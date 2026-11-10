@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Questlog – Anmelden')}"></head>
+<body class="bg-base-100 text-base-content">
+  <main class="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-8">
+    <h1 class="pt-[22dvh] text-3xl font-semibold tracking-tight">Questlog</h1>
+
+    <form th:action="@{/login}" method="post" class="mt-auto flex flex-col gap-4">
+      <p th:if="${param.error}" class="text-error" role="alert">Name oder Passwort stimmt nicht.</p>
+      <label class="flex flex-col gap-1.5">
+        <span class="text-sm text-base-content/70">Name</span>
+        <input class="input input-lg w-full" type="text" name="username"
+               autocomplete="username" autocapitalize="none" autocorrect="off" required autofocus>
+      </label>
+      <label class="flex flex-col gap-1.5">
+        <span class="text-sm text-base-content/70">Passwort</span>
+        <input class="input input-lg w-full" type="password" name="password"
+               autocomplete="current-password" required>
+      </label>
+      <button class="btn btn-primary btn-lg mt-2 w-full" type="submit">Anmelden</button>
+    </form>
+  </main>
+</body>
+</html>

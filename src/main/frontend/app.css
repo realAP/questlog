@@ -1,0 +1,67 @@
+/* Wird beim Build nach target/frontend-tools kopiert; Pfade sind relativ zu dort. */
+@import "tailwindcss" source(none);
+@source "../../src/main/resources/templates";
+@source "../../src/main/resources/static/js";
+
+@plugin "./daisyui.mjs" {
+  themes: false;
+}
+
+@plugin "./daisyui-theme.mjs" {
+  name: "questlog-light";
+  default: true;
+  color-scheme: light;
+  --color-base-100: oklch(98.5% 0.006 85);
+  --color-base-200: oklch(95.5% 0.008 85);
+  --color-base-300: oklch(91% 0.01 85);
+  --color-base-content: oklch(28% 0.015 70);
+  --color-primary: oklch(52% 0.07 165);
+  --color-primary-content: oklch(98% 0.01 165);
+  --color-neutral: oklch(35% 0.015 70);
+  --color-neutral-content: oklch(97% 0.005 85);
+  --color-error: oklch(58% 0.15 30);
+  --color-error-content: oklch(98% 0.01 30);
+  --radius-field: 0.75rem;
+  --radius-box: 1.25rem;
+}
+
+@plugin "./daisyui-theme.mjs" {
+  name: "questlog-dark";
+  prefersdark: true;
+  color-scheme: dark;
+  --color-base-100: oklch(21% 0.008 70);
+  --color-base-200: oklch(25% 0.01 70);
+  --color-base-300: oklch(31% 0.012 70);
+  --color-base-content: oklch(92% 0.008 85);
+  --color-primary: oklch(72% 0.08 165);
+  --color-primary-content: oklch(20% 0.02 165);
+  --color-neutral: oklch(85% 0.01 85);
+  --color-neutral-content: oklch(22% 0.01 70);
+  --color-error: oklch(70% 0.13 30);
+  --color-error-content: oklch(20% 0.02 30);
+  --radius-field: 0.75rem;
+  --radius-box: 1.25rem;
+}
+
+@layer base {
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+  }
+  body {
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+      env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  input, select, textarea {
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
