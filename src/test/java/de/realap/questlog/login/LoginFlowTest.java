@@ -18,12 +18,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest(
-    properties = {
-      "questlog.login.username=held",
-      "questlog.login.password=geheim",
-      "questlog.login.remember-me-key=test-key"
-    })
+@SpringBootTest
 @AutoConfigureMockMvc
 @Import(PostgresContainerConfig.class)
 class LoginFlowTest {

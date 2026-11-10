@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Questlog – Glossar', '/js/glossary.js')}"></head>
+<body class="bg-base-100 text-base-content">
+<main class="mx-auto max-w-xl px-5 pb-20">
+
+  <header class="flex flex-col gap-4 pt-6 pb-4">
+    <a th:href="@{/}" class="btn btn-ghost -ml-3 h-11 min-h-11 self-start px-3">
+      <svg th:replace="~{fragments/icons :: back('size-5')}"></svg>Zurück
+    </a>
+    <h1 class="text-3xl font-semibold tracking-tight">Glossar</h1>
+    <p class="text-base-content/80">
+      Wörter, um Gestaltung zu beschreiben und zu kritisieren. Jeder Begriff hat ein Beispiel zum
+      Antippen, einen Vergleich ohne und mit und einen Satz für Feedback.
+    </p>
+    <p x-data x-show="QL.reducedMotion" x-cloak class="rounded-box bg-base-200 p-4 text-sm">
+      „Bewegung reduzieren“ ist auf diesem Gerät aktiv. Die Bewegungsbeispiele laufen deshalb
+      abgeschwächt.
+    </p>
+    <nav aria-label="Kategorien" class="flex flex-wrap gap-2">
+      <a href="#layout" class="btn btn-sm h-11 min-h-11">Layout und Raum</a>
+      <a href="#typografie" class="btn btn-sm h-11 min-h-11">Typografie</a>
+      <a href="#farbe" class="btn btn-sm h-11 min-h-11">Farbe</a>
+      <a href="#bewegung" class="btn btn-sm h-11 min-h-11">Bewegung</a>
+      <a href="#feedback" class="btn btn-sm h-11 min-h-11">Feedback</a>
+      <a href="#interaktion" class="btn btn-sm h-11 min-h-11">Interaktion</a>
+      <a href="#wirkung" class="btn btn-sm h-11 min-h-11">Wirkung</a>
+    </nav>
+  </header>
+
+  <!-- ============================== 1 Layout und Raum ============================== -->
+  <section id="layout" aria-labelledby="layout-title">
+    <h2 id="layout-title" class="pt-8 text-sm font-semibold uppercase tracking-wider text-base-content/60">
+      1 · Layout und Raum
+    </h2>
+
+    <article id="weissraum" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Weißraum</h3>
+      <p class="ql-definition">
+        Leere Fläche um und zwischen Elementen. Weißraum trennt Gruppen, lässt das Wichtige atmen
+        und macht eine Ansicht ruhig. Zu wenig wirkt gedrängt, zu viel zerfällt in lose Teile.
+      </p>
+      <div class="ql-example ql-stage flex flex-col gap-4" x-data="{ space: 28 }">
+        <div class="rounded-box bg-base-100" :style="`padding: ${space}px`">
+          <p class="text-sm text-base-content/60">Waschen · Schritt 4 von 6</p>
+          <p class="text-xl font-semibold" :style="`margin-block: ${space / 2}px ${space}px`">In die Maschine geben</p>
+          <button type="button" class="btn btn-primary h-11 min-h-11 w-full">Erledigt</button>
+        </div>
+        <label class="flex items-center gap-3 text-sm">
+          <span class="shrink-0">Weißraum</span>
+          <input type="range" min="2" max="48" x-model.number="space" class="range range-sm range-primary">
+        </label>
+      </div>
+      <div class="ql-compare">
+        <figure>
+          <div class="rounded-box bg-base-200 p-1">
+            <p class="text-xs text-base-content/60">Waschen · 4 von 6</p>
+            <p class="font-semibold leading-tight">In die Maschine geben</p>
+            <span class="btn btn-primary btn-xs w-full">Erledigt</span>
+          </div>
+          <figcaption>Ohne: gedrängt</figcaption>
+        </figure>
+        <figure>
+          <div class="rounded-box bg-base-200 p-4">
+            <p class="text-xs text-base-content/60">Waschen · 4 von 6</p>
+            <p class="mt-2 mb-4 font-semibold leading-tight">In die Maschine geben</p>
+            <span class="btn btn-primary btn-xs w-full">Erledigt</span>
+          </div>
+          <figcaption>Mit: Luft zum Atmen</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Der Schritt wirkt gedrängt, gib ihm mehr Weißraum nach oben und unten.“</blockquote>
+    </article>
+
+    <article id="single-task-view" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Single-Task-View</h3>
+      <p class="ql-definition">
+        Nur der aktuelle Schritt ist groß sichtbar, alles andere tritt zurück. Die Ansicht hat einen
+        einzigen <strong>Fokuspunkt</strong>: die Stelle, auf die der Blick zuerst fällt. Man muss
+        nicht suchen, was als Nächstes dran ist.
+      </p>
+      <div class="ql-example ql-stage flex min-h-72 flex-col"
+           x-data="singleTask(['Wäsche sammeln', 'In den Wäschekorb', 'Nach unten bringen', 'In die Maschine geben', 'Waschmittel prüfen', 'Maschine starten'])">
+        <p class="text-sm text-base-content/60">Waschen · Schritt <span x-text="index + 1"></span> von 6</p>
+        <p x-ref="card" class="my-auto py-8 text-3xl font-semibold leading-tight" x-text="step"></p>
+        <button type="button" class="btn btn-primary btn-lg w-full" @click="next()">Erledigt</button>
+      </div>
+      <div class="ql-compare">
+        <figure>
+          <ul class="flex flex-col gap-1.5 rounded-box bg-base-200 p-3 text-sm">
+            <li class="flex items-center gap-2"><span class="size-3.5 shrink-0 rounded border border-base-content/40"></span>Wäsche sammeln</li>
+            <li class="flex items-center gap-2"><span class="size-3.5 shrink-0 rounded border border-base-content/40"></span>In den Korb</li>
+            <li class="flex items-center gap-2"><span class="size-3.5 shrink-0 rounded border border-base-content/40"></span>Nach unten</li>
+            <li class="flex items-center gap-2"><span class="size-3.5 shrink-0 rounded border border-base-content/40"></span>In die Maschine</li>
+            <li class="flex items-center gap-2"><span class="size-3.5 shrink-0 rounded border border-base-content/40"></span>Waschmittel</li>
+            <li class="flex items-center gap-2"><span class="size-3.5 shrink-0 rounded border border-base-content/40"></span>Starten</li>
+          </ul>
+          <figcaption>Ohne: alles gleich laut</figcaption>
+        </figure>
+        <figure>
+          <div class="flex h-full flex-col rounded-box bg-base-200 p-3">
+            <p class="text-xs text-base-content/60">Schritt 4 von 6</p>
+            <p class="my-auto py-3 text-lg font-semibold leading-tight">In die Maschine geben</p>
+            <span class="btn btn-primary btn-xs w-full">Erledigt</span>
+          </div>
+          <figcaption>Mit: ein Fokuspunkt</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Hier konkurrieren zu viele Dinge. Ich will eine Single-Task-View mit nur dem aktuellen Schritt.“</blockquote>
+    </article>
+  </section>
+
+  <!-- ============================== 2 Typografie ============================== -->
+  <section id="typografie" aria-labelledby="typografie-title">
+    <h2 id="typografie-title" class="pt-8 text-sm font-semibold uppercase tracking-wider text-base-content/60">
+      2 · Typografie
+    </h2>
+
+    <article id="typografische-hierarchie" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Typografische Hierarchie</h3>
+      <p class="ql-definition">
+        Unterschiede in Schriftgröße, Schriftgewicht und Helligkeit zeigen, was wichtig ist. Die
+        Überschrift ist deutlich größer und kräftiger als der Text, Nebensachen sind kleiner und
+        leiser. Ein großzügiger <strong>Zeilenabstand</strong> macht Fließtext leichter lesbar.
+      </p>
+      <div class="ql-example ql-stage flex flex-col gap-3">
+        <div class="flex items-baseline justify-between gap-3">
+          <p class="text-sm text-base-content/60">Waschen · Schritt 5 von 6</p>
+          <span class="shrink-0 font-mono text-xs text-base-content/50">14 px · leise</span>
+        </div>
+        <div class="flex items-baseline justify-between gap-3">
+          <p class="text-[28px] font-semibold leading-tight">Waschmittel prüfen</p>
+          <span class="shrink-0 font-mono text-xs text-base-content/50">28 px · halbfett</span>
+        </div>
+        <div class="flex items-baseline justify-between gap-3">
+          <p class="leading-relaxed text-base-content/80">Im Fach links oben.</p>
+          <span class="shrink-0 font-mono text-xs text-base-content/50">16 px · normal</span>
+        </div>
+      </div>
+      <div class="ql-compare">
+        <figure>
+          <div class="rounded-box bg-base-200 p-3 text-sm">
+            <p>Waschen · Schritt 5 von 6</p>
+            <p>Waschmittel prüfen</p>
+            <p>Im Fach links oben.</p>
+          </div>
+          <figcaption>Ohne: alles gleich</figcaption>
+        </figure>
+        <figure>
+          <div class="rounded-box bg-base-200 p-3">
+            <p class="text-xs text-base-content/60">Waschen · 5 von 6</p>
+            <p class="text-lg font-semibold leading-tight">Waschmittel prüfen</p>
+            <p class="text-sm text-base-content/80">Im Fach links oben.</p>
+          </div>
+          <figcaption>Mit: klare Rangfolge</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Überschrift und Hinweis sind gleich laut, die Hierarchie fehlt. Den Schritt größer, den Kontext leiser.“</blockquote>
+    </article>
+  </section>
+
+  <!-- ============================== 3 Farbe ============================== -->
+  <section id="farbe" aria-labelledby="farbe-title">
+    <h2 id="farbe-title" class="pt-8 text-sm font-semibold uppercase tracking-wider text-base-content/60">
+      3 · Farbe
+    </h2>
+
+    <article id="akzentfarbe" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Akzentfarbe</h3>
+      <p class="ql-definition">
+        Eine kräftige Farbe, die nur wenigen Stellen vorbehalten ist: der Hauptaktion und dem
+        Fortschritt. Der Rest der <strong>Farbpalette</strong> bleibt gedämpft. Weil die
+        Akzentfarbe selten vorkommt, findet der Blick sie sofort.
+      </p>
+      <div class="ql-example ql-stage flex items-center gap-4">
+        <svg class="size-16 shrink-0 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="ql-ring-track" cx="50" cy="50" r="40" stroke-width="10"/>
+          <circle class="ql-ring" cx="50" cy="50" r="40" stroke-width="10" pathLength="100" style="stroke-dashoffset: 33"/>
+        </svg>
+        <div class="flex min-w-0 flex-1 flex-col gap-3">
+          <p class="text-lg font-semibold leading-tight">Maschine starten</p>
+          <button type="button" class="btn btn-primary h-11 min-h-11">Erledigt</button>
+        </div>
+      </div>
+      <div class="ql-compare">
+        <figure>
+          <div class="flex flex-col gap-2 rounded-box bg-base-200 p-3">
+            <span class="self-start rounded-full bg-[oklch(70%_0.15_250)] px-2 text-xs text-white">Waschen</span>
+            <p class="font-semibold leading-tight text-[oklch(55%_0.15_30)]">Maschine starten</p>
+            <span class="btn btn-xs border-0 bg-[oklch(70%_0.15_140)] text-white">Erledigt</span>
+            <span class="btn btn-xs border-0 bg-[oklch(75%_0.15_80)]">Später</span>
+          </div>
+          <figcaption>Ohne: alles bunt</figcaption>
+        </figure>
+        <figure>
+          <div class="flex flex-col gap-2 rounded-box bg-base-200 p-3">
+            <span class="self-start text-xs text-base-content/60">Waschen</span>
+            <p class="font-semibold leading-tight">Maschine starten</p>
+            <span class="btn btn-primary btn-xs">Erledigt</span>
+            <span class="btn btn-ghost btn-xs">Später</span>
+          </div>
+          <figcaption>Mit: ein Akzent</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Zu viele Farben ziehen am Blick. Die Akzentfarbe sollte nur die Hauptaktion markieren.“</blockquote>
+    </article>
+  </section>
+
+  <!-- ============================== 4 Bewegung ============================== -->
+  <section id="bewegung" aria-labelledby="bewegung-title">
+    <h2 id="bewegung-title" class="pt-8 text-sm font-semibold uppercase tracking-wider text-base-content/60">
+      4 · Bewegung
+    </h2>
+    <p class="pt-3 text-base-content/80">
+      <strong>Motion Design</strong> gestaltet Bewegung als Teil der Oberfläche: Sie zeigt, woher
+      etwas kommt, was sich geändert hat und dass die App reagiert. Die Begriffe hier beschreiben,
+      wie sich etwas bewegt.
+    </p>
+
+    <article id="easing" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Easing</h3>
+      <p class="ql-definition">
+        Die Beschleunigungskurve einer Animation. <em>Linear</em> wirkt mechanisch,
+        <em>ease-out</em> startet schnell und bremst weich ab (gut für Dinge, die erscheinen),
+        <em>ease-in-out</em> beschleunigt und bremst (gut für Bewegung von A nach B). Zusammen mit
+        der <strong>Dauer</strong> entscheidet das Easing, ob Bewegung natürlich wirkt; für kleine
+        Elemente sind 200 bis 400 Millisekunden üblich.
+      </p>
+      <div class="ql-example ql-stage flex flex-col gap-3" x-data="demo('easing-race')">
+        <template x-for="label in ['linear', 'ease-out', 'ease-in-out']">
+          <div class="flex flex-col gap-1">
+            <span class="font-mono text-xs text-base-content/60" x-text="label"></span>
+            <div class="relative h-6 rounded-full bg-base-300">
+              <span data-part="dot" class="absolute left-0 top-0 size-6 rounded-full bg-primary"></span>
+            </div>
+          </div>
+        </template>
+        <button type="button" class="btn h-11 min-h-11" @click="play()">Abspielen</button>
+      </div>
+      <div class="ql-compare">
+        <figure x-data="demo('easing-linear')">
+          <div class="overflow-hidden rounded-box bg-base-200 p-3">
+            <div data-part="card" class="rounded-field bg-base-100 p-3 text-sm font-semibold">Aufhängen</div>
+          </div>
+          <button type="button" class="btn btn-sm h-11 min-h-11" @click="play()">Abspielen</button>
+          <figcaption>Ohne: linear, steif</figcaption>
+        </figure>
+        <figure x-data="demo('easing-out')">
+          <div class="overflow-hidden rounded-box bg-base-200 p-3">
+            <div data-part="card" class="rounded-field bg-base-100 p-3 text-sm font-semibold">Aufhängen</div>
+          </div>
+          <button type="button" class="btn btn-sm h-11 min-h-11" @click="play()">Abspielen</button>
+          <figcaption>Mit: ease-out, weich</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Die Karte bewegt sich mechanisch. Nimm ein Ease-out, damit sie weich ankommt.“</blockquote>
+    </article>
+
+    <article id="spring-animation" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Spring-Animation</h3>
+      <p class="ql-definition">
+        Bewegung, die wie eine Feder physikalisch simuliert wird: Sie hat keine feste Kurve,
+        sondern schwingt je nach Federung leicht über das Ziel hinaus und federt nach. Dadurch
+        fühlt sie sich lebendig und direkt an. Wenig Nachfedern wirkt hochwertig, viel wirkt
+        verspielt.
+      </p>
+      <div class="ql-example ql-stage flex flex-col items-center gap-5" x-data="{ bounce: 0.4 }">
+        <div x-data="demo('spring-tune')" :data-bounce="bounce" class="py-4">
+          <button type="button" data-part="target" @click="play()"
+                  class="btn btn-primary btn-circle size-24 text-primary-content" aria-label="Antippen">
+            <svg th:replace="~{fragments/icons :: check('size-10')}"></svg>
+          </button>
+        </div>
+        <label class="flex w-full items-center gap-3 text-sm">
+          <span class="shrink-0">Nachfedern</span>
+          <input type="range" min="0" max="0.8" step="0.05" x-model.number="bounce" class="range range-sm range-primary">
+          <span class="w-8 shrink-0 text-right font-mono text-xs" x-text="bounce.toFixed(2)"></span>
+        </label>
+      </div>
+      <div class="ql-compare">
+        <figure x-data="demo('spring-off')" class="items-center">
+          <div class="flex w-full justify-center rounded-box bg-base-200 py-5">
+            <button type="button" data-part="target" @click="play()" class="btn btn-primary btn-circle size-14" aria-label="Antippen">
+              <svg th:replace="~{fragments/icons :: check('size-6')}"></svg>
+            </button>
+          </div>
+          <figcaption>Ohne: feste Kurve</figcaption>
+        </figure>
+        <figure x-data="demo('spring-on')" class="items-center">
+          <div class="flex w-full justify-center rounded-box bg-base-200 py-5">
+            <button type="button" data-part="target" @click="play()" class="btn btn-primary btn-circle size-14" aria-label="Antippen">
+              <svg th:replace="~{fragments/icons :: check('size-6')}"></svg>
+            </button>
+          </div>
+          <figcaption>Mit: federt nach</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Der Button reagiert steif. Eine Spring mit leichtem Nachfedern würde ihn lebendiger machen.“</blockquote>
+    </article>
+
+    <article id="ambient-motion" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Ambient Motion</h3>
+      <p class="ql-definition">
+        Dezente Dauerbewegung im Hintergrund, die keine Aufmerksamkeit fordert. Sie zeigt, dass
+        etwas läuft, etwa eine Wartezeit, und lässt eine stille Ansicht lebendig statt eingefroren
+        wirken. Sie muss langsam sein (mehrere Sekunden pro Zyklus), sonst lenkt sie ab.
+      </p>
+      <div class="ql-example ql-stage flex flex-col items-center gap-3 py-8" x-data="demo('ambient-on')" data-autoplay>
+        <div class="relative grid size-40 place-items-center">
+          <span data-part="breath" class="absolute inset-4 rounded-full bg-primary/25"></span>
+          <svg class="absolute inset-0 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+            <circle class="ql-ring-track" cx="50" cy="50" r="46" stroke-width="3"/>
+            <circle class="ql-ring" cx="50" cy="50" r="46" stroke-width="3" pathLength="100" style="stroke-dashoffset: 58"/>
+          </svg>
+          <span class="relative text-2xl font-semibold tabular-nums">1:42 h</span>
+        </div>
+        <p class="text-base-content/70">Waschgang läuft</p>
+      </div>
+      <div class="ql-compare">
+        <figure>
+          <div class="grid place-items-center rounded-box bg-base-200 py-5">
+            <span class="grid size-20 place-items-center rounded-full bg-primary/25 text-sm font-semibold">1:42 h</span>
+          </div>
+          <figcaption>Ohne: wirkt eingefroren</figcaption>
+        </figure>
+        <figure x-data="demo('ambient-on')" data-autoplay>
+          <div class="grid place-items-center rounded-box bg-base-200 py-5">
+            <div class="relative grid size-20 place-items-center">
+              <span data-part="breath" class="absolute inset-0 rounded-full bg-primary/25"></span>
+              <span class="relative text-sm font-semibold">1:42 h</span>
+            </div>
+          </div>
+          <figcaption>Mit: atmet langsam</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Beim Warten wirkt die App eingefroren. Etwas Ambient Motion würde zeigen, dass die Zeit läuft.“</blockquote>
+    </article>
+
+    <article id="choreografie" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Choreografie</h3>
+      <p class="ql-definition">
+        Mehrere Elemente bewegen sich zeitlich versetzt statt gleichzeitig (englisch
+        <em>stagger</em>). Der Versatz führt den Blick in einer Reihenfolge durch die Ansicht.
+        Wenige zehn Millisekunden pro Element reichen; zu viel Versatz wirkt träge.
+      </p>
+      <div class="ql-example ql-stage flex flex-col gap-4" x-data="{ delay: 90 }">
+        <div x-data="demo('stagger-tune')" :data-delay="delay" class="flex flex-col gap-2">
+          <div data-part="row" class="rounded-field bg-base-100 p-3 font-semibold">Wäsche abnehmen</div>
+          <div data-part="row" class="rounded-field bg-base-100 p-3 font-semibold">Wegräumen</div>
+          <div data-part="row" class="rounded-field bg-base-100 p-3 font-semibold">Wäscheleine freiräumen</div>
+          <button type="button" class="btn mt-2 h-11 min-h-11" @click="play()">Abspielen</button>
+        </div>
+        <label class="flex items-center gap-3 text-sm">
+          <span class="shrink-0">Versatz</span>
+          <input type="range" min="0" max="300" step="10" x-model.number="delay" class="range range-sm range-primary">
+          <span class="w-14 shrink-0 text-right font-mono text-xs" x-text="`${delay} ms`"></span>
+        </label>
+      </div>
+      <div class="ql-compare">
+        <figure x-data="demo('stagger-off')">
+          <div class="flex flex-col gap-1.5 rounded-box bg-base-200 p-3">
+            <div data-part="row" class="h-5 rounded bg-base-100"></div>
+            <div data-part="row" class="h-5 rounded bg-base-100"></div>
+            <div data-part="row" class="h-5 rounded bg-base-100"></div>
+          </div>
+          <button type="button" class="btn btn-sm h-11 min-h-11" @click="play()">Abspielen</button>
+          <figcaption>Ohne: alles auf einmal</figcaption>
+        </figure>
+        <figure x-data="demo('stagger-on')">
+          <div class="flex flex-col gap-1.5 rounded-box bg-base-200 p-3">
+            <div data-part="row" class="h-5 rounded bg-base-100"></div>
+            <div data-part="row" class="h-5 rounded bg-base-100"></div>
+            <div data-part="row" class="h-5 rounded bg-base-100"></div>
+          </div>
+          <button type="button" class="btn btn-sm h-11 min-h-11" @click="play()">Abspielen</button>
+          <figcaption>Mit: nacheinander</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Alles springt gleichzeitig rein. Eine Choreografie mit leichtem Versatz würde den Blick führen.“</blockquote>
+    </article>
+  </section>
+
+  <!-- ============================== 5 Feedback ============================== -->
+  <section id="feedback" aria-labelledby="feedback-title">
+    <h2 id="feedback-title" class="pt-8 text-sm font-semibold uppercase tracking-wider text-base-content/60">
+      5 · Feedback
+    </h2>
+
+    <article id="micro-interaction" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Micro-Interaction</h3>
+      <p class="ql-definition">
+        Kleine Animation als direkte Rückmeldung auf eine einzelne Aktion: Ein Häkchen springt
+        ein, ein Ring pulsiert kurz. Sie bestätigt „angekommen“, ohne dass man hinsehen muss, und
+        macht wiederholte Handgriffe angenehm. Dazu gehört auch der <strong>Tap-Zustand</strong>:
+        Ein Button gibt schon beim Berühren sichtbar nach.
+      </p>
+      <div class="ql-example ql-stage grid place-items-center py-8">
+        <button type="button" class="ql-check relative grid size-28 place-items-center" x-data="demo('micro-on')" @click="play()"
+                aria-label="Abhaken">
+          <span data-part="pulse" class="absolute inset-0 rounded-full bg-primary/40 opacity-0"></span>
+          <span data-part="box" class="relative grid size-24 place-items-center rounded-full">
+            <svg class="size-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path data-part="tick" class="ql-tick" pathLength="100" d="M5 12.5l4.5 4.5L19 7.5"/>
+            </svg>
+          </span>
+        </button>
+      </div>
+      <div class="ql-compare">
+        <figure>
+          <div class="grid place-items-center rounded-box bg-base-200 py-5">
+            <button type="button" class="ql-check grid size-14 place-items-center" x-data="demo('micro-off')" @click="play()" aria-label="Abhaken">
+              <span data-part="box" class="grid size-10 place-items-center rounded-md">
+                <svg th:replace="~{fragments/icons :: check('ql-tick-plain size-6')}"></svg>
+              </span>
+            </button>
+          </div>
+          <figcaption>Ohne: schaltet nur um</figcaption>
+        </figure>
+        <figure>
+          <div class="grid place-items-center rounded-box bg-base-200 py-5">
+            <button type="button" class="ql-check relative grid size-14 place-items-center" x-data="demo('micro-on')" @click="play()" aria-label="Abhaken">
+              <span data-part="pulse" class="absolute inset-0 rounded-full bg-primary/40 opacity-0"></span>
+              <span data-part="box" class="relative grid size-12 place-items-center rounded-full">
+                <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path data-part="tick" class="ql-tick" pathLength="100" d="M5 12.5l4.5 4.5L19 7.5"/>
+                </svg>
+              </span>
+            </button>
+          </div>
+          <figcaption>Mit: springt ein, pulsiert</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Das Abhaken fühlt sich nach nichts an. Hier fehlt eine Micro-Interaction.“</blockquote>
+    </article>
+
+    <article id="celebration-moment" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Celebration-Moment</h3>
+      <p class="ql-definition">
+        Ein hervorgehobener Abschluss, der eine geschaffte Quest spürbar macht: Bewegung, Licht und
+        später ein Ton spielen zusammen. Er ist bewusst selten, damit er Gewicht behält. Bekannte
+        Vorbilder sind der sich schließende Aktivitätsring bei Apple Fitness und der
+        Abschlussbildschirm einer Lektion bei Duolingo, der Bewegung, Ton und Fortschritt verbindet.
+      </p>
+      <div class="ql-example ql-stage flex flex-col items-center gap-4 py-8" x-data="demo('celebrate-on')">
+        <div class="relative grid size-40 place-items-center">
+          <div data-part="confetti" class="pointer-events-none absolute inset-0"></div>
+          <svg data-part="ring-group" class="absolute inset-0 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+            <circle class="ql-ring-track" cx="50" cy="50" r="42" stroke-width="9"/>
+            <circle data-part="ring" class="ql-ring" cx="50" cy="50" r="42" stroke-width="9" pathLength="100" style="stroke-dashoffset: 17"/>
+          </svg>
+        </div>
+        <p data-part="title" class="text-2xl font-semibold opacity-0">Wäsche geschafft</p>
+        <button type="button" class="btn btn-primary h-11 min-h-11" @click="play()">Letzten Schritt abhaken</button>
+      </div>
+      <div class="ql-compare">
+        <figure x-data="demo('celebrate-off')">
+          <div class="grid min-h-24 place-items-center rounded-box bg-base-200 p-3">
+            <p data-part="title" class="font-semibold opacity-0">Erledigt.</p>
+          </div>
+          <button type="button" class="btn btn-sm h-11 min-h-11" @click="play()">Abschließen</button>
+          <figcaption>Ohne: endet beiläufig</figcaption>
+        </figure>
+        <figure x-data="demo('celebrate-on')">
+          <div class="relative grid min-h-24 place-items-center rounded-box bg-base-200 p-3">
+            <div data-part="confetti" class="pointer-events-none absolute inset-0"></div>
+            <svg data-part="ring-group" class="size-12 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+              <circle class="ql-ring-track" cx="50" cy="50" r="40" stroke-width="12"/>
+              <circle data-part="ring" class="ql-ring" cx="50" cy="50" r="40" stroke-width="12" pathLength="100" style="stroke-dashoffset: 17"/>
+            </svg>
+            <p data-part="title" class="font-semibold opacity-0">Geschafft</p>
+          </div>
+          <button type="button" class="btn btn-sm h-11 min-h-11" @click="play()">Abschließen</button>
+          <figcaption>Mit: Abschluss mit Gewicht</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Der Abschluss braucht mehr Gewicht, hier fehlt ein Celebration-Moment.“</blockquote>
+    </article>
+  </section>
+
+  <!-- ============================== 6 Interaktion ============================== -->
+  <section id="interaktion" aria-labelledby="interaktion-title">
+    <h2 id="interaktion-title" class="pt-8 text-sm font-semibold uppercase tracking-wider text-base-content/60">
+      6 · Interaktion
+    </h2>
+
+    <article id="progress-ring" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Progress-Ring</h3>
+      <p class="ql-definition">
+        Kreisförmige Fortschrittsanzeige. Ein Schritt-Ring füllt sich mit jedem erledigten
+        Schritt; ein Timer-Ring leert sich, während eine Wartezeit abläuft. Der Ring zeigt auf
+        einen Blick, wie weit man ist, ohne Zahlen lesen zu müssen.
+      </p>
+      <div class="ql-example ql-stage grid grid-cols-2 gap-4" x-data="progressDemo(6)">
+        <div class="flex flex-col items-center gap-3">
+          <div class="relative grid size-28 place-items-center">
+            <svg class="absolute inset-0 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+              <circle class="ql-ring-track" cx="50" cy="50" r="42" stroke-width="9"/>
+              <circle x-ref="stepRing" class="ql-ring" cx="50" cy="50" r="42" stroke-width="9" pathLength="100"/>
+            </svg>
+            <span class="relative text-xl font-semibold tabular-nums" x-text="`${done}/${steps}`"></span>
+          </div>
+          <button type="button" class="btn h-11 min-h-11 w-full" @click="advance()"
+                  x-text="done === steps ? 'Neu starten' : 'Schritt erledigt'"></button>
+        </div>
+        <div class="flex flex-col items-center gap-3">
+          <div class="relative grid size-28 place-items-center">
+            <svg class="absolute inset-0 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+              <circle class="ql-ring-track" cx="50" cy="50" r="42" stroke-width="9"/>
+              <circle x-ref="timerRing" class="ql-ring" cx="50" cy="50" r="42" stroke-width="9" pathLength="100" style="stroke-dashoffset: 0"/>
+            </svg>
+            <svg th:replace="~{fragments/icons :: clock('relative size-8 text-base-content/70')}"></svg>
+          </div>
+          <button type="button" class="btn h-11 min-h-11 w-full" @click="runTimer()" :disabled="timerRunning">Timer (6 s)</button>
+        </div>
+      </div>
+      <div class="ql-compare">
+        <figure>
+          <div class="grid min-h-24 place-items-center rounded-box bg-base-200 p-3">
+            <p class="text-sm">Schritt 4 von 6</p>
+          </div>
+          <figcaption>Ohne: Zahl lesen</figcaption>
+        </figure>
+        <figure>
+          <div class="grid min-h-24 place-items-center rounded-box bg-base-200 p-3">
+            <svg class="size-14 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+              <circle class="ql-ring-track" cx="50" cy="50" r="40" stroke-width="12"/>
+              <circle class="ql-ring" cx="50" cy="50" r="40" stroke-width="12" pathLength="100" style="stroke-dashoffset: 33"/>
+            </svg>
+          </div>
+          <figcaption>Mit: auf einen Blick</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Ich sehe nicht, wie weit ich bin. Ein Progress-Ring um den Schritt würde das zeigen.“</blockquote>
+    </article>
+  </section>
+
+  <!-- ============================== 7 Wirkung ============================== -->
+  <section id="wirkung" aria-labelledby="wirkung-title">
+    <h2 id="wirkung-title" class="pt-8 text-sm font-semibold uppercase tracking-wider text-base-content/60">
+      7 · Wirkung
+    </h2>
+
+    <article id="calm-focus" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Calm Focus</h3>
+      <p class="ql-definition">
+        Die Wirkung <em>ruhig und konzentriert</em>: stark reduziert, viel Weißraum, gedämpfte warme
+        Farben, eine Akzentfarbe und langsame, weiche Bewegung. Das ist die Grundrichtung von
+        Questlog. Zum Vergleich die zwei verworfenen Richtungen:
+        <strong>Cozy Game</strong> (warme Farben, weiche runde Formen, verspielt) und
+        <strong>Quest Scroll</strong> (dezente Fantasy-Anmutung mit Pergament und Banner).
+      </p>
+      <div class="ql-example ql-stage flex flex-col gap-4" x-data="{ look: 'calm' }">
+        <div class="flex flex-wrap gap-2" role="tablist" aria-label="Stilrichtung">
+          <button type="button" role="tab" class="btn btn-sm h-11 min-h-11" :class="look === 'calm' && 'btn-active'" :aria-selected="look === 'calm'" @click="look = 'calm'">Calm Focus</button>
+          <button type="button" role="tab" class="btn btn-sm h-11 min-h-11" :class="look === 'cozy' && 'btn-active'" :aria-selected="look === 'cozy'" @click="look = 'cozy'">Cozy Game</button>
+          <button type="button" role="tab" class="btn btn-sm h-11 min-h-11" :class="look === 'scroll' && 'btn-active'" :aria-selected="look === 'scroll'" @click="look = 'scroll'">Quest Scroll</button>
+        </div>
+        <div x-show="look === 'calm'" class="flex flex-col gap-6 rounded-box bg-base-100 p-6">
+          <p class="text-sm text-base-content/60">Aufhängen · Schritt 2 von 2</p>
+          <p class="text-2xl font-semibold leading-tight">Wäsche aufhängen</p>
+          <button type="button" class="btn btn-primary h-11 min-h-11">Erledigt</button>
+        </div>
+        <div x-show="look === 'cozy'" x-cloak
+             class="flex flex-col gap-4 rounded-[2rem] border-4 border-[oklch(62%_0.12_45)] bg-[oklch(90%_0.07_75)] p-6 text-[oklch(35%_0.07_45)] shadow-[0_6px_0_oklch(62%_0.12_45)]">
+          <p class="self-start rounded-full bg-[oklch(80%_0.12_140)] px-3 py-1 text-sm font-bold">Aufhängen · 2/2</p>
+          <p class="text-2xl font-extrabold leading-tight">Wäsche aufhängen</p>
+          <button type="button" class="btn h-12 rounded-full border-0 bg-[oklch(68%_0.14_140)] text-lg font-bold text-white shadow-[0_4px_0_oklch(50%_0.12_140)]">Erledigt</button>
+        </div>
+        <div x-show="look === 'scroll'" x-cloak
+             class="flex flex-col gap-4 border-y-8 border-double border-[oklch(55%_0.07_60)] bg-[oklch(92%_0.04_85)] p-6 font-serif text-[oklch(30%_0.05_60)]">
+          <p class="bg-[oklch(45%_0.1_30)] px-3 py-1 text-center text-sm uppercase tracking-[0.2em] text-[oklch(95%_0.02_85)]">Aufhängen</p>
+          <p class="text-center text-2xl italic leading-tight">Wäsche aufhängen</p>
+          <button type="button" class="btn h-11 rounded-none border-2 border-[oklch(45%_0.1_30)] bg-transparent font-serif text-[oklch(30%_0.05_60)]">Erledigt</button>
+        </div>
+      </div>
+      <div class="ql-compare">
+        <figure>
+          <div class="flex flex-col gap-1.5 rounded-box border-2 border-base-content/30 bg-base-200 p-2">
+            <div class="flex flex-wrap gap-1">
+              <span class="rounded bg-[oklch(70%_0.15_250)] px-1 text-[10px] text-white">NEU</span>
+              <span class="rounded bg-[oklch(72%_0.15_80)] px-1 text-[10px]">3 Tage</span>
+              <span class="rounded bg-[oklch(65%_0.15_140)] px-1 text-[10px] text-white">+50</span>
+            </div>
+            <p class="text-sm font-extrabold leading-tight">WÄSCHE AUFHÄNGEN!</p>
+            <p class="text-[10px] leading-tight">Tipp: Socken paarweise. Du bist auf Platz 2!</p>
+            <div class="grid grid-cols-2 gap-1">
+              <span class="btn btn-xs btn-primary">Fertig</span>
+              <span class="btn btn-xs">Später</span>
+            </div>
+          </div>
+          <figcaption>Überladen</figcaption>
+        </figure>
+        <figure>
+          <div class="flex h-full flex-col gap-3 rounded-box bg-base-200 p-3">
+            <p class="text-xs text-base-content/60">Aufhängen</p>
+            <p class="font-semibold leading-tight">Wäsche aufhängen</p>
+            <span class="btn btn-primary btn-xs mt-auto">Erledigt</span>
+          </div>
+          <figcaption>Calm Focus</figcaption>
+        </figure>
+      </div>
+      <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+        <dt class="font-semibold">ruhig</dt><dd class="text-base-content/80">Weißraum, gedämpfte Palette, ein Akzent, langsame Bewegung</dd>
+        <dt class="font-semibold">verspielt</dt><dd class="text-base-content/80">runde Formen, kräftige Farben, Springs mit viel Nachfedern</dd>
+        <dt class="font-semibold">hochwertig</dt><dd class="text-base-content/80">präzise Abstände, wenige Schriftgrößen, kurzes Nachfedern</dd>
+        <dt class="font-semibold">überladen</dt><dd class="text-base-content/80">viele Farben, Abzeichen und Texte konkurrieren, kein Fokuspunkt</dd>
+        <dt class="font-semibold">steril</dt><dd class="text-base-content/80">kalte Farben, keine Bewegung, kein Feedback</dd>
+      </dl>
+      <blockquote class="ql-feedback">„Die Ansicht wirkt überladen. Zurück zu Calm Focus: weniger Elemente, ein Akzent, mehr Weißraum.“</blockquote>
+    </article>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,5 @@
+questlog:
+  login:
+    username: held
+    password: geheim
+    remember-me-key: test-key
