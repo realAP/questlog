@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="questlog"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  <description>
+    Alle PMD-Kategorien. Ausgenommen sind nur Regeln, die google-java-format, idiomatischem
+    Spring-Code oder modernem Java (var, Records) widersprechen.
+  </description>
+
+  <rule ref="category/java/bestpractices.xml">
+    <!-- Fachliche Integrationstests prüfen einen Ablauf mit mehreren Erwartungen. -->
+    <exclude name="UnitTestContainsTooManyAsserts"/>
+    <exclude name="UnitTestShouldIncludeAssert"/>
+  </rule>
+  <rule ref="category/java/bestpractices.xml/UnitTestShouldIncludeAssert">
+    <properties><property name="extraAssertMethodNames" value="andExpect"/></properties>
+  </rule>
+  <rule ref="category/java/errorprone.xml"/>
+  <rule ref="category/java/multithreading.xml"/>
+  <rule ref="category/java/performance.xml"/>
+  <rule ref="category/java/security.xml"/>
+  <rule ref="category/java/documentation.xml">
+    <!-- Javadoc-Pflicht regelt Checkstyle (Google-Stil). -->
+    <exclude name="CommentRequired"/>
+    <exclude name="CommentSize"/>
+  </rule>
+  <rule ref="category/java/codestyle.xml">
+    <exclude name="AtLeastOneConstructor"/>
+    <exclude name="LocalVariableCouldBeFinal"/>
+    <exclude name="MethodArgumentCouldBeFinal"/>
+    <exclude name="OnlyOneReturn"/>
+    <exclude name="LongVariable"/>
+    <exclude name="UseExplicitTypes"/>
+    <!-- Spring-Komponenten sind bewusst package-private. -->
+    <exclude name="CommentDefaultAccessModifier"/>
+    <!-- Widerspricht der Deklaration am Ort der Verwendung. -->
+    <exclude name="LocalVariableDeclarationShouldBeAtStartOfBlock"/>
+    <exclude name="TooManyStaticImports"/>
+  </rule>
+  <rule ref="category/java/codestyle.xml/TooManyStaticImports">
+    <properties><property name="maximumStaticImports" value="10"/></properties>
+  </rule>
+  <rule ref="category/java/design.xml">
+    <exclude name="LawOfDemeter"/>
+    <exclude name="LoosePackageCoupling"/>
+    <exclude name="CognitiveComplexity"/>
+    <exclude name="NcssCount"/>
+  </rule>
+
+  <!-- Grenzwerte: ein Mensch soll jede Methode auf einen Blick erfassen. -->
+  <rule ref="category/java/design.xml/CognitiveComplexity">
+    <properties><property name="reportLevel" value="10"/></properties>
+  </rule>
+  <rule ref="category/java/design.xml/NcssCount">
+    <properties>
+      <property name="methodReportLevel" value="30"/>
+      <property name="classReportLevel" value="300"/>
+    </properties>
+  </rule>
+</ruleset>

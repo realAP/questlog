@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: questlog
+  datasource:
+    url: ${QUESTLOG_DB_URL:jdbc:postgresql://localhost:5432/questlog}
+    username: ${QUESTLOG_DB_USER:questlog}
+    password: ${QUESTLOG_DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  thymeleaf:
+    cache: true
+
+server:
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        same-site: lax
+
+questlog:
+  login:
+    username: ${QUESTLOG_USERNAME:}
+    password: ${QUESTLOG_PASSWORD:}
+    remember-me-key: ${QUESTLOG_REMEMBER_ME_KEY:}
+    remember-me-validity: 56d
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never

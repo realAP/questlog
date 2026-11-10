@@ -1,0 +1,34 @@
+# Deployment in Coolify. Secrets stehen hier nur als Platzhalter und werden in Coolify als
+# Umgebungsvariablen gepflegt; ${VAR:?} bricht den Start ab, wenn eine Variable fehlt.
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      QUESTLOG_DB_URL: jdbc:postgresql://db:5432/questlog
+      QUESTLOG_DB_USER: questlog
+      QUESTLOG_DB_PASSWORD: ${QUESTLOG_DB_PASSWORD:?}
+      QUESTLOG_USERNAME: ${QUESTLOG_USERNAME:?}
+      QUESTLOG_PASSWORD: ${QUESTLOG_PASSWORD:?}
+      QUESTLOG_REMEMBER_ME_KEY: ${QUESTLOG_REMEMBER_ME_KEY:?}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: questlog
+      POSTGRES_USER: questlog
+      POSTGRES_PASSWORD: ${QUESTLOG_DB_PASSWORD:?}
+    volumes:
+      - questlog-db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U questlog -d questlog"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  questlog-db:
