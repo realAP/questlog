@@ -15,11 +15,11 @@
   <link rel="apple-touch-icon" th:href="@{/icons/icon-180.png}">
   <link rel="stylesheet" th:href="@{/css/app.css}">
   <!-- Reihenfolge zählt: Komponenten registrieren sich bei alpine:init, Alpine startet zuletzt. -->
-  <script th:src="@{/js/vendor/motion-14.12.0.js}" defer></script>
-  <script th:src="@{/js/vendor/htmx-2.0.11.min.js}" defer></script>
+  <script th:src="@{/js/vendor/motion.js}" defer></script>
+  <script th:src="@{/webjars/htmx.org/dist/htmx.min.js}" defer></script>
   <script th:src="@{/js/motion-kit.js}" defer></script>
   <script th:if="${script}" th:src="@{${script}}" defer></script>
-  <script th:src="@{/js/vendor/alpine-3.17.5.min.js}" defer></script>
+  <script th:src="@{/webjars/alpinejs/dist/cdn.min.js}" defer></script>
   <script th:src="@{/js/register-sw.js}" defer></script>
 </head>
 </html>

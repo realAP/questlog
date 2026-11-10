@@ -42,6 +42,9 @@ class LoginFlowTest {
     mvc.perform(get("/sw.js")).andExpect(status().isOk());
     mvc.perform(get("/icons/icon-192.png")).andExpect(status().isOk());
     mvc.perform(get("/css/app.css")).andExpect(status().isOk());
+    mvc.perform(get("/js/vendor/motion.js")).andExpect(status().isOk());
+    mvc.perform(get("/webjars/htmx.org/dist/htmx.min.js")).andExpect(status().isOk());
+    mvc.perform(get("/webjars/alpinejs/dist/cdn.min.js")).andExpect(status().isOk());
     mvc.perform(get("/actuator/health"))
         .andExpect(status().isOk())
         .andExpect(content().json("{\"status\":\"UP\"}"));

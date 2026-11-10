@@ -3,11 +3,11 @@
 @source "../../src/main/resources/templates";
 @source "../../src/main/resources/static/js";
 
-@plugin "./daisyui.mjs" {
+@plugin "daisyui" {
   themes: false;
 }
 
-@plugin "./daisyui-theme.mjs" {
+@plugin "daisyui/theme" {
   name: "questlog-light";
   default: true;
   color-scheme: light;
@@ -41,7 +41,7 @@
   --noise: 0;
 }
 
-@plugin "./daisyui-theme.mjs" {
+@plugin "daisyui/theme" {
   name: "questlog-dark";
   prefersdark: true;
   color-scheme: dark;
