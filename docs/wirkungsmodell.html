@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wirkungsmodell</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: oklch(98.5% 0.006 85);
+    --surface: oklch(95.5% 0.008 85);
+    --surface-2: oklch(91% 0.01 85);
+    --text: oklch(28% 0.015 70);
+    --muted: oklch(28% 0.015 70 / 0.62);
+    --line: oklch(28% 0.015 70 / 0.14);
+    --primary: oklch(52% 0.07 165);
+    --primary-text: oklch(98% 0.01 165);
+    --l-wirkung: oklch(62% 0.09 30);
+    --l-rueckmeldung: oklch(60% 0.09 300);
+    --l-bewegung: oklch(58% 0.08 230);
+    --l-erscheinung: oklch(60% 0.08 140);
+    --l-inhalt: oklch(55% 0.02 70);
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: oklch(21% 0.008 70);
+      --surface: oklch(25% 0.01 70);
+      --surface-2: oklch(31% 0.012 70);
+      --text: oklch(92% 0.008 85);
+      --muted: oklch(92% 0.008 85 / 0.62);
+      --line: oklch(92% 0.008 85 / 0.14);
+      --primary: oklch(72% 0.08 165);
+      --primary-text: oklch(20% 0.02 165);
+      --l-wirkung: oklch(74% 0.09 30);
+      --l-rueckmeldung: oklch(74% 0.08 300);
+      --l-bewegung: oklch(74% 0.07 230);
+      --l-erscheinung: oklch(76% 0.08 140);
+      --l-inhalt: oklch(72% 0.02 70);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { font-size: 16px; -webkit-text-size-adjust: 100%; overflow-x: hidden; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  main { max-width: 1120px; margin: 0 auto; padding: 1.5rem 1.25rem 5rem; }
+  h1 { font-size: 2rem; line-height: 1.15; margin: 0.5rem 0 0.75rem; letter-spacing: -0.01em; }
+  h2 { font-size: 1.375rem; line-height: 1.25; margin: 0 0 0.5rem; }
+  h3 { font-size: 1.0625rem; margin: 0 0 0.25rem; }
+  p { margin: 0 0 0.75rem; }
+  .lead { color: var(--muted); max-width: 42rem; }
+  .muted { color: var(--muted); }
+  section { padding-top: 2.75rem; }
+  button { font: inherit; color: inherit; }
+
+  .grid { display: grid; gap: 1.5rem; }
+  @media (min-width: 900px) {
+    .grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
+    .sticky { position: sticky; top: 1rem; }
+  }
+
+  /* ---------- Das Modell: Schichten wie im CSS-Box-Modell ---------- */
+  .layer {
+    position: relative;
+    border: 2px dashed var(--c);
+    border-radius: var(--radius);
+    padding: 0.5rem 0.625rem 0.625rem;
+    background: color-mix(in oklch, var(--c) 7%, var(--bg));
+  }
+  .layer.solid { border-style: solid; }
+  .layer[data-layer="wirkung"] { --c: var(--l-wirkung); }
+  .layer[data-layer="rueckmeldung"] { --c: var(--l-rueckmeldung); }
+  .layer[data-layer="bewegung"] { --c: var(--l-bewegung); }
+  .layer[data-layer="erscheinung"] { --c: var(--l-erscheinung); }
+  .layer[data-layer="inhalt"] { --c: var(--l-inhalt); background: var(--bg); }
+  .layer.active { border-style: solid; box-shadow: 0 0 0 3px color-mix(in oklch, var(--c) 30%, transparent); }
+
+  .layer-head {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem;
+    width: 100%; margin: 0 0 0.5rem; padding: 0; border: 0; background: none;
+    text-align: left; cursor: pointer; min-height: 44px;
+  }
+  .layer-name {
+    font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--c); margin-right: 0.25rem;
+  }
+  .chip {
+    display: inline-flex; gap: 0.3rem; align-items: baseline;
+    font-size: 0.8125rem; line-height: 1.2;
+    padding: 0.25rem 0.5rem; border-radius: 999px;
+    background: color-mix(in oklch, var(--c) 14%, var(--bg));
+    font-variant-numeric: tabular-nums;
+    transition: background-color 0.5s;
+  }
+  .chip b { font-weight: 600; }
+  .chip.flash { background: color-mix(in oklch, var(--c) 45%, var(--bg)); transition: none; }
+
+  /* ---------- Exemplar im Kern ---------- */
+  .specimen {
+    --acc: var(--primary); --acc-text: var(--primary-text);
+    --rad: 12px; --pad: 22px; --fs: 17px; --fw: 600; --meta-alpha: 0.62;
+    background: var(--surface);
+    border-radius: calc(var(--rad) + 6px);
+    padding: var(--pad);
+    min-height: 15rem;
+    display: flex; flex-direction: column; gap: calc(var(--pad) * 0.55);
+    overflow: hidden;
+  }
+  .sp-meta { font-size: 0.875rem; color: color-mix(in oklch, var(--text) calc(var(--meta-alpha) * 100%), transparent); }
+  .sp-title { font-size: calc(var(--fs) * 1.45); font-weight: var(--fw); line-height: 1.2; }
+  .sp-hint { color: color-mix(in oklch, var(--text) calc(var(--meta-alpha) * 100%), transparent); font-size: 0.9375rem; }
+  .sp-actions { margin-top: auto; display: flex; gap: 0.625rem; }
+  .sp-btn {
+    position: relative; flex: 2;
+    min-height: 52px; border: 0; border-radius: var(--rad);
+    background: var(--acc); color: var(--acc-text);
+    font-size: var(--fs); font-weight: var(--fw);
+    cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    user-select: none; -webkit-user-select: none;
+  }
+  .sp-btn.secondary { flex: 1; background: var(--surface-2); color: var(--text); font-weight: 500; }
+  .sp-pulse {
+    position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 0 0 var(--acc); opacity: 0;
+  }
+  .spark { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; border-radius: 50%; background: var(--acc); pointer-events: none; }
+  [hidden] { display: none !important; }
+
+  /* ---------- Erklärung der Schicht ---------- */
+  .panel {
+    border-radius: var(--radius); background: var(--surface); padding: 1rem 1.125rem;
+    border-left: 4px solid var(--c, var(--line));
+  }
+  .panel dl { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.875rem; margin: 0.75rem 0 0; }
+  .panel dt { font-weight: 600; }
+  .panel dd { margin: 0; color: var(--muted); }
+  .quote { font-style: italic; margin-top: 0.75rem; color: var(--muted); }
+
+  /* ---------- Achsen ---------- */
+  .axis { padding: 0.875rem 0; border-bottom: 1px solid var(--line); }
+  .axis:last-child { border-bottom: 0; }
+  .axis-poles { display: flex; justify-content: space-between; font-weight: 600; gap: 1rem; }
+  .axis-poles span:last-child { text-align: right; }
+  .axis input { width: 100%; height: 44px; margin: 0; accent-color: var(--primary); }
+  .axis-moves { font-size: 0.875rem; color: var(--muted); }
+  .axis-moves .dot { display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 50%; margin: 0 0.2rem 0.05rem 0.35rem; }
+
+  .row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .btn {
+    min-height: 44px; padding: 0 1rem; border-radius: 12px;
+    border: 1px solid var(--line); background: var(--surface); cursor: pointer;
+  }
+  .btn.primary { background: var(--primary); color: var(--primary-text); border-color: transparent; font-weight: 600; }
+  .btn[aria-pressed="true"] { background: var(--surface-2); font-weight: 600; }
+
+  /* ---------- Diagnose ---------- */
+  .diag { border-radius: var(--radius); background: var(--surface); padding: 1.25rem; min-height: 15rem; display: flex; flex-direction: column; gap: 1rem; }
+  .diag-q { font-size: 1.375rem; font-weight: 600; line-height: 1.25; }
+  .diag-answers { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.5rem; margin-top: auto; }
+  .diag-answers .btn { min-height: 52px; }
+  .summary li { margin-bottom: 0.5rem; }
+  .arrow-up::before { content: "↑ "; }
+  .arrow-down::before { content: "↓ "; }
+
+  .principle { border-radius: var(--radius); background: var(--surface); padding: 1rem 1.125rem; }
+  .principle ol { margin: 0.5rem 0 0; padding-left: 1.25rem; }
+  .note { font-size: 0.9375rem; background: var(--surface); border-radius: 12px; padding: 0.75rem 1rem; }
+</style>
+</head>
+<body>
+<main>
+
+  <header>
+    <h1>Wirkungsmodell</h1>
+    <p class="lead">
+      Ein Modell, um Gestaltung zu beschreiben, aufgebaut wie das Box-Modell in CSS. Jede Schicht
+      umschließt die innere. Innen liegen die Hebel, die man einstellt; außen liegt die Wirkung,
+      die man spürt. Feedback beginnt fast immer außen („wirkt unruhig“), geändert wird innen.
+    </p>
+    <p id="rm-note" class="note" hidden>
+      Auf diesem Gerät ist „Bewegung reduzieren“ aktiv. Die Bewegungshebel werden angezeigt,
+      aber abgeschwächt ausgeführt.
+    </p>
+  </header>
+
+  <!-- ===================== 1. Das Modell ===================== -->
+  <section aria-labelledby="modell-title">
+    <h2 id="modell-title">1 · Die Schichten</h2>
+    <p class="muted">Tippe auf den Namen einer Schicht für ihre Erklärung. Tippe im Kern auf „Erledigt“, gern auch gedrückt halten.</p>
+
+    <div class="grid">
+      <div class="layer" data-layer="wirkung">
+        <button class="layer-head" data-open="wirkung"><span class="layer-name">Wirkung</span><span id="chips-wirkung" class="row" style="gap:.375rem"></span></button>
+        <div class="layer" data-layer="rueckmeldung">
+          <button class="layer-head" data-open="rueckmeldung"><span class="layer-name">Rückmeldung</span><span id="chips-rueckmeldung" class="row" style="gap:.375rem"></span></button>
+          <div class="layer" data-layer="bewegung">
+            <button class="layer-head" data-open="bewegung"><span class="layer-name">Bewegung</span><span id="chips-bewegung" class="row" style="gap:.375rem"></span></button>
+            <div class="layer" data-layer="erscheinung">
+              <button class="layer-head" data-open="erscheinung"><span class="layer-name">Erscheinung</span><span id="chips-erscheinung" class="row" style="gap:.375rem"></span></button>
+              <div class="layer solid" data-layer="inhalt">
+                <button class="layer-head" data-open="inhalt"><span class="layer-name">Inhalt</span></button>
+                <div class="specimen" id="specimen">
+                  <div class="sp-meta" data-enter id="sp-meta">Waschen · Schritt 4 von 6</div>
+                  <div class="sp-title" data-enter id="sp-title">In die Maschine geben</div>
+                  <div class="sp-hint" data-enter id="sp-hint">Trommel nur zu drei Vierteln füllen.</div>
+                  <div class="sp-actions">
+                    <button class="sp-btn secondary" id="sp-later" type="button">Später</button>
+                    <button class="sp-btn" id="sp-done" type="button"><span class="sp-pulse" id="sp-pulse"></span>Erledigt</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sticky">
+        <div class="panel" id="panel" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 2. Achsen ===================== -->
+  <section aria-labelledby="achsen-title">
+    <h2 id="achsen-title">2 · Die Wirkungsachsen</h2>
+    <p class="muted" style="max-width:42rem">
+      Wirkung lässt sich nicht direkt einstellen, nur über Gegensatzpaare. Jede Achse bewegt
+      mehrere Hebel in mehreren Schichten zugleich. Deshalb fühlt sich „gefällt mir nicht“ so
+      diffus an: Es ist selten ein einzelner Wert. Schieb einen Regler und schau, welche Werte
+      im Modell oben aufleuchten.
+    </p>
+    <div class="row" style="margin:.75rem 0 .25rem" role="group" aria-label="Voreinstellung">
+      <button class="btn" data-preset="neutral">Neutral</button>
+      <button class="btn" data-preset="zurueckhaltend">Wie Mockup „Zurückhaltend“</button>
+      <button class="btn" data-preset="mittel">Wie „Mittel“</button>
+      <button class="btn" data-preset="verspielt">Wie „Verspielt“</button>
+    </div>
+    <div id="axes"></div>
+  </section>
+
+  <!-- ===================== 3. Diagnose ===================== -->
+  <section aria-labelledby="diag-title">
+    <h2 id="diag-title">3 · „Gefällt mir nicht, weiß nicht warum“</h2>
+    <p class="muted" style="max-width:42rem">
+      Du musst den Grund nicht kennen. Beantworte eine Frage pro Achse mit einer von zwei Seiten
+      oder „passt“. Jede Antwort verändert das Exemplar oben sofort, so prüfst du, ob es besser wird.
+    </p>
+    <div class="grid">
+      <div class="diag" id="diag"></div>
+      <div class="principle">
+        <h3>Das Vorgehen, das immer funktioniert</h3>
+        <ol>
+          <li><b>Wo?</b> Welche Ansicht, welcher Moment, welches Element.</li>
+          <li><b>Welche Achse?</b> Nicht „wie“, sondern „eher zu … oder zu …“.</li>
+          <li><b>Welche Richtung?</b> Eine Seite wählen, ein Stück schieben, vergleichen.</li>
+        </ol>
+        <p class="quote" style="margin-top:1rem">Die Übersetzung in Hebel ist nicht deine Aufgabe. Ein Satz wie „Beim Abhaken eher zu schwer“ reicht völlig.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  const dark = matchMedia("(prefers-color-scheme: dark)");
+  document.getElementById("rm-note").hidden = !reduced.matches;
+
+  // ---------------------------------------------------------------------------
+  // Hebel: messbare Werte je Schicht. base = Ausgangswert, Achsen verschieben ihn.
+  // ---------------------------------------------------------------------------
+  const px = (v) => `${Math.round(v)} px`;
+  const ms = (v) => `${Math.round(v / 10) * 10} ms`;
+  const pct = (min, max) => (v) => `${Math.round(((v - min) / (max - min)) * 100)} %`;
+  const hueName = (h) => (h < 75 ? "warm" : h < 125 ? "warm-neutral" : h < 185 ? "neutral" : "kühl");
+  const LEVERS = {
+    groesse:   { layer: "erscheinung", label: "Größe",     min: 15,   max: 22,   base: 17,   fmt: px },
+    gewicht:   { layer: "erscheinung", label: "Gewicht",   min: 400,  max: 800,  base: 600,  fmt: (v) => String(Math.round(v / 50) * 50) },
+    form:      { layer: "erscheinung", label: "Radius",    min: 2,    max: 26,   base: 12,   fmt: px },
+    farbton:   { layer: "erscheinung", label: "Farbton",   min: 40,   max: 240,  base: 165,  fmt: (v) => `${Math.round(v)}° ${hueName(v)}` },
+    saettigung:{ layer: "erscheinung", label: "Sättigung", min: 0.015,max: 0.16, base: 0.07, fmt: pct(0.015, 0.16) },
+    kontrast:  { layer: "erscheinung", label: "Kontrast",  min: 0,    max: 1,    base: 0.5,  fmt: pct(0, 1) },
+    weissraum: { layer: "erscheinung", label: "Weißraum",  min: 8,    max: 36,   base: 22,   fmt: px },
+    dichte:    { layer: "erscheinung", label: "Dichte",    min: 1,    max: 3,    base: 2,    fmt: (v) => `${Math.round(v)} von 3 Elementen` },
+    dauer:     { layer: "bewegung",    label: "Dauer",     min: 100,  max: 700,  base: 320,  fmt: ms },
+    easing:    { layer: "bewegung",    label: "Easing",    min: 0,    max: 1,    base: 0.5,  fmt: (v) => (v < 0.34 ? "weich" : v < 0.67 ? "mittel" : "hart") },
+    federung:  { layer: "bewegung",    label: "Federung",  min: 0,    max: 0.7,  base: 0.25, fmt: pct(0, 0.7) },
+    versatz:   { layer: "bewegung",    label: "Versatz",   min: 0,    max: 160,  base: 50,   fmt: ms },
+    nachgeben: { layer: "rueckmeldung",label: "Berühren",  min: 0,    max: 1,    base: 0.4,  fmt: (v) => `gibt ${Math.round(v * 12)} % nach` },
+    nachklang: { layer: "rueckmeldung",label: "Nachklang", min: 0,    max: 1,    base: 0.25, fmt: (v) => (v < 0.15 ? "keiner" : v < 0.6 ? `Puls ${Math.round(v * 100)} %` : `Puls + Funken`) },
+    ton:       { layer: "rueckmeldung",label: "Ton",       min: 0,    max: 1,    base: 0,    fmt: (v) => (v < 0.15 ? "aus" : `${Math.round(v * 100)} %`) },
+  };
+
+  // ---------------------------------------------------------------------------
+  // Achsen: Gegensatzpaare. Gewicht = Anteil der Hebel-Spanne bei vollem Ausschlag.
+  // Positive Gewichte schieben den Hebel Richtung rechtem Pol.
+  // ---------------------------------------------------------------------------
+  const AXES = [
+    { id: "lebendig", left: "ruhig",  right: "lebendig",
+      moves: { saettigung: 0.35, federung: 0.35, versatz: 0.3, nachklang: 0.45, dauer: -0.12 } },
+    { id: "knackig",  left: "weich",  right: "knackig",
+      moves: { form: -0.4, dauer: -0.35, easing: 0.45, federung: -0.25 } },
+    { id: "schwer",   left: "leicht", right: "schwer",
+      moves: { gewicht: 0.45, groesse: 0.3, kontrast: 0.25, dauer: 0.2, nachgeben: 0.2 } },
+    { id: "kuehl",    left: "warm",   right: "kühl",
+      moves: { farbton: 0.5 } },
+    { id: "dicht",    left: "luftig", right: "dicht",
+      moves: { weissraum: -0.5, dichte: 0.5 } },
+    { id: "laut",     left: "leise",  right: "laut",
+      moves: { kontrast: 0.4, saettigung: 0.3, groesse: 0.15, ton: 0.6 } },
+    { id: "verspielt",left: "ernst",  right: "verspielt",
+      moves: { federung: 0.4, form: 0.3, nachklang: 0.4, versatz: 0.15, nachgeben: 0.2 } },
+  ];
+
+  const PRESETS = {
+    neutral:        {},
+    zurueckhaltend: { lebendig: -0.6, verspielt: -0.5, laut: -0.3 },
+    mittel:         { lebendig: 0.15, verspielt: 0.1 },
+    verspielt:      { lebendig: 0.7, verspielt: 0.85, knackig: -0.2, laut: 0.2 },
+  };
+
+  const LAYERS = {
+    wirkung: {
+      title: "Wirkung",
+      text: "Was du spürst, wenn du die Oberfläche benutzt. Hier entsteht fast jedes Feedback. Die Wirkung kann man nicht direkt einstellen, nur über die Schichten darunter. Beschreiben lässt sie sich mit Gegensatzpaaren, den Wirkungsachsen (Abschnitt 2).",
+      levers: [["Achsen", "ruhig–lebendig, weich–knackig, leicht–schwer, warm–kühl, luftig–dicht, leise–laut, ernst–verspielt"]],
+      quote: "„Die Ansicht wirkt mir zu unruhig.“",
+    },
+    rueckmeldung: {
+      title: "Rückmeldung",
+      text: "Wie ein Element antwortet, wenn du es benutzt. Rückmeldung hat drei Zeitpunkte: beim Berühren (der Finger ist drauf), beim Loslassen und den Nachklang danach. Kanäle sind Bewegung, Farbe und Ton. Fehlt Rückmeldung, fühlt sich eine Aktion an wie ins Leere getippt.",
+      levers: [["Berühren", "gibt das Element sofort nach?"], ["Nachklang", "Puls, Funken, Leuchten nach dem Loslassen"], ["Ton", "akustische Bestätigung"]],
+      quote: "„Das Abhaken fühlt sich nach nichts an, da fehlt Rückmeldung beim Loslassen.“",
+    },
+    bewegung: {
+      title: "Bewegung",
+      text: "Wie Veränderungen ablaufen, also wie etwas von A nach B kommt. Bewegung verbindet Zustände: Der Blick kann folgen, statt nach einem Sprung neu zu suchen. Das Nachatmen eines Buttons ist Federung, das Nacheinander-Erscheinen ist Versatz.",
+      levers: [["Dauer", "wie lang eine Bewegung braucht"], ["Easing", "Beschleunigungskurve: weich anlaufen oder sofort losgehen"], ["Federung", "schwingt nach oder steht sofort"], ["Versatz", "Abstand zwischen mehreren Elementen (Choreografie)"]],
+      quote: "„Der Übergang ist zu träge, kürzere Dauer, weniger Federung.“",
+    },
+    erscheinung: {
+      title: "Erscheinung",
+      text: "Das stehende Bild, so wie auf einem Foto. Hier entscheidet sich, was zuerst auffällt und wie schwer oder leicht etwas wirkt. Diese Hebel greifen auch dann, wenn sich nichts bewegt.",
+      levers: [["Größe", "wie groß"], ["Gewicht", "wie fett Schrift und Flächen wirken"], ["Radius", "wie rund die Ecken sind"], ["Farbton", "warm (Gelb, Rot) bis kühl (Blau)"], ["Sättigung", "gedämpft bis kräftig"], ["Kontrast", "wie stark sich etwas vom Hintergrund abhebt"], ["Weißraum", "Luft um und zwischen Elementen"], ["Dichte", "wie viel auf einmal sichtbar ist"]],
+      quote: "„Die Hauptaktion geht unter, mehr Kontrast oder weniger Dichte.“",
+    },
+    inhalt: {
+      title: "Inhalt",
+      text: "Was da steht und was es bedeutet: Text, Symbol, die Aufgabe selbst. Inhalt ist kein Hebel für Wirkung, aber die Grundlage. Falscher oder überflüssiger Inhalt lässt sich nicht weggestalten. Jeder sichtbare Text muss eine Aufgabe haben.",
+      levers: [["Prüffrage", "Braucht man das gerade, um den Schritt zu erledigen?"]],
+      quote: "„Der Hinweis lenkt ab, den brauche ich in diesem Schritt nicht.“",
+    },
+  };
+
+  const state = Object.fromEntries(AXES.map((axis) => [axis.id, 0]));
+  let current = {};
+
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+  function computeLevers() {
+    const out = {};
+    for (const [key, lever] of Object.entries(LEVERS)) {
+      const span = lever.max - lever.min;
+      let value = lever.base;
+      for (const axis of AXES) value += (axis.moves[key] ?? 0) * state[axis.id] * span;
+      out[key] = clamp(value, lever.min, lever.max);
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Darstellung des Modells
+  // ---------------------------------------------------------------------------
+  function axisWord(axis) {
+    const v = state[axis.id];
+    if (Math.abs(v) < 0.12) return null;
+    const strength = Math.abs(v) > 0.6 ? "deutlich " : Math.abs(v) > 0.3 ? "" : "etwas ";
+    return `${strength}${v < 0 ? axis.left : axis.right}`;
+  }
+
+  function renderChips(previous) {
+    for (const layer of ["erscheinung", "bewegung", "rueckmeldung"]) {
+      const host = document.getElementById(`chips-${layer}`);
+      host.replaceChildren(...Object.entries(LEVERS).filter(([, l]) => l.layer === layer).map(([key, lever]) => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.dataset.lever = key;
+        chip.innerHTML = `${lever.label} <b>${lever.fmt(current[key])}</b>`;
+        if (previous && lever.fmt(previous[key]) !== lever.fmt(current[key])) {
+          chip.classList.add("flash");
+          requestAnimationFrame(() => requestAnimationFrame(() => chip.classList.remove("flash")));
+        }
+        return chip;
+      }));
+    }
+    const words = AXES.map(axisWord).filter(Boolean);
+    const wirkung = document.getElementById("chips-wirkung");
+    const chips = (words.length ? words : ["neutral"]).map((word) => {
+      const chip = document.createElement("span");
+      chip.className = "chip";
+      chip.innerHTML = `<b>${word}</b>`;
+      return chip;
+    });
+    wirkung.replaceChildren(...chips);
+  }
+
+  function renderSpecimen() {
+    const el = document.getElementById("specimen");
+    const isDark = dark.matches;
+    const k = current.kontrast;
+    const accL = isDark ? 0.62 + k * 0.2 : 0.66 - k * 0.24;
+    el.style.setProperty("--acc", `oklch(${accL} ${current.saettigung} ${current.farbton})`);
+    el.style.setProperty("--acc-text", accL > 0.62 ? "oklch(0.2 0.02 70)" : "oklch(0.98 0.01 85)");
+    el.style.setProperty("--rad", `${current.form}px`);
+    el.style.setProperty("--pad", `${current.weissraum}px`);
+    el.style.setProperty("--fs", `${current.groesse}px`);
+    el.style.setProperty("--fw", String(Math.round(current.gewicht / 50) * 50));
+    el.style.setProperty("--meta-alpha", String(0.45 + k * 0.4));
+    const density = Math.round(current.dichte);
+    document.getElementById("sp-hint").hidden = density < 2;
+    document.getElementById("sp-later").hidden = density < 3;
+  }
+
+  function update() {
+    const previous = current;
+    current = computeLevers();
+    renderChips(Object.keys(previous).length ? previous : null);
+    renderSpecimen();
+    for (const axis of AXES) {
+      const input = document.getElementById(`axis-${axis.id}`);
+      if (input && Number(input.value) !== Math.round(state[axis.id] * 100)) input.value = Math.round(state[axis.id] * 100);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Erklärung der Schichten
+  // ---------------------------------------------------------------------------
+  function openLayer(id) {
+    document.querySelectorAll(".layer").forEach((el) => el.classList.toggle("active", el.dataset.layer === id));
+    const info = LAYERS[id];
+    const panel = document.getElementById("panel");
+    panel.style.setProperty("--c", `var(--l-${id})`);
+    panel.innerHTML = `
+      <h3 style="color:var(--l-${id})">${info.title}</h3>
+      <p>${info.text}</p>
+      <dl>${info.levers.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
+      <p class="quote">${info.quote}</p>`;
+  }
+  document.querySelectorAll("[data-open]").forEach((button) => button.addEventListener("click", () => openLayer(button.dataset.open)));
+
+  // ---------------------------------------------------------------------------
+  // Achsen-Regler
+  // ---------------------------------------------------------------------------
+  const axesHost = document.getElementById("axes");
+  for (const axis of AXES) {
+    const row = document.createElement("div");
+    row.className = "axis";
+    const moves = Object.entries(axis.moves).map(([key, w]) => {
+      const lever = LEVERS[key];
+      return `<span class="dot" style="background:var(--l-${lever.layer})"></span>${lever.label} ${w > 0 ? "↑" : "↓"}`;
+    }).join("");
+    row.innerHTML = `
+      <label for="axis-${axis.id}" class="axis-poles"><span>${axis.left}</span><span>${axis.right}</span></label>
+      <input id="axis-${axis.id}" type="range" min="-100" max="100" step="5" value="0" aria-label="${axis.left} bis ${axis.right}">
+      <div class="axis-moves">Nach rechts geschoben:${moves}</div>`;
+    row.querySelector("input").addEventListener("input", (event) => {
+      state[axis.id] = Number(event.target.value) / 100;
+      update();
+    });
+    axesHost.append(row);
+  }
+  document.querySelectorAll("[data-preset]").forEach((button) => button.addEventListener("click", () => {
+    const preset = PRESETS[button.dataset.preset];
+    for (const axis of AXES) state[axis.id] = preset[axis.id] ?? 0;
+    document.querySelectorAll("[data-preset]").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+    update();
+  }));
+
+  // ---------------------------------------------------------------------------
+  // Bewegung: Feder-Simulation und Easing aus den Hebeln
+  // ---------------------------------------------------------------------------
+  function springFrames(from, to, bounce, durationMs) {
+    const zeta = 1 - bounce;
+    const omega = (2 * Math.PI) / Math.max(0.08, durationMs / 1000);
+    const a = from - to;
+    const frames = [];
+    const dt = 1 / 60;
+    for (let t = 0; t < 2.5; t += dt) {
+      let x;
+      if (zeta >= 1) {
+        x = to + (a + a * omega * t) * Math.exp(-omega * t);
+      } else {
+        const wd = omega * Math.sqrt(1 - zeta * zeta);
+        x = to + Math.exp(-zeta * omega * t) * (a * Math.cos(wd * t) + ((zeta * omega * a) / wd) * Math.sin(wd * t));
+      }
+      frames.push(x);
+      if (t > durationMs / 2000 && Math.abs(x - to) < 0.0008 * Math.max(1, Math.abs(a) * 50)) break;
+    }
+    frames.push(to);
+    return { frames, duration: frames.length * dt * 1000 };
+  }
+
+  function easingCurve(hardness) {
+    const soft = [0.45, 0.05, 0.35, 1];
+    const hard = [0.1, 0.9, 0.2, 1];
+    const p = soft.map((s, i) => (s + (hard[i] - s) * hardness).toFixed(3));
+    return `cubic-bezier(${p.join(",")})`;
+  }
+
+  const motion = (ms) => (reduced.matches ? 0 : ms);
+
+  // ---------------------------------------------------------------------------
+  // Rückmeldung am Exemplar: Berühren, Loslassen, Nachklang, dann Übergang
+  // ---------------------------------------------------------------------------
+  const button = document.getElementById("sp-done");
+  let audio = null;
+  let pressAnimation = null;
+  let pressedScale = 1;
+
+  function beep(volume) {
+    if (volume < 0.15) return;
+    audio ??= new AudioContext();
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(520 + current.federung * 400, audio.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880 + current.federung * 300, audio.currentTime + 0.09);
+    gain.gain.setValueAtTime(0, audio.currentTime);
+    gain.gain.linearRampToValueAtTime(volume * 0.18, audio.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.22);
+    osc.connect(gain).connect(audio.destination);
+    osc.start();
+    osc.stop(audio.currentTime + 0.25);
+  }
+
+  function press() {
+    pressedScale = 1 - current.nachgeben * 0.12;
+    pressAnimation?.cancel();
+    pressAnimation = button.animate([{ transform: "scale(1)" }, { transform: `scale(${pressedScale})` }],
+      { duration: motion(current.dauer * 0.35), easing: "cubic-bezier(0.2,0.8,0.3,1)", fill: "forwards" });
+  }
+
+  function release() {
+    pressAnimation?.cancel();
+    if (!reduced.matches) {
+      const { frames, duration } = springFrames(pressedScale, 1, current.federung, current.dauer);
+      button.animate(frames.map((s) => ({ transform: `scale(${s})` })), { duration, easing: "linear" });
+    }
+    afterglow();
+    beep(current.ton);
+    setTimeout(nextStep, motion(Math.min(260, current.dauer * 0.6)));
+  }
+
+  function afterglow() {
+    const n = current.nachklang;
+    if (n < 0.15 || reduced.matches) return;
+    document.getElementById("sp-pulse").animate(
+      [{ boxShadow: "0 0 0 0 var(--acc)", opacity: 0.55 * n }, { boxShadow: `0 0 0 ${8 + n * 18}px var(--acc)`, opacity: 0 }],
+      { duration: 500 + n * 300, easing: "cubic-bezier(0.2,0.8,0.3,1)" });
+    if (n < 0.6) return;
+    const count = Math.round(6 + n * 10);
+    for (let i = 0; i < count; i += 1) {
+      const spark = document.createElement("span");
+      spark.className = "spark";
+      button.append(spark);
+      const angle = (i / count) * Math.PI * 2;
+      const dist = 40 + Math.random() * 40;
+      spark.animate([
+        { transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
+        { transform: `translate(calc(-50% + ${Math.cos(angle) * dist}px), calc(-50% + ${Math.sin(angle) * dist * 0.6}px)) scale(0.4)`, opacity: 0 },
+      ], { duration: 650, easing: "cubic-bezier(0.1,0.8,0.3,1)" }).finished.then(() => spark.remove());
+    }
+  }
+
+  const STEPS = [
+    ["Waschen · Schritt 4 von 6", "In die Maschine geben", "Trommel nur zu drei Vierteln füllen."],
+    ["Waschen · Schritt 5 von 6", "Waschmittel prüfen", "Steht im Regal links."],
+    ["Waschen · Schritt 6 von 6", "Maschine starten", "Programm 40 °C, Schleudern 1200."],
+    ["Aufhängen · Schritt 1 von 2", "Wäsche holen", "Den Korb mitnehmen."],
+  ];
+  let stepIndex = 0;
+  let busy = false;
+
+  async function nextStep() {
+    if (busy) return;
+    busy = true;
+    const parts = [...document.querySelectorAll("#specimen [data-enter]")].filter((el) => !el.hidden);
+    const duration = motion(current.dauer);
+    const easing = easingCurve(current.easing);
+    await Promise.all(parts.map((el) => el.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-10px)" }],
+      { duration: duration * 0.45, easing: "ease-in", fill: "forwards" }).finished));
+    stepIndex = (stepIndex + 1) % STEPS.length;
+    const [meta, title, hint] = STEPS[stepIndex];
+    document.getElementById("sp-meta").textContent = meta;
+    document.getElementById("sp-title").textContent = title;
+    document.getElementById("sp-hint").textContent = hint;
+    const animations = parts.map((el, i) => {
+      el.getAnimations().forEach((a) => a.cancel());
+      return el.animate([{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "none" }],
+        { duration: reduced.matches ? 120 : duration, delay: motion(i * current.versatz), easing, fill: "backwards" }).finished;
+    });
+    await Promise.all(animations);
+    busy = false;
+  }
+
+  button.addEventListener("pointerdown", (event) => { button.setPointerCapture(event.pointerId); press(); });
+  button.addEventListener("pointerup", release);
+  button.addEventListener("pointercancel", () => pressAnimation?.cancel());
+  button.addEventListener("keydown", (event) => { if (event.key === " " || event.key === "Enter") { event.preventDefault(); press(); } });
+  button.addEventListener("keyup", (event) => { if (event.key === " " || event.key === "Enter") release(); });
+  document.getElementById("sp-later").addEventListener("click", nextStep);
+
+  // ---------------------------------------------------------------------------
+  // Diagnose: eine Frage pro Achse, jede Antwort wirkt sofort
+  // ---------------------------------------------------------------------------
+  const NUDGE = 0.35;
+  const COMPARATIVE = {
+    ruhig: "ruhiger", lebendig: "lebendiger", weich: "weicher", knackig: "knackiger",
+    leicht: "leichter", schwer: "schwerer", warm: "wärmer", "kühl": "kühler",
+    luftig: "luftiger", dicht: "dichter", leise: "leiser", laut: "lauter",
+    ernst: "ernster", verspielt: "verspielter",
+  };
+  const diag = document.getElementById("diag");
+  let diagIndex = -1;
+  let answers = [];
+
+  function renderDiag() {
+    if (diagIndex < 0) {
+      diag.innerHTML = `
+        <div class="diag-q">Schau dir das Exemplar oben an und tippe ein paarmal auf „Erledigt“.</div>
+        <p class="muted">Danach sieben kurze Fragen, eine pro Achse.</p>
+        <div style="margin-top:auto"><button class="btn primary" style="width:100%;min-height:52px" data-diag="start">Fragen starten</button></div>`;
+      return;
+    }
+    if (diagIndex >= AXES.length) {
+      const changed = answers.filter((a) => a.dir !== 0);
+      const sentence = changed.length
+        ? `„Eher zu ${changed.map((a) => (a.dir > 0 ? a.axis.left : a.axis.right)).join(", zu ")}.“`
+        : "„Passt so.“";
+      diag.innerHTML = `
+        <div class="diag-q">Dein Feedback als Satz</div>
+        <p style="font-size:1.125rem">${sentence}</p>
+        ${changed.length ? `<ul class="summary">${changed.map(({ axis, dir }) => {
+          const target = dir > 0 ? axis.right : axis.left;
+          const levers = Object.entries(axis.moves).map(([key, w]) => {
+            const up = w * dir > 0;
+            return `<span class="${up ? "arrow-up" : "arrow-down"}">${LEVERS[key].label}</span>`;
+          }).join(", ");
+          return `<li><b>${COMPARATIVE[target]}</b>, also ${levers}</li>`;
+        }).join("")}</ul>` : ""}
+        <p class="muted">Die Änderungen sind oben schon angewendet. Wenn es jetzt besser ist, hast du deine Richtung.</p>
+        <div class="row" style="margin-top:auto">
+          <button class="btn" data-diag="undo">Änderungen zurücknehmen</button>
+          <button class="btn primary" data-diag="start">Nochmal fragen</button>
+        </div>`;
+      return;
+    }
+    const axis = AXES[diagIndex];
+    diag.innerHTML = `
+      <p class="muted">Frage ${diagIndex + 1} von ${AXES.length}</p>
+      <div class="diag-q">Wirkt es eher zu ${axis.left} oder zu ${axis.right}?</div>
+      <div class="diag-answers">
+        <button class="btn" data-answer="1">zu ${axis.left}</button>
+        <button class="btn" data-answer="0">passt</button>
+        <button class="btn" data-answer="-1">zu ${axis.right}</button>
+      </div>`;
+  }
+
+  diag.addEventListener("click", (event) => {
+    const target = event.target.closest("button");
+    if (!target) return;
+    if (target.dataset.diag === "start") { diagIndex = 0; answers = []; }
+    else if (target.dataset.diag === "undo") {
+      for (const { axis, dir } of answers) state[axis.id] = clamp(state[axis.id] - dir * NUDGE, -1, 1);
+      answers = []; diagIndex = -1; update();
+    } else if (target.dataset.answer !== undefined) {
+      const dir = Number(target.dataset.answer);
+      const axis = AXES[diagIndex];
+      answers.push({ axis, dir });
+      state[axis.id] = clamp(state[axis.id] + dir * NUDGE, -1, 1);
+      update();
+      diagIndex += 1;
+    }
+    renderDiag();
+  });
+
+  dark.addEventListener("change", renderSpecimen);
+  update();
+  openLayer("wirkung");
+  renderDiag();
+})();
+</script>
+</body>
+</html>
