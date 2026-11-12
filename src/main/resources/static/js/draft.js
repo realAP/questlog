@@ -32,7 +32,7 @@
             missing: "Waschmittel",
           },
         ],
-        wait: { label: "Waschgang", presets: [3 * HOUR, 6 * HOUR], step: 15, min: 15, reminder: "alle 30 Minuten" },
+        wait: { label: "Waschgang", presets: [3 * HOUR, 6 * HOUR], preselect: 0, step: 15, min: 15, reminder: "alle 30 Minuten" },
       },
       {
         name: "Trocknen",
@@ -48,7 +48,7 @@
             action: "Trocknen starten",
           },
         ],
-        wait: { label: "Trockenzeit", presets: [DAY, 2 * DAY, 3 * DAY], step: 12 * HOUR, min: 12 * HOUR, reminder: "morgens und abends" },
+        wait: { label: "Trockenzeit", presets: [2 * DAY, 3 * DAY, 4 * DAY], preselect: 1, step: 12 * HOUR, min: 12 * HOUR, reminder: "morgens und abends" },
       },
       {
         name: "Aufräumen",
@@ -63,13 +63,13 @@
   };
   const WAIT_SECONDS = 120;
 
-  const SUBSTEP_VIEWS = [
-    "Punkte unter dem Symbol",
-    "Ring um das Symbol",
-    "Symbolreihe",
-    "Checkliste",
-    "Segmentleiste",
-  ];
+  const SUBSTEP_VIEWS = ["Ring", "Ring wandert", "Antippen"];
+  // Varianten für die Mitte, je nach Ansicht verschieden.
+  const MIDDLE_VIEWS = {
+    choose: ["Leiste", "Drehen", "Fertig um"],
+    wait: ["Countdown", "Fertig um", "Segmente"],
+  };
+  const RING = { radius: 46, width: 8, gap: 5, sweep: 0.35, travel: 0.55 };
 
   function duration(minutes) {
     if (minutes >= DAY) {
@@ -84,10 +84,36 @@
     return `${minutes} min`;
   }
 
-  function remaining(minutes) {
-    if (minutes >= DAY) return `${(minutes / DAY).toFixed(1).replace(".", ",")} Tage`;
-    if (minutes >= HOUR) return `${Math.floor(minutes / HOUR)}:${String(Math.ceil(minutes % HOUR)).padStart(2, "0")} h`;
-    return `${Math.ceil(minutes)} min`;
+  const pad = (n) => String(n).padStart(2, "0");
+
+  function parts(minutes) {
+    const total = Math.max(0, Math.round(minutes * 60));
+    return { d: Math.floor(total / 86400), h: Math.floor((total % 86400) / 3600), m: Math.floor((total % 3600) / 60), s: total % 60 };
+  }
+
+  // Countdown wie eine Uhr: Tage, dann Stunden, Minuten, Sekunden.
+  function countdown(minutes) {
+    const t = parts(minutes);
+    return t.d > 0 ? `${t.d} T ${t.h}:${pad(t.m)}` : `${t.h}:${pad(t.m)}:${pad(t.s)}`;
+  }
+
+  // Restzeit in Worten, ohne Kommazahlen.
+  function inWords(minutes) {
+    const t = parts(minutes);
+    const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+    if (t.d > 0) return `noch ${plural(t.d, "Tag", "Tage")}${t.h ? `, ${plural(t.h, "Stunde", "Stunden")}` : ""}`;
+    if (t.h > 0) return `noch ${plural(t.h, "Stunde", "Stunden")}${t.m ? `, ${plural(t.m, "Minute", "Minuten")}` : ""}`;
+    return `noch ${plural(t.m, "Minute", "Minuten")}`;
+  }
+
+  // Wann eine Wartezeit endet: "heute, 18:00", "morgen, 9:30" oder "So, 18:00".
+  function finishedAt(date) {
+    const today = new Date();
+    const days = Math.round((new Date(date).setHours(0, 0, 0, 0) - new Date(today).setHours(0, 0, 0, 0)) / 86400000);
+    const time = date.toLocaleTimeString("de-DE", { hour: "numeric", minute: "2-digit" });
+    if (days === 0) return `heute, ${time}`;
+    if (days === 1) return `morgen, ${time}`;
+    return `${date.toLocaleDateString("de-DE", { weekday: "short" }).replace(".", "")}, ${time}`;
   }
 
   function laundryDraft() {
@@ -95,6 +121,9 @@
       quest: QUEST,
       views: SUBSTEP_VIEWS,
       view: 0,
+      middle: 0,
+      sheet: false,
+      endsAt: null,
       labels: false,
       screen: "start",
       stageIndex: 0,
@@ -106,6 +135,9 @@
       packed: false,
       chosenMinutes: 0,
       custom: false,
+      peek: false,
+      peekTimer: null,
+      ringFill: {},
       root: null,
       duration,
 
@@ -126,8 +158,48 @@
       get nextStage() {
         return this.quest.stages[this.stageIndex + 1];
       },
-      get remainingText() {
-        return remaining(this.remaining * this.chosenMinutes);
+      get minutesLeft() {
+        return this.remaining * this.chosenMinutes;
+      },
+      get countdownText() {
+        return countdown(this.minutesLeft);
+      },
+      get wordsText() {
+        return inWords(this.minutesLeft);
+      },
+      get endText() {
+        return this.endsAt ? finishedAt(this.endsAt) : "";
+      },
+      endFor(minutes) {
+        return finishedAt(new Date(Date.now() + minutes * 60000));
+      },
+      // Welche Mittel-Varianten es in der aktuellen Ansicht gibt.
+      get middleKind() {
+        if (this.screen === "step" && this.step.startsWait) return "choose";
+        if (this.screen === "wait") return "wait";
+        return null;
+      },
+      get middleViews() {
+        return MIDDLE_VIEWS[this.middleKind] ?? [];
+      },
+      // Segmente der laufenden Wartezeit: Stunden beim Waschen, Tage beim Trocknen.
+      get waitSegments() {
+        const unit = this.chosenMinutes >= DAY ? DAY : HOUR;
+        const n = Math.max(1, Math.min(12, Math.round(this.chosenMinutes / unit)));
+        const left = this.remaining * n;
+        return Array.from({ length: n }, (_, k) => Math.max(0, Math.min(1, left - k)));
+      },
+      waitRingSvg() {
+        const n = this.waitSegments.length;
+        const gap = n > 1 ? 2 : 0;
+        const circles = this.waitSegments.map((fill, k) => {
+          const length = 100 / n - gap;
+          const offset = -(k * 100) / n - gap / 2;
+          const common = `cx="50" cy="50" r="47" fill="none" stroke-width="2.5" stroke-linecap="round" pathLength="100" stroke-dashoffset="${offset}"`;
+          return `<circle ${common} stroke="var(--color-base-300)" stroke-dasharray="${length} ${100 - length}"/>`
+            + `<circle ${common} stroke="var(--color-primary)" stroke-dasharray="${length * fill} ${100 - length * fill}"/>`;
+        }).join("");
+        return `<svg class="size-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">${circles}</svg>`;
       },
       get waiting() {
         return this.screen === "wait" || this.screen === "waitDone";
@@ -151,22 +223,112 @@
         if (this.screen === "done" || s < this.stageIndex) return "done";
         return s === this.stageIndex ? "current" : "open";
       },
-      // Segment k von n als Bogen im Ring um das Etappen-Symbol (pathLength 100).
-      arc(k, n) {
-        const gap = n > 1 ? 4 : 0;
-        const length = 100 / n - gap;
-        return { dasharray: `${length} ${100 - length}`, dashoffset: String(-(k * 100) / n - gap / 2) };
+
+      // ---------- Ring um die aktuelle Etappe ----------
+      // Ändert sich dieser Schlüssel, wird der Ring neu gezeichnet.
+      get ringKey() {
+        return `${this.screen}|${this.stageIndex}|${this.stepIndex}|${this.checking}|${this.view}`;
       },
 
-      // Ring aus Segmenten um das aktuelle Etappen-Symbol, ein Segment pro Unterschritt.
-      ringSvg() {
+      segment(k, n) {
+        const length = 100 / n - (n > 1 ? RING.gap : 0);
+        const offset = -(k * 100) / n - (n > 1 ? RING.gap / 2 : 0);
+        return { length, offset };
+      },
+
+      fillOf(k) {
+        const state = this.subState(k);
+        if (state === "done") return 1;
+        return state === "current" ? 0.0001 : 0;
+      },
+
+      ringSvg(s) {
         const n = this.substeps.length;
-        const color = { done: "var(--color-primary)", current: "color-mix(in oklch, var(--color-primary) 40%, var(--color-base-300))", open: "var(--color-base-300)" };
-        const arcs = this.substeps.map((_, k) => {
-          const a = this.arc(k, n);
-          return `<circle cx="50" cy="50" r="46" fill="none" stroke-width="8" stroke-linecap="round" pathLength="100" stroke="${color[this.subState(k)]}" stroke-dasharray="${a.dasharray}" stroke-dashoffset="${a.dashoffset}"/>`;
+        const circles = this.substeps.map((_, k) => {
+          const { length, offset } = this.segment(k, n);
+          const track = this.subState(k) === "current"
+            ? "color-mix(in oklch, var(--color-primary) 35%, var(--color-base-300))"
+            : "var(--color-base-300)";
+          const common = `cx="50" cy="50" r="${RING.radius}" fill="none" stroke-width="${RING.width}" stroke-linecap="round" pathLength="100" stroke-dashoffset="${offset}"`;
+          const filled = length * (this.ringFill[`${s}-${k}`] ?? 0);
+          return `<circle ${common} stroke="${track}" stroke-dasharray="${length} ${100 - length}"/>`
+            + `<circle ${common} data-seg="${k}" stroke="var(--color-primary)" stroke-dasharray="${filled} ${100 - filled}"/>`;
         }).join("");
-        return `<svg class="size-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">${arcs}</svg>`;
+        return `<svg class="size-full -rotate-90 overflow-visible" viewBox="0 0 100 100" aria-hidden="true">${circles}</svg>${this.clockMarker(n)}`;
+      },
+
+      // Kleine Uhr auf dem Ring, mittig über dem Segment der Wartezeit.
+      clockMarker(n) {
+        if (!this.stage.wait) return "";
+        const angle = ((n - 0.5) / n) * Math.PI * 2;
+        const x = 50 + 50 * Math.sin(angle);
+        const y = 50 - 50 * Math.cos(angle);
+        const done = this.subState(n - 1) === "done";
+        return `<span class="absolute grid size-4 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full ${done ? "bg-primary text-primary-content" : "bg-base-100 text-base-content/60 ring-1 ring-base-300"}" style="left:${x}%;top:${y}%"><span class="size-3">${this.icon("clock")}</span></span>`;
+      },
+
+      fullRingSvg() {
+        return `<svg class="size-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="${RING.radius}" fill="none" stroke-width="3" stroke="color-mix(in oklch, var(--color-primary) 45%, transparent)"/></svg>`;
+      },
+
+      // Zeichnet die Ringe und lässt neu erledigte Segmente sichtbar volllaufen.
+      updateRings() {
+        if (!this.root) return;
+        this.quest.stages.forEach((_, s) => {
+          const host = this.root.querySelector(`[data-ring-host="${s}"]`);
+          if (!host || host.dataset.travelling) return;
+          if (s !== this.stageIndex) {
+            host.innerHTML = this.stageState(s) === "done" ? this.fullRingSvg() : "";
+            return;
+          }
+          const sweeping = [];
+          this.substeps.forEach((_, k) => {
+            const key = `${s}-${k}`;
+            const target = this.fillOf(k);
+            if ((this.ringFill[key] ?? 0) < 1 && target === 1) sweeping.push(k);
+            else this.ringFill[key] = target;
+          });
+          host.innerHTML = this.ringSvg(s);
+          sweeping.forEach((k) => this.sweep(host, s, k));
+        });
+      },
+
+      sweep(host, s, k) {
+        const key = `${s}-${k}`;
+        const circle = host.querySelector(`[data-seg="${k}"]`);
+        const { length } = this.segment(k, this.substeps.length);
+        QL.tween(this.ringFill[key] ?? 0, 1, (v) => {
+          this.ringFill[key] = v;
+          circle?.setAttribute("stroke-dasharray", `${length * v} ${100 - length * v}`);
+        }, { duration: RING.sweep, ease: EASE_OUT });
+      },
+
+      // Variante 2: Der volle Ring wandert entlang der Linie zur nächsten Etappe.
+      async travelRing(from, to) {
+        const fromHost = this.root.querySelector(`[data-ring-host="${from}"]`);
+        const toHost = this.root.querySelector(`[data-ring-host="${to}"]`);
+        if (!fromHost || !toHost || QL.reducedMotion) return;
+        const a = fromHost.getBoundingClientRect();
+        const b = toHost.getBoundingClientRect();
+        const traveller = document.createElement("span");
+        traveller.className = "pointer-events-none fixed z-20";
+        Object.assign(traveller.style, { left: `${a.left}px`, top: `${a.top}px`, width: `${a.width}px`, height: `${a.height}px` });
+        traveller.innerHTML = `<svg class="size-full -rotate-90" viewBox="0 0 100 100"><circle cx="50" cy="50" r="${RING.radius}" fill="none" stroke-width="${RING.width}" stroke="var(--color-primary)"/></svg>`;
+        document.body.append(traveller);
+        fromHost.dataset.travelling = "true";
+        fromHost.innerHTML = this.fullRingSvg();
+        await Motion.animate(traveller, { x: [0, b.left - a.left], scale: [1, 0.55, 1], opacity: [1, 0.8, 1] },
+          { duration: RING.travel, ease: [0.65, 0, 0.35, 1] }).finished;
+        traveller.remove();
+        delete fromHost.dataset.travelling;
+      },
+
+      // Variante 3: Antippen der aktuellen Etappe zeigt ihre Unterschritte als Symbole.
+      togglePeek(s) {
+        if (this.view !== 2 || s !== this.stageIndex) return;
+        this.peek = !this.peek;
+        clearTimeout(this.peekTimer);
+        if (this.peek) this.peekTimer = setTimeout(() => (this.peek = false), 3000);
       },
 
       // ---------- Ablauf ----------
@@ -248,7 +410,7 @@
 
       prepareStep() {
         if (this.step.startsWait) {
-          this.chosenMinutes = this.stage.wait.presets[0];
+          this.chosenMinutes = this.stage.wait.presets[this.stage.wait.preselect ?? 0];
           this.custom = false;
         }
       },
@@ -283,6 +445,7 @@
       },
 
       startTimer() {
+        this.endsAt = new Date(Date.now() + this.chosenMinutes * 60000);
         QL.setRing(this.$refs.timerRing, 1);
         this.timer = setInterval(() => this.tick(1 / WAIT_SECONDS), 1000);
       },
@@ -312,6 +475,8 @@
 
       async continueQuest(event) {
         await this.press(event);
+        this.peek = false;
+        if (this.view === 1) await this.travelRing(this.stageIndex, this.stageIndex + 1);
         await this.show(() => {
           this.stageIndex += 1;
           this.stepIndex = 0;

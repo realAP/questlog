@@ -40,11 +40,12 @@ class MockupPageTest {
   }
 
   @Test
-  void laundryDraftOffersSubstepViewsAndLabels() throws Exception {
+  void laundryDraftOffersVariantsAndLabels() throws Exception {
     mvc.perform(get("/entwurf/waesche"))
         .andExpect(status().isOk())
         .andExpect(content().string(containsString("x-data=\"laundryDraft\"")))
-        .andExpect(content().string(containsString("Anzeige der Unterschritte")))
+        .andExpect(content().string(containsString("Varianten oben")))
+        .andExpect(content().string(containsString("Varianten Mitte")))
         .andExpect(content().string(containsString("id=\"icon-washer\"")))
         .andExpect(content().string(containsString("/js/draft.js")));
   }
