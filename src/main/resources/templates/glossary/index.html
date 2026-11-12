@@ -17,6 +17,33 @@
       „Bewegung reduzieren“ ist auf diesem Gerät aktiv. Die Bewegungsbeispiele laufen deshalb
       abgeschwächt.
     </p>
+    <section aria-labelledby="grundbegriffe-title" class="rounded-box bg-base-200 p-5">
+      <h2 id="grundbegriffe-title" class="text-lg font-semibold">Grundbegriffe</h2>
+      <p class="mt-1 text-sm text-base-content/70">
+        Jedes Element lässt sich aus drei Blickwinkeln beschreiben. Sie entsprechen den drei
+        Teilen des UI-Designs: Visual, Motion und Interaction Design.
+      </p>
+      <dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-3">
+        <dt class="font-semibold">statisch</dt>
+        <dd class="flex flex-wrap gap-x-3 gap-y-1">
+          <a class="link" href="#typografische-hierarchie">Hierarchie</a>
+          <a class="link" href="#kontrast">Kontrast</a>
+          <a class="link" href="#weissraum">Weißraum</a>
+          <a class="link" href="#gruppierung">Gruppierung</a>
+          <a class="link" href="#ausrichtung">Ausrichtung</a>
+          <a class="link" href="#akzentfarbe">Akzentfarbe</a>
+        </dd>
+        <dt class="font-semibold">bewegt</dt>
+        <dd><a class="link" href="#uebergang">Übergang</a></dd>
+        <dt class="font-semibold">interaktiv</dt>
+        <dd><a class="link" href="#feedback">Feedback</a></dd>
+        <dt class="font-semibold">alle drei</dt>
+        <dd><a class="link" href="#konsistenz">Konsistenz</a></dd>
+      </dl>
+      <p class="mt-4 text-sm text-base-content/70">
+        Feedback-Satz: Wirkung und Grund. „Wirkt gedrängt, zu wenig Weißraum um den Schritt.“
+      </p>
+    </section>
     <nav aria-label="Kategorien" class="flex flex-wrap gap-2">
       <a href="#layout" class="btn btn-sm h-11 min-h-11">Layout und Raum</a>
       <a href="#typografie" class="btn btn-sm h-11 min-h-11">Typografie</a>
@@ -70,6 +97,85 @@
         </figure>
       </div>
       <blockquote class="ql-feedback">„Der Schritt wirkt gedrängt, gib ihm mehr Weißraum nach oben und unten.“</blockquote>
+    </article>
+
+    <article id="gruppierung" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Gruppierung</h3>
+      <p class="ql-definition">
+        Was zusammengehört, steht nah beieinander; was nicht zusammengehört, hat mehr Abstand.
+        Das Auge liest Nähe als Zusammengehörigkeit, noch bevor es den Text liest. In der
+        Gestaltungslehre heißt das <strong>Nähe</strong>.
+      </p>
+      <div class="ql-example ql-stage flex flex-col gap-4" x-data="{ grouped: true }">
+        <div class="flex flex-col rounded-box bg-base-100 p-5" :class="grouped ? 'gap-6' : 'gap-3'">
+          <div class="flex flex-col" :class="grouped ? 'gap-1' : 'gap-3'">
+            <p class="text-sm text-base-content/60">Waschgang läuft</p>
+            <p class="text-2xl font-semibold tabular-nums">1:42 h</p>
+          </div>
+          <div class="flex flex-col" :class="grouped ? 'gap-1' : 'gap-3'">
+            <p class="text-sm text-base-content/60">Danach</p>
+            <p class="font-semibold">Wäsche aufhängen</p>
+          </div>
+        </div>
+        <button type="button" class="btn h-11 min-h-11" @click="grouped = !grouped"
+                x-text="grouped ? 'Gruppierung aufheben' : 'Gruppieren'"></button>
+      </div>
+      <div class="ql-compare">
+        <figure>
+          <div class="flex flex-col gap-2 rounded-box bg-base-200 p-3 text-sm">
+            <p class="text-base-content/60">Waschgang läuft</p>
+            <p class="font-semibold">1:42 h</p>
+            <p class="text-base-content/60">Danach</p>
+            <p class="font-semibold">Aufhängen</p>
+          </div>
+          <figcaption>Ohne: gleiche Abstände</figcaption>
+        </figure>
+        <figure>
+          <div class="flex flex-col gap-4 rounded-box bg-base-200 p-3 text-sm">
+            <div><p class="text-base-content/60">Waschgang läuft</p><p class="font-semibold">1:42 h</p></div>
+            <div><p class="text-base-content/60">Danach</p><p class="font-semibold">Aufhängen</p></div>
+          </div>
+          <figcaption>Mit: zwei klare Gruppen</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Ich sehe nicht, was zur Restzeit gehört. Die Gruppierung stimmt nicht.“</blockquote>
+    </article>
+
+    <article id="ausrichtung" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Ausrichtung</h3>
+      <p class="ql-definition">
+        Elemente stehen an gemeinsamen Kanten. Dadurch entsteht eine unsichtbare Linie, an der
+        der Blick entlanglaufen kann. Fehlt sie, wirkt eine Ansicht unruhig, auch wenn man nicht
+        sagen kann, warum.
+      </p>
+      <div class="ql-example ql-stage flex flex-col gap-4" x-data="{ aligned: true }">
+        <div class="flex flex-col gap-2 rounded-box bg-base-100 p-5">
+          <p class="text-sm text-base-content/60 transition-[margin]" :class="aligned ? 'ml-0' : 'ml-5'">Aufhängen · Schritt 1 von 2</p>
+          <p class="text-2xl font-semibold transition-[margin]" :class="aligned ? 'ml-0' : 'ml-1'">Wäsche holen</p>
+          <p class="text-base-content/70 transition-[margin]" :class="aligned ? 'ml-0' : 'ml-8'">Den Korb mitnehmen.</p>
+        </div>
+        <button type="button" class="btn h-11 min-h-11" @click="aligned = !aligned"
+                x-text="aligned ? 'Ausrichtung aufheben' : 'Ausrichten'"></button>
+      </div>
+      <div class="ql-compare">
+        <figure>
+          <div class="flex flex-col gap-1 rounded-box bg-base-200 p-3 text-sm">
+            <p class="ml-3 text-base-content/60">Schritt 1 von 2</p>
+            <p class="font-semibold">Wäsche holen</p>
+            <p class="ml-5 text-base-content/70">Korb mitnehmen.</p>
+          </div>
+          <figcaption>Ohne: springende Kanten</figcaption>
+        </figure>
+        <figure>
+          <div class="flex flex-col gap-1 rounded-box bg-base-200 p-3 text-sm">
+            <p class="text-base-content/60">Schritt 1 von 2</p>
+            <p class="font-semibold">Wäsche holen</p>
+            <p class="text-base-content/70">Korb mitnehmen.</p>
+          </div>
+          <figcaption>Mit: eine Kante</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Die Ansicht wirkt unruhig, Titel und Hinweis sind nicht aneinander ausgerichtet.“</blockquote>
     </article>
 
     <article id="single-task-view" class="ql-entry" data-term>
@@ -165,6 +271,43 @@
       3 · Farbe
     </h2>
 
+    <article id="kontrast" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Kontrast</h3>
+      <p class="ql-definition">
+        Der Unterschied, durch den sich etwas abhebt: hell gegen dunkel, groß gegen klein, fett
+        gegen dünn, farbig gegen grau. Kontrast macht Wichtiges sichtbar und Text lesbar. Ohne
+        Kontrast ist alles gleich laut, und nichts fällt auf.
+      </p>
+      <div class="ql-example ql-stage flex flex-col gap-4" x-data="{ level: 80 }">
+        <div class="flex flex-col gap-4 rounded-box bg-base-100 p-5">
+          <p class="text-2xl font-semibold" :style="`opacity: ${0.25 + level / 133}`">Maschine starten</p>
+          <button type="button" class="btn h-11 min-h-11 border-0"
+                  :style="`background: color-mix(in oklch, var(--color-primary) ${level}%, var(--color-base-200)); color: ${level > 55 ? 'var(--color-primary-content)' : 'var(--color-base-content)'}`">Erledigt</button>
+        </div>
+        <label class="flex items-center gap-3 text-sm">
+          <span class="shrink-0">Kontrast</span>
+          <input type="range" min="10" max="100" x-model.number="level" class="range range-sm range-primary">
+        </label>
+      </div>
+      <div class="ql-compare">
+        <figure>
+          <div class="flex flex-col gap-2 rounded-box bg-base-200 p-3">
+            <p class="text-sm text-base-content/50">Maschine starten</p>
+            <span class="btn btn-xs border-0 bg-base-300 font-normal text-base-content/60">Erledigt</span>
+          </div>
+          <figcaption>Ohne: alles grau</figcaption>
+        </figure>
+        <figure>
+          <div class="flex flex-col gap-2 rounded-box bg-base-200 p-3">
+            <p class="font-semibold">Maschine starten</p>
+            <span class="btn btn-primary btn-xs">Erledigt</span>
+          </div>
+          <figcaption>Mit: das Wichtige hebt sich ab</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Der Button geht unter, er hat zu wenig Kontrast zum Hintergrund.“</blockquote>
+    </article>
+
     <article id="akzentfarbe" class="ql-entry" data-term>
       <h3 class="text-2xl font-semibold">Akzentfarbe</h3>
       <p class="ql-definition">
@@ -216,6 +359,39 @@
       etwas kommt, was sich geändert hat und dass die App reagiert. Die Begriffe hier beschreiben,
       wie sich etwas bewegt.
     </p>
+
+    <article id="uebergang" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Übergang</h3>
+      <p class="ql-definition">
+        Wie eine Ansicht oder ein Zustand in den nächsten wechselt (englisch
+        <em>transition</em>). Ein Übergang zeigt, dass sich etwas geändert hat und was. Ohne ihn
+        springt der Inhalt, und das Auge muss neu suchen. Beschrieben wird er durch
+        <strong>Dauer</strong> und <strong>Easing</strong>.
+      </p>
+      <div class="ql-example ql-stage flex min-h-56 flex-col"
+           x-data="singleTask(['Wäsche holen', 'Wäsche aufhängen', 'Wäsche abnehmen'])">
+        <p class="text-sm text-base-content/60">Mit Übergang</p>
+        <p x-ref="card" class="my-auto py-6 text-2xl font-semibold" x-text="step"></p>
+        <button type="button" class="btn btn-primary h-11 min-h-11" @click="next()">Erledigt</button>
+      </div>
+      <div class="ql-compare">
+        <figure x-data="{ steps: ['Holen', 'Aufhängen', 'Abnehmen'], index: 0 }">
+          <div class="grid min-h-20 place-items-center rounded-box bg-base-200 p-3">
+            <p class="font-semibold" x-text="steps[index]"></p>
+          </div>
+          <button type="button" class="btn btn-sm h-11 min-h-11" @click="index = (index + 1) % steps.length">Erledigt</button>
+          <figcaption>Ohne: Text springt</figcaption>
+        </figure>
+        <figure x-data="singleTask(['Holen', 'Aufhängen', 'Abnehmen'])">
+          <div class="grid min-h-20 place-items-center rounded-box bg-base-200 p-3">
+            <p x-ref="card" class="font-semibold" x-text="step"></p>
+          </div>
+          <button type="button" class="btn btn-sm h-11 min-h-11" @click="next()">Erledigt</button>
+          <figcaption>Mit: Text gleitet herein</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Der nächste Schritt springt einfach rein, hier fehlt ein Übergang.“</blockquote>
+    </article>
 
     <article id="easing" class="ql-entry" data-term>
       <h3 class="text-2xl font-semibold">Easing</h3>
@@ -541,6 +717,45 @@
     <h2 id="wirkung-title" class="pt-8 text-sm font-semibold uppercase tracking-wider text-base-content/60">
       7 · Wirkung
     </h2>
+
+    <article id="konsistenz" class="ql-entry" data-term>
+      <h3 class="text-2xl font-semibold">Konsistenz</h3>
+      <p class="ql-definition">
+        Gleiches sieht überall gleich aus und verhält sich gleich: derselbe Button, dieselbe
+        Farbe für dieselbe Bedeutung, dieselbe Bewegung für denselben Vorgang. Dann muss man die
+        App nur einmal lernen. Konsistenz gilt für alle drei Blickwinkel.
+      </p>
+      <div class="ql-example ql-stage flex flex-col gap-4" x-data="{ consistent: true }">
+        <div class="flex flex-col gap-3 rounded-box bg-base-100 p-5">
+          <p class="font-semibold">Wäsche holen</p>
+          <button type="button" class="btn btn-primary h-11 min-h-11">Erledigt</button>
+          <p class="pt-2 font-semibold">Wäsche aufhängen</p>
+          <button type="button" class="h-11 min-h-11" :class="consistent ? 'btn btn-primary' : 'btn btn-outline btn-sm rounded-full'"
+                  x-text="consistent ? 'Erledigt' : 'Fertig!'"></button>
+        </div>
+        <button type="button" class="btn h-11 min-h-11" @click="consistent = !consistent"
+                x-text="consistent ? 'Konsistenz brechen' : 'Konsistent machen'"></button>
+      </div>
+      <div class="ql-compare">
+        <figure>
+          <div class="flex flex-col gap-2 rounded-box bg-base-200 p-3">
+            <span class="btn btn-primary btn-xs">Erledigt</span>
+            <span class="btn btn-outline btn-xs rounded-full">Fertig!</span>
+            <span class="btn btn-xs">OK</span>
+          </div>
+          <figcaption>Ohne: drei Gestalten</figcaption>
+        </figure>
+        <figure>
+          <div class="flex flex-col gap-2 rounded-box bg-base-200 p-3">
+            <span class="btn btn-primary btn-xs">Erledigt</span>
+            <span class="btn btn-primary btn-xs">Erledigt</span>
+            <span class="btn btn-primary btn-xs">Erledigt</span>
+          </div>
+          <figcaption>Mit: einmal lernen</figcaption>
+        </figure>
+      </div>
+      <blockquote class="ql-feedback">„Der Button sieht hier anders aus als im vorigen Schritt, das ist nicht konsistent.“</blockquote>
+    </article>
 
     <article id="calm-focus" class="ql-entry" data-term>
       <h3 class="text-2xl font-semibold">Calm Focus</h3>

@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import de.realap.questlog.PostgresContainerConfig;
+import java.util.List;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,20 +20,21 @@ import org.springframework.test.web.servlet.MockMvc;
 @Import(PostgresContainerConfig.class)
 class GlossaryPageTest {
 
+  private static final String GLOSSARY = "/glossar";
   private static final Pattern ENTRY = Pattern.compile("<article [^>]*data-term");
 
   @Autowired private MockMvc mvc;
 
   @Test
   void glossaryNeedsLogin() throws Exception {
-    mvc.perform(get("/glossar")).andExpect(status().is3xxRedirection());
+    mvc.perform(get(GLOSSARY)).andExpect(status().is3xxRedirection());
   }
 
   @Test
   @WithMockUser
   void everyTermHasDefinitionExampleComparisonAndFeedbackSentence() throws Exception {
     String html =
-        mvc.perform(get("/glossar"))
+        mvc.perform(get(GLOSSARY))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -49,7 +51,7 @@ class GlossaryPageTest {
   @Test
   @WithMockUser
   void glossaryCoversAllSevenCategories() throws Exception {
-    String html = mvc.perform(get("/glossar")).andReturn().getResponse().getContentAsString();
+    String html = mvc.perform(get(GLOSSARY)).andReturn().getResponse().getContentAsString();
 
     assertThat(html)
         .contains(
@@ -60,6 +62,27 @@ class GlossaryPageTest {
             "id=\"feedback\"",
             "id=\"interaktion\"",
             "id=\"wirkung\"");
+  }
+
+  @Test
+  @WithMockUser
+  void everyBasicTermLinksToAnEntry() throws Exception {
+    String html = mvc.perform(get(GLOSSARY)).andReturn().getResponse().getContentAsString();
+
+    List<String> basicTerms =
+        List.of(
+            "typografische-hierarchie",
+            "kontrast",
+            "weissraum",
+            "gruppierung",
+            "ausrichtung",
+            "akzentfarbe",
+            "uebergang",
+            "feedback",
+            "konsistenz");
+    for (String term : basicTerms) {
+      assertThat(html).contains("href=\"#" + term + "\"").contains("id=\"" + term + "\"");
+    }
   }
 
   private static long count(String text, String fragment) {
