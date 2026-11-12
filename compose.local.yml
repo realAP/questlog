@@ -1,0 +1,10 @@
+# Nur zum lokalen Ansehen. In Coolify läuft ausschließlich docker-compose.yml; dort macht
+# Traefik die App erreichbar, daher veröffentlicht sie selbst keine Ports.
+# Start siehe README, Abschnitt "Lokal starten".
+services:
+  app:
+    ports:
+      - "3000:8080"
+  db:
+    ports:
+      - "3432:5432"

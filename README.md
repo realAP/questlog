@@ -15,6 +15,19 @@ daisyUI 5 auf Tailwind 4. Ausgeliefert als PWA.
 scripts/smoke-test.sh    # Image bauen, docker-compose.yml starten, Endpunkte prüfen
 ```
 
+### Lokal starten
+
+```bash
+docker compose --env-file .env.local -f docker-compose.yml -f compose.local.yml up --build
+```
+
+Dann `http://localhost:3000` öffnen, Anmeldung **test** / **test**. Beenden mit `Strg+C`,
+Datenbank wegwerfen mit `… down -v` statt `up --build`.
+
+`compose.local.yml` veröffentlicht die Ports (App 3000, PostgreSQL 3432), `.env.local` enthält
+Wegwerf-Zugangsdaten. Beides gilt nur lokal: In Coolify läuft ausschließlich `docker-compose.yml`,
+dort macht Traefik die App erreichbar und die Zugangsdaten kommen aus den Umgebungsvariablen.
+
 **Build-Tool Maven:** Spotless, Checkstyle, PMD und SpotBugs sind ausgereifte Maven-Plugins, die
 sich an `verify` binden lassen und den Build bei einem Verstoß abbrechen. Die Build-Logik bleibt
 deklarativ in `pom.xml`.
