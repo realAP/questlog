@@ -5,29 +5,71 @@
     textOut: { duration: 0.12 },
     textIn: { duration: 0.25, distance: 8 },
     press: { scale: 0.97, bounce: 0.2, duration: 0.25 },
-    ringStep: { duration: 0.4 },
+    check: { hold: 0.38, bounce: 0.35, duration: 0.3 },
+    dot: { pulse: 1.6, fly: 0.45 },
+    line: { duration: 0.45 },
     finale: { ring: 0.6, title: 0.3, sparks: 8 },
   };
   const EASE_OUT = [0.16, 1, 0.3, 1];
   const ms = (seconds) => `${Math.round(seconds * 1000)} ms`;
+  const wait = (seconds) => new Promise((resolve) => setTimeout(resolve, QL.reducedMotion ? 0 : seconds * 1000));
+
+  const HOUR = 60;
+  const DAY = 24 * HOUR;
 
   const QUEST = {
     name: "Wäsche",
     stages: [
       {
         name: "Waschen",
-        steps: ["Wäsche sammeln", "In den Wäschekorb", "Nach unten bringen", "In die Maschine geben", "Maschine starten"],
-        wait: { label: "Waschgang", minutes: 120, reminder: "alle 30 Minuten" },
+        icon: "washer",
+        steps: [
+          { title: "Alles in den Wäschekorb" },
+          {
+            title: "Nach unten bringen",
+            hint: "und die Maschine starten",
+            needs: { icon: "key", label: "Schlüssel mitnehmen" },
+            missing: { label: "Waschmittel fehlt", icon: "detergent" },
+          },
+        ],
+        wait: { label: "Waschgang", question: "Wie lange läuft der Waschgang?", presets: [HOUR, 2 * HOUR, 3 * HOUR], step: 15, min: 15, reminder: "alle 30 Minuten" },
       },
       {
         name: "Aufhängen",
-        steps: ["Wäsche holen", "Wäsche aufhängen"],
-        wait: { label: "Trocknen", minutes: 2 * 24 * 60, reminder: "morgens und abends" },
+        icon: "hanger",
+        steps: [
+          { title: "Wäsche holen", needs: { icon: "key", label: "Schlüssel mitnehmen" } },
+          { title: "Wäsche aufhängen" },
+        ],
+        wait: { label: "Trocknen", question: "Wie lange soll die Wäsche trocknen?", presets: [DAY, 2 * DAY, 3 * DAY], step: 12 * HOUR, min: 12 * HOUR, reminder: "morgens und abends" },
       },
-      { name: "Abnehmen", steps: ["Wäsche abnehmen", "Wegräumen", "Wäscheleine freiräumen"] },
+      {
+        name: "Abnehmen",
+        icon: "basket",
+        steps: [{ title: "Wäsche abnehmen" }, { title: "Wegräumen" }, { title: "Wäscheleine freiräumen" }],
+      },
     ],
   };
   const WAIT_SECONDS = 120;
+
+  function duration(minutes) {
+    if (minutes >= DAY) {
+      const days = minutes / DAY;
+      return `${String(days).replace(".", ",")} ${days === 1 ? "Tag" : "Tage"}`;
+    }
+    if (minutes >= HOUR) {
+      const hours = Math.floor(minutes / HOUR);
+      const rest = minutes % HOUR;
+      return rest ? `${hours}:${String(rest).padStart(2, "0")} h` : `${hours} h`;
+    }
+    return `${minutes} min`;
+  }
+
+  function remaining(minutes) {
+    if (minutes >= DAY) return `${(minutes / DAY).toFixed(1).replace(".", ",")} Tage`;
+    if (minutes >= HOUR) return `${Math.floor(minutes / HOUR)}:${String(Math.ceil(minutes % HOUR)).padStart(2, "0")} h`;
+    return `${Math.ceil(minutes)} min`;
+  }
 
   // Ein Eintrag verweist auf den Glossar-Begriff, der die Entscheidung benennt.
   const note = (term, anchor, text) => ({ term, anchor, text });
@@ -35,36 +77,59 @@
   const NOTES = {
     start: {
       statisch: [
-        note("Hierarchie", "typografische-hierarchie", "Der Questname ist das Größte. Die Etappen darunter sind ruhiger und kleiner."),
-        note("Gruppierung", "gruppierung", "Jede Etappe steht mit ihrer Wartezeit in einer Zeile, damit man sieht, was danach kommt."),
-        note("Akzentfarbe", "akzentfarbe", "Nur „Quest starten“ ist farbig. Das ist die einzige Aktion."),
+        note("Hierarchie", "typografische-hierarchie", "Der Questname ist das Größte. Darunter liegt der Ablauf als senkrechte Zeitleiste."),
+        note("Stepper", "progress-ring", "Etappen sind Punkte auf einer Linie, die Wartezeiten liegen auf der Linie dazwischen. Die erste Etappe ist hervorgehoben, dort geht es los."),
+        note("Akzentfarbe", "akzentfarbe", "Nur „Quest starten“ und der erste Punkt sind farbig."),
       ],
       interaktiv: [note("Feedback", "feedback", `Der Button gibt beim Drücken leicht nach (auf ${DESIGN.press.scale * 100} %).`)],
-      bewegt: [note("Übergang", "uebergang", "Beim Start blendet die Übersicht aus und der erste Schritt ein, genau wie zwischen zwei Schritten.")],
+      bewegt: [note("Übergang", "uebergang", "Die Übersicht blendet aus und der erste Schritt ein, genau wie zwischen zwei Schritten.")],
     },
     step: {
       statisch: [
-        note("Hierarchie", "typografische-hierarchie", "Der Schritt ist groß (34 px, halbfett) und steht in der Mitte. Der Kontext oben ist klein (15 px) und gedämpft."),
-        note("Weißraum", "weissraum", "Um den Schritt herum ist bewusst viel frei. Nichts konkurriert mit ihm."),
-        note("Ausrichtung", "ausrichtung", "Kontext, Schritt und Button stehen an derselben linken Kante."),
-        note("Akzentfarbe", "akzentfarbe", "Nur der Button ist farbig. Er sitzt im unteren Drittel und ist einhändig mit dem Daumen erreichbar."),
+        note("Stepper", "progress-ring", "Oben steht der Ablauf als Symbole: Waschmaschine, Kleiderbügel, Wäschekorb. Die aktuelle Etappe ist farbig und als einzige beschriftet."),
+        note("Gruppierung", "gruppierung", "Die Punkte unter der Leiste sind die Schritte der aktuellen Etappe. Sie ersetzen „Schritt 1 von 2“."),
+        note("Hierarchie", "typografische-hierarchie", "Der Schritt ist groß (34 px, halbfett) in der Mitte. Was du dafür brauchst, steht als hervorgehobene Marke direkt darüber."),
+        note("Akzentfarbe", "akzentfarbe", "Farbig sind nur der Button, die Marke „Schlüssel mitnehmen“ und der Fortschritt."),
       ],
       interaktiv: [
-        note("Feedback", "feedback", `Beim Drücken gibt der Button auf ${DESIGN.press.scale * 100} % nach und federt kaum merklich zurück.`),
-        note("Feedback", "feedback", "Im Kontext oben zählt der Schritt hoch. Mit der Variante „Ring“ füllt sich zusätzlich ein kleiner Ring."),
+        note("Feedback", "feedback", `Beim Abhaken springt für ${ms(DESIGN.check.hold)} ein Häkchen an die Stelle des Textes, und der Punkt des Schritts füllt sich mit einem kleinen Puls.`),
+        note("Feedback", "feedback", "Mit der Variante „Punkt fliegt“ wandert zusätzlich ein Punkt vom Button hoch in die Leiste."),
+        note("Feedback", "feedback", "„Waschmittel fehlt“ ist eine zweite, leise Aktion neben „Erledigt“. Sie hält die Quest an, statt sie abzubrechen."),
       ],
       bewegt: [
-        note("Übergang", "uebergang", `Der alte Schritt blendet in ${ms(DESIGN.textOut.duration)} aus. Der neue kommt in ${ms(DESIGN.textIn.duration)} ${DESIGN.textIn.distance} px von unten, mit Ease-out.`),
-        note("Spring-Animation", "spring-animation", "Kein Nachfedern im Text, das ist die zurückhaltende Stufe aus den Mockups."),
+        note("Micro-Interaction", "micro-interaction", "Häkchen und Puls sind die kleine Rückmeldung pro Schritt. Den großen Celebration-Moment gibt es nur am Ende der Quest."),
+        note("Übergang", "uebergang", `Danach blendet der neue Schritt in ${ms(DESIGN.textIn.duration)} ${DESIGN.textIn.distance} px von unten ein. Beim Wechsel der Etappe füllt sich die Linie zum nächsten Symbol in ${ms(DESIGN.line.duration)}.`),
       ],
+    },
+    missing: {
+      statisch: [
+        note("Hierarchie", "typografische-hierarchie", "Das fehlende Waschmittel ist das Thema der Seite, als Symbol und als Satz."),
+        note("Kontrast", "kontrast", "Rot nur am Symbol, nicht flächig. Es ist ein Hinweis, kein Alarm."),
+      ],
+      interaktiv: [
+        note("Feedback", "feedback", "Die Quest wartet an dieser Stelle. Mit „Waschmittel ist da“ geht es genau hier weiter."),
+        note("Feedback", "feedback", "Fachlich noch offen: Soll das eine Erinnerung zum Einkaufen auslösen oder auf eine Einkaufsliste wandern?"),
+      ],
+      bewegt: [note("Übergang", "uebergang", "Derselbe ruhige Übergang wie zwischen zwei Schritten.")],
+    },
+    time: {
+      statisch: [
+        note("Hierarchie", "typografische-hierarchie", "Die Frage oben, darunter drei große Vorgaben. Die mittlere ist vorausgewählt."),
+        note("Gruppierung", "gruppierung", "Vorgaben und eigene Zeit stehen zusammen. „Timer starten“ sitzt unten, wie jede Hauptaktion."),
+      ],
+      interaktiv: [
+        note("Feedback", "feedback", "Antippen wählt eine Vorgabe. „Andere Zeit“ blendet einen Regler mit Minus und Plus ein."),
+        note("Feedback", "feedback", "Nach der gewählten Zeit kommt eine Push-Nachricht, danach erinnert die App nach dem Erinnerungsprofil."),
+      ],
+      bewegt: [note("Übergang", "uebergang", "Die Auswahl wechselt ohne Bewegung, nur die Markierung springt um.")],
     },
     wait: {
       statisch: [
         note("Hierarchie", "typografische-hierarchie", "Die Restzeit ist das Größte auf der Seite."),
-        note("Kontrast", "kontrast", "Der Ring ist dünn und ruhig, damit er nicht drängt."),
+        note("Stepper", "progress-ring", "Oben steht die Linie zwischen zwei Etappen halb gefüllt, dort ist die Wartezeit."),
         note("Weißraum", "weissraum", "Unten ist kein farbiger Button, weil es gerade nichts zu tun gibt. Die App darf weggelegt werden."),
       ],
-      interaktiv: [note("Feedback", "feedback", "Die Erinnerung kommt später als Push. Hier steht nur, wie oft sie kommt.")],
+      interaktiv: [note("Feedback", "feedback", "Der Satz unten sagt, wann die App sich meldet und wie oft sie danach erinnert.")],
       bewegt: [
         note("Progress-Ring", "progress-ring", "Der Ring läuft gleichmäßig ab und wird jede Sekunde aktualisiert."),
         note("Ambient Motion", "ambient-motion", "Bewusst keine Dauerbewegung, das wäre lebendiger, aber unruhiger."),
@@ -73,14 +138,14 @@
     waitDone: {
       statisch: [note("Akzentfarbe", "akzentfarbe", "Der Button wird wieder farbig, es gibt wieder etwas zu tun.")],
       interaktiv: [note("Feedback", "feedback", "Ein Häkchen im vollen Ring zeigt: Die Wartezeit ist vorbei. Der Button nennt die nächste Etappe.")],
-      bewegt: [note("Übergang", "uebergang", "Häkchen und Button blenden ruhig ein.")],
+      bewegt: [note("Übergang", "uebergang", `Mit „Weiter“ füllt sich die Linie oben bis zum nächsten Symbol (${ms(DESIGN.line.duration)}), das Symbol wird farbig.`)],
     },
     done: {
       statisch: [note("Hierarchie", "typografische-hierarchie", "Nur Ring, Häkchen und ein Satz. Der Abschluss steht für sich.")],
       interaktiv: [note("Feedback", "feedback", "Später kommt hier der Abschluss-Sound aus den Sound-Slots dazu.")],
       bewegt: [
-        note("Celebration-Moment", "celebration-moment", `Der Ring schließt sich in ${ms(DESIGN.finale.ring)}, danach blendet der Satz ein. Bewusst nur am Ende der ganzen Quest, nicht nach jeder Etappe.`),
-        note("Celebration-Moment", "celebration-moment", `Mit der Variante „Funken“ fliegen zusätzlich ${DESIGN.finale.sparks} kleine Punkte.`),
+        note("Celebration-Moment", "celebration-moment", `Der Ring schließt sich in ${ms(DESIGN.finale.ring)}, danach blendet der Satz ein. Bewusst nur am Ende der ganzen Quest.`),
+        note("Celebration-Moment", "celebration-moment", `Mit der Variante „mit Funken“ fliegen zusätzlich ${DESIGN.finale.sparks} kleine Punkte.`),
       ],
     },
   };
@@ -88,17 +153,11 @@
   // Stellen, an denen bewusst zwei Varianten zur Wahl stehen.
   const CHOICES = {
     step: [
-      { key: "context", label: "Kontext oben", options: [["text", "nur Text"], ["ring", "Text und Ring"]] },
+      { key: "feedback", label: "Rückmeldung pro Schritt", options: [["check", "Häkchen und Puls"], ["fly", "Punkt fliegt"]] },
       { key: "shape", label: "Button-Form", options: [["rounded", "abgerundet"], ["capsule", "Kapsel"]] },
     ],
     done: [{ key: "finale", label: "Abschluss", options: [["calm", "ruhig"], ["sparks", "mit Funken"]] }],
   };
-
-  function formatRemaining(minutes) {
-    if (minutes >= 24 * 60) return `${(minutes / (24 * 60)).toFixed(1).replace(".", ",")} Tage`;
-    if (minutes >= 60) return `${Math.floor(minutes / 60)}:${String(Math.ceil(minutes % 60)).padStart(2, "0")} h`;
-    return `${Math.ceil(minutes)} min`;
-  }
 
   function laundryDraft() {
     return {
@@ -109,8 +168,11 @@
       remaining: 1,
       timer: null,
       busy: false,
+      checking: false,
       notesOpen: false,
-      choice: { context: "text", shape: "rounded", finale: "calm" },
+      chosenMinutes: 0,
+      customOpen: false,
+      choice: { feedback: "check", shape: "rounded", finale: "calm" },
       root: null,
 
       init() {
@@ -127,7 +189,7 @@
         return this.quest.stages[this.stageIndex + 1];
       },
       get remainingText() {
-        return formatRemaining(this.remaining * (this.stage.wait?.minutes ?? 0));
+        return remaining(this.remaining * this.chosenMinutes);
       },
       get notes() {
         return NOTES[this.screen];
@@ -135,13 +197,34 @@
       get choices() {
         return CHOICES[this.screen] ?? [];
       },
+      get buttonShape() {
+        return this.choice.shape === "capsule" ? "rounded-full" : "rounded-[14px]";
+      },
+      duration,
 
+      // ---------- Zustand des Prozesses ----------
+      stageState(index) {
+        if (this.screen === "done" || index < this.stageIndex) return "done";
+        if (index > this.stageIndex) return "open";
+        return this.screen === "wait" || this.screen === "waitDone" || this.screen === "time" ? "done" : "current";
+      },
+      lineFill(index) {
+        if (this.screen === "done" || index < this.stageIndex) return 1;
+        if (index > this.stageIndex) return 0;
+        if (this.screen === "wait" || this.screen === "time") return 0.5;
+        return this.screen === "waitDone" ? 0.5 : 0;
+      },
+      dotState(k) {
+        if (k < this.stepIndex) return "done";
+        if (k === this.stepIndex && this.checking) return "done";
+        return k === this.stepIndex ? "current" : "open";
+      },
+
+      // ---------- Ablauf ----------
       async press(event) {
         const button = event?.currentTarget;
-        if (button) {
-          QL.animate(button, { scale: [DESIGN.press.scale, 1] }, QL.spring(DESIGN.press.bounce, DESIGN.press.duration));
-        }
-        await new Promise((resolve) => setTimeout(resolve, 90));
+        if (button) QL.animate(button, { scale: [DESIGN.press.scale, 1] }, QL.spring(DESIGN.press.bounce, DESIGN.press.duration));
+        await wait(0.09);
       },
 
       async show(change) {
@@ -161,38 +244,91 @@
         await this.show(() => {
           this.screen = "step";
         });
-        QL.setRing(this.$refs.stepRing, 0);
+        this.popNode(0);
+      },
+
+      // Kleine Rückmeldung pro Schritt: Häkchen statt Text, Punkt füllt sich.
+      async stepFeedback(button) {
+        const dot = this.root.querySelector(`[data-dot="${this.stepIndex}"]`);
+        if (this.choice.feedback === "fly" && dot && button && !QL.reducedMotion) {
+          await this.flyDot(button, dot);
+        }
+        this.checking = true;
+        const title = this.$refs.stepTitle;
+        const check = this.$refs.stepCheck;
+        QL.animate(title, { opacity: 0 }, { duration: 0.1 });
+        QL.animate(check, { opacity: [0, 1], scale: [0.6, 1] }, QL.spring(DESIGN.check.bounce, DESIGN.check.duration));
+        await this.$nextTick();
+        if (dot) QL.animate(dot, { scale: [DESIGN.dot.pulse, 1] }, QL.spring(0.3, 0.35));
+        await wait(DESIGN.check.hold);
+        QL.animate(check, { opacity: 0 }, { duration: 0.1 });
+      },
+
+      async flyDot(button, dot) {
+        const from = button.getBoundingClientRect();
+        const to = dot.getBoundingClientRect();
+        const flyer = document.createElement("span");
+        flyer.className = "pointer-events-none fixed z-30 size-2.5 rounded-full bg-primary";
+        flyer.style.left = `${from.left + from.width / 2 - 5}px`;
+        flyer.style.top = `${from.top + from.height / 2 - 5}px`;
+        document.body.append(flyer);
+        await Motion.animate(flyer, {
+          x: [0, to.left + to.width / 2 - (from.left + from.width / 2)],
+          y: [0, to.top + to.height / 2 - (from.top + from.height / 2)],
+          scale: [1.4, 1],
+        }, { duration: DESIGN.dot.fly, ease: [0.5, 0, 0.2, 1] }).finished;
+        flyer.remove();
       },
 
       async complete(event) {
         if (this.busy) return;
         this.busy = true;
+        const button = event?.currentTarget;
         await this.press(event);
-        const ring = this.$refs.stepRing;
-        const from = this.stepIndex / this.stage.steps.length;
-        const to = (this.stepIndex + 1) / this.stage.steps.length;
-        QL.tween(from, to, (v) => QL.setRing(ring, v), { duration: DESIGN.ringStep.duration, ease: EASE_OUT });
+        await this.stepFeedback(button);
         const last = this.stepIndex === this.stage.steps.length - 1;
-        if (!last) {
-          await this.show(() => {
+        await this.show(() => {
+          this.checking = false;
+          if (!last) {
             this.stepIndex += 1;
-          });
-        } else if (this.stage.wait) {
-          await this.show(() => {
-            this.screen = "wait";
-            this.remaining = 1;
-          });
-          this.startWaiting();
-        } else {
-          await this.show(() => {
+          } else if (this.stage.wait) {
+            this.screen = "time";
+            this.chosenMinutes = this.stage.wait.presets[1];
+            this.customOpen = false;
+          } else {
             this.screen = "done";
-          });
-          this.celebrate();
-        }
+          }
+        });
+        this.$refs.stepTitle.style.opacity = "";
+        if (this.screen === "done") this.celebrate();
         this.busy = false;
       },
 
-      startWaiting() {
+      async reportMissing(event) {
+        await this.press(event);
+        await this.show(() => {
+          this.screen = "missing";
+        });
+      },
+
+      async resolveMissing(event) {
+        await this.press(event);
+        await this.show(() => {
+          this.screen = "step";
+        });
+      },
+
+      adjust(sign) {
+        const w = this.stage.wait;
+        this.chosenMinutes = Math.max(w.min, this.chosenMinutes + sign * w.step);
+      },
+
+      async startTimer(event) {
+        await this.press(event);
+        await this.show(() => {
+          this.screen = "wait";
+          this.remaining = 1;
+        });
         QL.setRing(this.$refs.timerRing, 1);
         this.timer = setInterval(() => this.tick(1 / WAIT_SECONDS), 1000);
       },
@@ -227,7 +363,15 @@
           this.stepIndex = 0;
           this.screen = "step";
         });
-        QL.setRing(this.$refs.stepRing, 0);
+        this.popNode(this.stageIndex);
+      },
+
+      // Das Symbol der neuen Etappe wird farbig und federt kurz.
+      popNode(index) {
+        this.$nextTick(() => {
+          const node = this.root.querySelector(`[data-node="${index}"]`);
+          if (node) QL.animate(node, { scale: [0.8, 1] }, QL.spring(0.3, 0.4));
+        });
       },
 
       async celebrate() {
