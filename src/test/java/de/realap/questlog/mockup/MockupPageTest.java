@@ -40,12 +40,12 @@ class MockupPageTest {
   }
 
   @Test
-  void laundryDraftOffersVariantsAndLabels() throws Exception {
+  void laundryDraftRendersWithLabelToggle() throws Exception {
     mvc.perform(get("/entwurf/waesche"))
         .andExpect(status().isOk())
         .andExpect(content().string(containsString("x-data=\"laundryDraft\"")))
-        .andExpect(content().string(containsString("Varianten Mitte")))
         .andExpect(content().string(containsString("id=\"icon-washer\"")))
+        .andExpect(content().string(containsString("data-label=\"Erinnerung\"")))
         .andExpect(content().string(containsString("/js/draft.js")));
   }
 

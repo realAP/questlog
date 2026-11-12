@@ -63,11 +63,6 @@
   };
   const WAIT_SECONDS = 120;
 
-  // Varianten für die Mitte, je nach Ansicht verschieden.
-  const MIDDLE_VIEWS = {
-    choose: ["Leiste", "Drehen", "Fertig um"],
-    wait: ["Countdown", "Fertig um", "Segmente"],
-  };
   // Segmente unterscheiden sich in der Dicke: erledigt und aktiv dick, offen dünn.
   const RING = { radius: 46, width: 9, thin: 3.5, gap: 6, sweep: 0.35, travel: 0.55, settle: 0.22 };
 
@@ -89,12 +84,6 @@
   function parts(minutes) {
     const total = Math.max(0, Math.round(minutes * 60));
     return { d: Math.floor(total / 86400), h: Math.floor((total % 86400) / 3600), m: Math.floor((total % 3600) / 60), s: total % 60 };
-  }
-
-  // Countdown wie eine Uhr: Tage, dann Stunden, Minuten, Sekunden.
-  function countdown(minutes) {
-    const t = parts(minutes);
-    return t.d > 0 ? `${t.d} T ${t.h}:${pad(t.m)}` : `${t.h}:${pad(t.m)}:${pad(t.s)}`;
   }
 
   // Restzeit in Worten, ohne Kommazahlen.
@@ -119,8 +108,6 @@
   function laundryDraft() {
     return {
       quest: QUEST,
-      middle: 0,
-      sheet: false,
       endsAt: null,
       labels: false,
       screen: "start",
@@ -130,7 +117,6 @@
       timer: null,
       busy: false,
       checking: false,
-      packed: false,
       chosenMinutes: 0,
       custom: false,
       peek: false,
@@ -160,9 +146,6 @@
       get minutesLeft() {
         return this.remaining * this.chosenMinutes;
       },
-      get countdownText() {
-        return countdown(this.minutesLeft);
-      },
       get wordsText() {
         return inWords(this.minutesLeft);
       },
@@ -171,15 +154,6 @@
       },
       endFor(minutes) {
         return finishedAt(new Date(Date.now() + minutes * 60000));
-      },
-      // Welche Mittel-Varianten es in der aktuellen Ansicht gibt.
-      get middleKind() {
-        if (this.screen === "step" && this.step.startsWait) return "choose";
-        if (this.screen === "wait") return "wait";
-        return null;
-      },
-      get middleViews() {
-        return MIDDLE_VIEWS[this.middleKind] ?? [];
       },
       // Segmente der laufenden Wartezeit: Stunden beim Waschen, Tage beim Trocknen.
       get waitSegments() {
@@ -406,7 +380,6 @@
         const last = this.stepIndex === this.stage.steps.length - 1;
         await this.show(() => {
           this.checking = false;
-          this.packed = false;
           if (this.step.startsWait) {
             this.screen = "wait";
             this.remaining = 1;
