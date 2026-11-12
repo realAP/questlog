@@ -1,17 +1,13 @@
-// Entwurf der Wäsche-Quest. Alle Gestaltungswerte stehen in DESIGN, die Erklärungen in NOTES
-// lesen dieselben Werte, damit Beschreibung und Verhalten nicht auseinanderlaufen.
+// Entwurf der Wäsche-Quest. Gestaltungswerte stehen in DESIGN, der Ablauf in QUEST.
 (() => {
   const DESIGN = {
-    textOut: { duration: 0.12 },
+    textOut: { duration: 0.1 },
     textIn: { duration: 0.25, distance: 8 },
     press: { scale: 0.97, bounce: 0.2, duration: 0.25 },
-    check: { hold: 0.38, bounce: 0.35, duration: 0.3 },
-    dot: { pulse: 1.6, fly: 0.45 },
-    line: { duration: 0.45 },
-    finale: { ring: 0.6, title: 0.3, sparks: 8 },
+    celebrate: { hold: 0.2, pop: 1.12, ripple: 0.4, dots: 6, dotDistance: 46 },
+    finale: { ring: 0.6, title: 0.3 },
   };
   const EASE_OUT = [0.16, 1, 0.3, 1];
-  const ms = (seconds) => `${Math.round(seconds * 1000)} ms`;
   const wait = (seconds) => new Promise((resolve) => setTimeout(resolve, QL.reducedMotion ? 0 : seconds * 1000));
 
   const HOUR = 60;
@@ -19,38 +15,61 @@
 
   const QUEST = {
     name: "Wäsche",
+    icon: "basket",
     stages: [
       {
         name: "Waschen",
         icon: "washer",
         steps: [
-          { title: "Alles in den Wäschekorb" },
+          { title: "Alles in den Wäschekorb", icon: "basket" },
+          { title: "Nach unten bringen", icon: "stairs", needs: { icon: "key", label: "Schlüssel" } },
           {
-            title: "Nach unten bringen",
-            hint: "und die Maschine starten",
-            needs: { icon: "key", label: "Schlüssel mitnehmen" },
-            missing: { label: "Waschmittel fehlt", icon: "detergent" },
+            title: "Maschine starten",
+            icon: "washer",
+            startsWait: true,
+            question: "Wie lange läuft der Waschgang?",
+            action: "Waschvorgang starten",
+            missing: "Waschmittel",
           },
         ],
-        wait: { label: "Waschgang", question: "Wie lange läuft der Waschgang?", presets: [HOUR, 2 * HOUR, 3 * HOUR], step: 15, min: 15, reminder: "alle 30 Minuten" },
+        wait: { label: "Waschgang", presets: [3 * HOUR, 6 * HOUR], step: 15, min: 15, reminder: "alle 30 Minuten" },
       },
       {
-        name: "Aufhängen",
+        name: "Trocknen",
+        icon: "clothesline",
+        steps: [
+          { title: "Wäsche holen", icon: "basket", needs: { icon: "key", label: "Schlüssel" } },
+          { title: "Wäsche aufhängen", icon: "clothesline" },
+          {
+            title: "Trocknen lassen",
+            icon: "clothesline",
+            startsWait: true,
+            question: "Wie lange soll die Wäsche trocknen?",
+            action: "Trocknen starten",
+          },
+        ],
+        wait: { label: "Trockenzeit", presets: [DAY, 2 * DAY, 3 * DAY], step: 12 * HOUR, min: 12 * HOUR, reminder: "morgens und abends" },
+      },
+      {
+        name: "Aufräumen",
         icon: "hanger",
         steps: [
-          { title: "Wäsche holen", needs: { icon: "key", label: "Schlüssel mitnehmen" } },
-          { title: "Wäsche aufhängen" },
+          { title: "Wäsche abnehmen", icon: "clothesline" },
+          { title: "Wegräumen", icon: "hanger" },
+          { title: "Wäscheleine freiräumen", icon: "clothesline" },
         ],
-        wait: { label: "Trocknen", question: "Wie lange soll die Wäsche trocknen?", presets: [DAY, 2 * DAY, 3 * DAY], step: 12 * HOUR, min: 12 * HOUR, reminder: "morgens und abends" },
-      },
-      {
-        name: "Abnehmen",
-        icon: "basket",
-        steps: [{ title: "Wäsche abnehmen" }, { title: "Wegräumen" }, { title: "Wäscheleine freiräumen" }],
       },
     ],
   };
   const WAIT_SECONDS = 120;
+
+  const SUBSTEP_VIEWS = [
+    "Punkte unter dem Symbol",
+    "Ring um das Symbol",
+    "Symbolreihe",
+    "Checkliste",
+    "Segmentleiste",
+  ];
 
   function duration(minutes) {
     if (minutes >= DAY) {
@@ -71,97 +90,12 @@
     return `${Math.ceil(minutes)} min`;
   }
 
-  // Ein Eintrag verweist auf den Glossar-Begriff, der die Entscheidung benennt.
-  const note = (term, anchor, text) => ({ term, anchor, text });
-
-  const NOTES = {
-    start: {
-      statisch: [
-        note("Hierarchie", "typografische-hierarchie", "Der Questname ist das Größte. Darunter liegt der Ablauf als senkrechte Zeitleiste."),
-        note("Stepper", "progress-ring", "Etappen sind Punkte auf einer Linie, die Wartezeiten liegen auf der Linie dazwischen. Die erste Etappe ist hervorgehoben, dort geht es los."),
-        note("Akzentfarbe", "akzentfarbe", "Nur „Quest starten“ und der erste Punkt sind farbig."),
-      ],
-      interaktiv: [note("Feedback", "feedback", `Der Button gibt beim Drücken leicht nach (auf ${DESIGN.press.scale * 100} %).`)],
-      bewegt: [note("Übergang", "uebergang", "Die Übersicht blendet aus und der erste Schritt ein, genau wie zwischen zwei Schritten.")],
-    },
-    step: {
-      statisch: [
-        note("Stepper", "progress-ring", "Oben steht der Ablauf als Symbole: Waschmaschine, Kleiderbügel, Wäschekorb. Die aktuelle Etappe ist farbig und als einzige beschriftet."),
-        note("Gruppierung", "gruppierung", "Die Punkte unter der Leiste sind die Schritte der aktuellen Etappe. Sie ersetzen „Schritt 1 von 2“."),
-        note("Hierarchie", "typografische-hierarchie", "Der Schritt ist groß (34 px, halbfett) in der Mitte. Was du dafür brauchst, steht als hervorgehobene Marke direkt darüber."),
-        note("Akzentfarbe", "akzentfarbe", "Farbig sind nur der Button, die Marke „Schlüssel mitnehmen“ und der Fortschritt."),
-      ],
-      interaktiv: [
-        note("Feedback", "feedback", `Beim Abhaken springt für ${ms(DESIGN.check.hold)} ein Häkchen an die Stelle des Textes, und der Punkt des Schritts füllt sich mit einem kleinen Puls.`),
-        note("Feedback", "feedback", "Mit der Variante „Punkt fliegt“ wandert zusätzlich ein Punkt vom Button hoch in die Leiste."),
-        note("Feedback", "feedback", "„Waschmittel fehlt“ ist eine zweite, leise Aktion neben „Erledigt“. Sie hält die Quest an, statt sie abzubrechen."),
-      ],
-      bewegt: [
-        note("Micro-Interaction", "micro-interaction", "Häkchen und Puls sind die kleine Rückmeldung pro Schritt. Den großen Celebration-Moment gibt es nur am Ende der Quest."),
-        note("Übergang", "uebergang", `Danach blendet der neue Schritt in ${ms(DESIGN.textIn.duration)} ${DESIGN.textIn.distance} px von unten ein. Beim Wechsel der Etappe füllt sich die Linie zum nächsten Symbol in ${ms(DESIGN.line.duration)}.`),
-      ],
-    },
-    missing: {
-      statisch: [
-        note("Hierarchie", "typografische-hierarchie", "Das fehlende Waschmittel ist das Thema der Seite, als Symbol und als Satz."),
-        note("Kontrast", "kontrast", "Rot nur am Symbol, nicht flächig. Es ist ein Hinweis, kein Alarm."),
-      ],
-      interaktiv: [
-        note("Feedback", "feedback", "Die Quest wartet an dieser Stelle. Mit „Waschmittel ist da“ geht es genau hier weiter."),
-        note("Feedback", "feedback", "Fachlich noch offen: Soll das eine Erinnerung zum Einkaufen auslösen oder auf eine Einkaufsliste wandern?"),
-      ],
-      bewegt: [note("Übergang", "uebergang", "Derselbe ruhige Übergang wie zwischen zwei Schritten.")],
-    },
-    time: {
-      statisch: [
-        note("Hierarchie", "typografische-hierarchie", "Die Frage oben, darunter drei große Vorgaben. Die mittlere ist vorausgewählt."),
-        note("Gruppierung", "gruppierung", "Vorgaben und eigene Zeit stehen zusammen. „Timer starten“ sitzt unten, wie jede Hauptaktion."),
-      ],
-      interaktiv: [
-        note("Feedback", "feedback", "Antippen wählt eine Vorgabe. „Andere Zeit“ blendet einen Regler mit Minus und Plus ein."),
-        note("Feedback", "feedback", "Nach der gewählten Zeit kommt eine Push-Nachricht, danach erinnert die App nach dem Erinnerungsprofil."),
-      ],
-      bewegt: [note("Übergang", "uebergang", "Die Auswahl wechselt ohne Bewegung, nur die Markierung springt um.")],
-    },
-    wait: {
-      statisch: [
-        note("Hierarchie", "typografische-hierarchie", "Die Restzeit ist das Größte auf der Seite."),
-        note("Stepper", "progress-ring", "Oben steht die Linie zwischen zwei Etappen halb gefüllt, dort ist die Wartezeit."),
-        note("Weißraum", "weissraum", "Unten ist kein farbiger Button, weil es gerade nichts zu tun gibt. Die App darf weggelegt werden."),
-      ],
-      interaktiv: [note("Feedback", "feedback", "Der Satz unten sagt, wann die App sich meldet und wie oft sie danach erinnert.")],
-      bewegt: [
-        note("Progress-Ring", "progress-ring", "Der Ring läuft gleichmäßig ab und wird jede Sekunde aktualisiert."),
-        note("Ambient Motion", "ambient-motion", "Bewusst keine Dauerbewegung, das wäre lebendiger, aber unruhiger."),
-      ],
-    },
-    waitDone: {
-      statisch: [note("Akzentfarbe", "akzentfarbe", "Der Button wird wieder farbig, es gibt wieder etwas zu tun.")],
-      interaktiv: [note("Feedback", "feedback", "Ein Häkchen im vollen Ring zeigt: Die Wartezeit ist vorbei. Der Button nennt die nächste Etappe.")],
-      bewegt: [note("Übergang", "uebergang", `Mit „Weiter“ füllt sich die Linie oben bis zum nächsten Symbol (${ms(DESIGN.line.duration)}), das Symbol wird farbig.`)],
-    },
-    done: {
-      statisch: [note("Hierarchie", "typografische-hierarchie", "Nur Ring, Häkchen und ein Satz. Der Abschluss steht für sich.")],
-      interaktiv: [note("Feedback", "feedback", "Später kommt hier der Abschluss-Sound aus den Sound-Slots dazu.")],
-      bewegt: [
-        note("Celebration-Moment", "celebration-moment", `Der Ring schließt sich in ${ms(DESIGN.finale.ring)}, danach blendet der Satz ein. Bewusst nur am Ende der ganzen Quest.`),
-        note("Celebration-Moment", "celebration-moment", `Mit der Variante „mit Funken“ fliegen zusätzlich ${DESIGN.finale.sparks} kleine Punkte.`),
-      ],
-    },
-  };
-
-  // Stellen, an denen bewusst zwei Varianten zur Wahl stehen.
-  const CHOICES = {
-    step: [
-      { key: "feedback", label: "Rückmeldung pro Schritt", options: [["check", "Häkchen und Puls"], ["fly", "Punkt fliegt"]] },
-      { key: "shape", label: "Button-Form", options: [["rounded", "abgerundet"], ["capsule", "Kapsel"]] },
-    ],
-    done: [{ key: "finale", label: "Abschluss", options: [["calm", "ruhig"], ["sparks", "mit Funken"]] }],
-  };
-
   function laundryDraft() {
     return {
       quest: QUEST,
+      views: SUBSTEP_VIEWS,
+      view: 0,
+      labels: false,
       screen: "start",
       stageIndex: 0,
       stepIndex: 0,
@@ -169,14 +103,18 @@
       timer: null,
       busy: false,
       checking: false,
-      notesOpen: false,
+      packed: false,
       chosenMinutes: 0,
-      customOpen: false,
-      choice: { feedback: "check", shape: "rounded", finale: "calm" },
+      custom: false,
       root: null,
+      duration,
 
       init() {
         this.root = this.$el;
+      },
+
+      icon(name) {
+        return document.getElementById(`icon-${name}`)?.innerHTML ?? "";
       },
 
       get stage() {
@@ -191,40 +129,51 @@
       get remainingText() {
         return remaining(this.remaining * this.chosenMinutes);
       },
-      get notes() {
-        return NOTES[this.screen];
+      get waiting() {
+        return this.screen === "wait" || this.screen === "waitDone";
       },
-      get choices() {
-        return CHOICES[this.screen] ?? [];
-      },
-      get buttonShape() {
-        return this.choice.shape === "capsule" ? "rounded-full" : "rounded-[14px]";
-      },
-      duration,
 
-      // ---------- Zustand des Prozesses ----------
-      stageState(index) {
-        if (this.screen === "done" || index < this.stageIndex) return "done";
-        if (index > this.stageIndex) return "open";
-        return this.screen === "wait" || this.screen === "waitDone" || this.screen === "time" ? "done" : "current";
+      // ---------- Unterschritte der aktuellen Etappe, die Wartezeit eingeschlossen ----------
+      get substeps() {
+        const list = this.stage.steps.map((s) => ({ icon: s.icon, label: s.title }));
+        if (this.stage.wait) list.push({ icon: "clock", label: this.stage.wait.label, isWait: true });
+        return list;
       },
-      lineFill(index) {
-        if (this.screen === "done" || index < this.stageIndex) return 1;
-        if (index > this.stageIndex) return 0;
-        if (this.screen === "wait" || this.screen === "time") return 0.5;
-        return this.screen === "waitDone" ? 0.5 : 0;
+      get currentSub() {
+        return this.waiting ? this.stage.steps.length : this.stepIndex;
       },
-      dotState(k) {
-        if (k < this.stepIndex) return "done";
-        if (k === this.stepIndex && this.checking) return "done";
-        return k === this.stepIndex ? "current" : "open";
+      subState(k) {
+        if (k < this.currentSub) return "done";
+        if (k === this.currentSub) return (this.checking || this.screen === "waitDone") ? "done" : "current";
+        return "open";
+      },
+      stageState(s) {
+        if (this.screen === "done" || s < this.stageIndex) return "done";
+        return s === this.stageIndex ? "current" : "open";
+      },
+      // Segment k von n als Bogen im Ring um das Etappen-Symbol (pathLength 100).
+      arc(k, n) {
+        const gap = n > 1 ? 4 : 0;
+        const length = 100 / n - gap;
+        return { dasharray: `${length} ${100 - length}`, dashoffset: String(-(k * 100) / n - gap / 2) };
+      },
+
+      // Ring aus Segmenten um das aktuelle Etappen-Symbol, ein Segment pro Unterschritt.
+      ringSvg() {
+        const n = this.substeps.length;
+        const color = { done: "var(--color-primary)", current: "color-mix(in oklch, var(--color-primary) 40%, var(--color-base-300))", open: "var(--color-base-300)" };
+        const arcs = this.substeps.map((_, k) => {
+          const a = this.arc(k, n);
+          return `<circle cx="50" cy="50" r="46" fill="none" stroke-width="8" stroke-linecap="round" pathLength="100" stroke="${color[this.subState(k)]}" stroke-dasharray="${a.dasharray}" stroke-dashoffset="${a.dashoffset}"/>`;
+        }).join("");
+        return `<svg class="size-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">${arcs}</svg>`;
       },
 
       // ---------- Ablauf ----------
       async press(event) {
         const button = event?.currentTarget;
         if (button) QL.animate(button, { scale: [DESIGN.press.scale, 1] }, QL.spring(DESIGN.press.bounce, DESIGN.press.duration));
-        await wait(0.09);
+        await wait(0.06);
       },
 
       async show(change) {
@@ -247,61 +196,71 @@
         this.popNode(0);
       },
 
-      // Kleine Rückmeldung pro Schritt: Häkchen statt Text, Punkt füllt sich.
-      async stepFeedback(button) {
-        const dot = this.root.querySelector(`[data-dot="${this.stepIndex}"]`);
-        if (this.choice.feedback === "fly" && dot && button && !QL.reducedMotion) {
-          await this.flyDot(button, dot);
-        }
+      // Mini-Celebration: Das Schritt-Symbol wird zum Häkchen, mit Welle und ein paar Punkten.
+      async miniCelebrate() {
         this.checking = true;
-        const title = this.$refs.stepTitle;
-        const check = this.$refs.stepCheck;
-        QL.animate(title, { opacity: 0 }, { duration: 0.1 });
-        QL.animate(check, { opacity: [0, 1], scale: [0.6, 1] }, QL.spring(DESIGN.check.bounce, DESIGN.check.duration));
         await this.$nextTick();
-        if (dot) QL.animate(dot, { scale: [DESIGN.dot.pulse, 1] }, QL.spring(0.3, 0.35));
-        await wait(DESIGN.check.hold);
-        QL.animate(check, { opacity: 0 }, { duration: 0.1 });
-      },
-
-      async flyDot(button, dot) {
-        const from = button.getBoundingClientRect();
-        const to = dot.getBoundingClientRect();
-        const flyer = document.createElement("span");
-        flyer.className = "pointer-events-none fixed z-30 size-2.5 rounded-full bg-primary";
-        flyer.style.left = `${from.left + from.width / 2 - 5}px`;
-        flyer.style.top = `${from.top + from.height / 2 - 5}px`;
-        document.body.append(flyer);
-        await Motion.animate(flyer, {
-          x: [0, to.left + to.width / 2 - (from.left + from.width / 2)],
-          y: [0, to.top + to.height / 2 - (from.top + from.height / 2)],
-          scale: [1.4, 1],
-        }, { duration: DESIGN.dot.fly, ease: [0.5, 0, 0.2, 1] }).finished;
-        flyer.remove();
+        const badge = [...this.root.querySelectorAll("[data-celebrate]")].find((el) => el.offsetParent !== null);
+        if (!badge || QL.reducedMotion) {
+          await wait(DESIGN.celebrate.hold);
+          return;
+        }
+        QL.animate(badge, { scale: [1, DESIGN.celebrate.pop, 1] }, { duration: 0.32, ease: EASE_OUT });
+        QL.animate(badge.querySelector("[data-ripple]"), { scale: [1, 1.7], opacity: [0.5, 0] }, { duration: DESIGN.celebrate.ripple, ease: "easeOut" });
+        const layer = badge.querySelector("[data-burst]");
+        const spread = badge.offsetWidth / 2;
+        layer.replaceChildren();
+        for (let i = 0; i < DESIGN.celebrate.dots; i += 1) {
+          const dot = document.createElement("span");
+          dot.className = "absolute left-1/2 top-1/2 -ml-1 -mt-1 size-2 rounded-full bg-primary";
+          layer.append(dot);
+          const angle = (i / DESIGN.celebrate.dots) * Math.PI * 2 - Math.PI / 2;
+          const d = spread + DESIGN.celebrate.dotDistance * (spread / 48);
+          Motion.animate(dot, { x: [Math.cos(angle) * spread, Math.cos(angle) * d], y: [Math.sin(angle) * spread, Math.sin(angle) * d], opacity: [1, 0], scale: [1, 0.5] },
+            { duration: 0.42, ease: EASE_OUT });
+        }
+        await wait(DESIGN.celebrate.hold + 0.12);
       },
 
       async complete(event) {
         if (this.busy) return;
         this.busy = true;
-        const button = event?.currentTarget;
         await this.press(event);
-        await this.stepFeedback(button);
+        await this.miniCelebrate();
         const last = this.stepIndex === this.stage.steps.length - 1;
         await this.show(() => {
           this.checking = false;
-          if (!last) {
+          this.packed = false;
+          if (this.step.startsWait) {
+            this.screen = "wait";
+            this.remaining = 1;
+          } else if (!last) {
             this.stepIndex += 1;
-          } else if (this.stage.wait) {
-            this.screen = "time";
-            this.chosenMinutes = this.stage.wait.presets[1];
-            this.customOpen = false;
+            this.prepareStep();
           } else {
             this.screen = "done";
           }
         });
-        this.$refs.stepTitle.style.opacity = "";
+        if (this.screen === "wait") this.startTimer();
         if (this.screen === "done") this.celebrate();
         this.busy = false;
+      },
+
+      prepareStep() {
+        if (this.step.startsWait) {
+          this.chosenMinutes = this.stage.wait.presets[0];
+          this.custom = false;
+        }
+      },
+
+      choosePreset(minutes) {
+        this.chosenMinutes = minutes;
+        this.custom = false;
+      },
+
+      adjust(sign) {
+        const w = this.stage.wait;
+        this.chosenMinutes = Math.max(w.min, this.chosenMinutes + sign * w.step);
       },
 
       async reportMissing(event) {
@@ -318,17 +277,12 @@
         });
       },
 
-      adjust(sign) {
-        const w = this.stage.wait;
-        this.chosenMinutes = Math.max(w.min, this.chosenMinutes + sign * w.step);
+      get shoppingLink() {
+        const text = encodeURIComponent(this.step.missing ?? "");
+        return `shortcuts://run-shortcut?name=${encodeURIComponent("Questlog Einkauf")}&input=text&text=${text}`;
       },
 
-      async startTimer(event) {
-        await this.press(event);
-        await this.show(() => {
-          this.screen = "wait";
-          this.remaining = 1;
-        });
+      startTimer() {
         QL.setRing(this.$refs.timerRing, 1);
         this.timer = setInterval(() => this.tick(1 / WAIT_SECONDS), 1000);
       },
@@ -362,11 +316,11 @@
           this.stageIndex += 1;
           this.stepIndex = 0;
           this.screen = "step";
+          this.prepareStep();
         });
         this.popNode(this.stageIndex);
       },
 
-      // Das Symbol der neuen Etappe wird farbig und federt kurz.
       popNode(index) {
         this.$nextTick(() => {
           const node = this.root.querySelector(`[data-node="${index}"]`);
@@ -380,25 +334,7 @@
         QL.setRing(ring, 0);
         title.style.opacity = "0";
         await QL.tween(0, 1, (v) => QL.setRing(ring, v), { duration: DESIGN.finale.ring, ease: EASE_OUT });
-        if (this.choice.finale === "sparks") this.sparks();
         QL.animate(title, { opacity: [0, 1], y: [DESIGN.textIn.distance, 0] }, { duration: DESIGN.finale.title, ease: EASE_OUT });
-      },
-
-      sparks() {
-        const layer = this.$refs.sparks;
-        layer.replaceChildren();
-        if (QL.reducedMotion) return;
-        for (let i = 0; i < DESIGN.finale.sparks; i += 1) {
-          const dot = document.createElement("span");
-          dot.className = "absolute left-1/2 top-1/2 size-2 rounded-full bg-primary";
-          layer.append(dot);
-          const angle = (i / DESIGN.finale.sparks) * Math.PI * 2 - Math.PI / 2;
-          Motion.animate(dot, { x: [0, Math.cos(angle) * 130], y: [0, Math.sin(angle) * 130], opacity: [1, 0] }, { duration: 0.8, ease: EASE_OUT });
-        }
-      },
-
-      replayFinale() {
-        if (this.screen === "done") this.celebrate();
       },
 
       restart() {
