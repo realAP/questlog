@@ -27,6 +27,7 @@ class SecurityConfig {
     "/icons/**",
     "/css/**",
     "/js/**",
+    "/webjars/**",
     "/favicon.ico",
     "/actuator/health",
   };

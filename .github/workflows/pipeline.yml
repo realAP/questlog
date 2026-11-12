@@ -49,4 +49,8 @@ jobs:
           COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
         run: |
+          if [[ -z "${COOLIFY_WEBHOOK}" || -z "${COOLIFY_TOKEN}" ]]; then
+            echo "::error::GitHub-Secrets COOLIFY_WEBHOOK und COOLIFY_TOKEN fehlen (siehe README, Einrichtung in Coolify)."
+            exit 1
+          fi
           curl -fsS --retry 3 -H "Authorization: Bearer ${COOLIFY_TOKEN}" "${COOLIFY_WEBHOOK}"

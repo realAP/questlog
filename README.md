@@ -15,13 +15,32 @@ daisyUI 5 auf Tailwind 4. Ausgeliefert als PWA.
 scripts/smoke-test.sh    # Image bauen, docker-compose.yml starten, Endpunkte prüfen
 ```
 
+### Lokal starten
+
+```bash
+docker compose --env-file .env.local -f docker-compose.yml -f compose.local.yml up --build
+```
+
+Dann `http://localhost:3000` öffnen, Anmeldung **test** / **test**. Beenden mit `Strg+C`,
+Datenbank wegwerfen mit `… down -v` statt `up --build`.
+
+`compose.local.yml` veröffentlicht die Ports (App 3000, PostgreSQL 3432), `.env.local` enthält
+Wegwerf-Zugangsdaten. Beides gilt nur lokal: In Coolify läuft ausschließlich `docker-compose.yml`,
+dort macht Traefik die App erreichbar und die Zugangsdaten kommen aus den Umgebungsvariablen.
+
 **Build-Tool Maven:** Spotless, Checkstyle, PMD und SpotBugs sind ausgereifte Maven-Plugins, die
 sich an `verify` binden lassen und den Build bei einem Verstoß abbrechen. Die Build-Logik bleibt
 deklarativ in `pom.xml`.
 
-**CSS:** Die Tailwind-Standalone-CLI und das daisyUI-Plugin werden beim Build in festen Versionen
-geladen (`pom.xml`, Properties `tailwind.version` und `daisyui.version`). Node und npm sind nicht
-nötig. Eingabe ist `src/main/frontend/app.css`, Ausgabe `static/css/app.css` im JAR.
+**Frontend-Bibliotheken:** Es sind keine Fremdbibliotheken eingecheckt. Alle Versionen stehen als
+Properties in `pom.xml`, Node und npm sind nicht nötig.
+
+- htmx und Alpine.js kommen als WebJars und werden unter `/webjars/...` ausgeliefert.
+- daisyUI kommt als WebJar. Der Build entpackt es für die Tailwind-Standalone-CLI, die
+  `src/main/frontend/app.css` zu `static/css/app.css` im JAR übersetzt.
+- Tailwind-CLI und Motion (für Motion gibt es kein WebJar) lädt der Build in fester Version und
+  prüft die SHA-256-Prüfsumme. Bei einem Versionswechsel muss die Prüfsumme in `pom.xml` mit
+  angepasst werden.
 
 **Statische Prüfungen** (Konfiguration in `config/`):
 

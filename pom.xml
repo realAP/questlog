@@ -19,8 +19,14 @@
   <properties>
     <java.version>25</java.version>
     <tailwind.version>4.3.5</tailwind.version>
-    <daisyui.version>5.7.50</daisyui.version>
     <tailwind.binary>tailwindcss-linux-x64</tailwind.binary>
+    <tailwind.sha256>e47695cee3f0d90623a91f3939b08bdee610eb5ad99340adff9d4145b284d6cc</tailwind.sha256>
+    <daisyui.version>5.7.50</daisyui.version>
+    <htmx.version>2.0.11</htmx.version>
+    <alpinejs.version>3.17.5</alpinejs.version>
+    <!-- Motion gibt es nicht als WebJar; der Build lädt das npm-Paket und prüft die Prüfsumme. -->
+    <motion.version>14.12.0</motion.version>
+    <motion.sha256>6afb001d8bfcf38cd5cca420a720322e3e881c8d3b333f14373c5ed60b44c51e</motion.sha256>
     <frontend.tools>${project.build.directory}/frontend-tools</frontend.tools>
     <archunit.version>1.5.1</archunit.version>
     <checkstyle.version>14.4.0</checkstyle.version>
@@ -57,6 +63,20 @@
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars.npm</groupId>
+      <artifactId>htmx.org</artifactId>
+      <version>${htmx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars.npm</groupId>
+      <artifactId>alpinejs</artifactId>
+      <version>${alpinejs.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>webjars-locator-lite</artifactId>
     </dependency>
     <dependency>
       <groupId>org.postgresql</groupId>
@@ -118,23 +138,46 @@
               <uri>https://github.com/tailwindlabs/tailwindcss/releases/download/v${tailwind.version}/${tailwind.binary}</uri>
               <outputDirectory>${frontend.tools}</outputDirectory>
               <outputFileName>tailwindcss</outputFileName>
+              <sha256>${tailwind.sha256}</sha256>
             </configuration>
           </execution>
+          <execution>
+            <id>motion</id>
+            <phase>generate-resources</phase>
+            <goals><goal>wget</goal></goals>
+            <configuration>
+              <uri>https://registry.npmjs.org/motion/-/motion-${motion.version}.tgz</uri>
+              <outputDirectory>${frontend.tools}/motion</outputDirectory>
+              <sha256>${motion.sha256}</sha256>
+              <unpack>true</unpack>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- daisyUI kommt als WebJar und wird für die Tailwind-CLI als node_modules bereitgestellt. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
           <execution>
             <id>daisyui</id>
             <phase>generate-resources</phase>
-            <goals><goal>wget</goal></goals>
+            <goals><goal>unpack</goal></goals>
             <configuration>
-              <uri>https://github.com/saadeghi/daisyui/releases/download/v${daisyui.version}/daisyui.mjs</uri>
-              <outputDirectory>${frontend.tools}</outputDirectory>
-            </configuration>
-          </execution>
-          <execution>
-            <id>daisyui-theme</id>
-            <phase>generate-resources</phase>
-            <goals><goal>wget</goal></goals>
-            <configuration>
-              <uri>https://github.com/saadeghi/daisyui/releases/download/v${daisyui.version}/daisyui-theme.mjs</uri>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.webjars.npm</groupId>
+                  <artifactId>daisyui</artifactId>
+                  <version>${daisyui.version}</version>
+                  <includes>META-INF/resources/webjars/daisyui/${daisyui.version}/**</includes>
+                  <fileMappers>
+                    <org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
+                      <pattern>^META-INF/resources/webjars/daisyui/[^/]+/</pattern>
+                      <replacement>node_modules/daisyui/</replacement>
+                    </org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
+                  </fileMappers>
+                </artifactItem>
+              </artifactItems>
               <outputDirectory>${frontend.tools}</outputDirectory>
             </configuration>
           </execution>
@@ -153,7 +196,7 @@
               <executable>sh</executable>
               <arguments>
                 <argument>-c</argument>
-                <argument>chmod +x "${frontend.tools}/tailwindcss" &amp;&amp; cp src/main/frontend/app.css "${frontend.tools}/app.css" &amp;&amp; "${frontend.tools}/tailwindcss" --cwd "${project.basedir}" -i "${frontend.tools}/app.css" -o "${project.build.outputDirectory}/static/css/app.css" --minify</argument>
+                <argument>chmod +x "${frontend.tools}/tailwindcss" &amp;&amp; cp src/main/frontend/app.css "${frontend.tools}/app.css" &amp;&amp; mkdir -p "${project.build.outputDirectory}/static/js/vendor" &amp;&amp; cp "${frontend.tools}/motion/package/dist/motion.js" "${project.build.outputDirectory}/static/js/vendor/motion.js" &amp;&amp; "${frontend.tools}/tailwindcss" --cwd "${project.basedir}" -i "${frontend.tools}/app.css" -o "${project.build.outputDirectory}/static/css/app.css" --minify</argument>
               </arguments>
             </configuration>
           </execution>
@@ -272,12 +315,18 @@
     <profile>
       <id>arm64</id>
       <activation><os><arch>aarch64</arch></os></activation>
-      <properties><tailwind.binary>tailwindcss-linux-arm64</tailwind.binary></properties>
+      <properties>
+        <tailwind.binary>tailwindcss-linux-arm64</tailwind.binary>
+        <tailwind.sha256>ffcd0d21dbd7c605dc12743ff0c0b47debc963c86b399674084c1c8f2c96ecad</tailwind.sha256>
+      </properties>
     </profile>
     <profile>
       <id>mac-arm64</id>
       <activation><os><family>mac</family><arch>aarch64</arch></os></activation>
-      <properties><tailwind.binary>tailwindcss-macos-arm64</tailwind.binary></properties>
+      <properties>
+        <tailwind.binary>tailwindcss-macos-arm64</tailwind.binary>
+        <tailwind.sha256>f3f4f5d1727e2b693b8f1c9a1492b5dd87008c86ea286bee1589cb458e6235fc</tailwind.sha256>
+      </properties>
     </profile>
   </profiles>
 </project>
