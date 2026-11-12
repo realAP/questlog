@@ -14,6 +14,8 @@
   <template id="icon-detergent"><svg th:replace="~{fragments/icons :: detergent('size-full')}"></svg></template>
   <template id="icon-clock"><svg th:replace="~{fragments/icons :: clock('size-full')}"></svg></template>
   <template id="icon-check"><svg th:replace="~{fragments/icons :: check('size-full')}"></svg></template>
+  <template id="icon-plus"><svg th:replace="~{fragments/icons :: plus('size-full')}"></svg></template>
+  <template id="icon-minus"><svg th:replace="~{fragments/icons :: minus('size-full')}"></svg></template>
 </div>
 
 <div class="mx-auto flex min-h-dvh max-w-md flex-col px-5" x-data="laundryDraft" :data-labels="labels">
@@ -46,7 +48,9 @@
       </template>
     </div>
 
-    <!-- Variante 3: Unterschritte als Symbole, klappt beim Antippen der Etappe auf -->
+    <!-- Antippen irgendwo schließt die Symbolreihe wieder -->
+    <div x-show="peek" x-cloak class="fixed inset-0 z-[9]" @click="closePeek()"></div>
+    <!-- Unterschritte als Symbole, klappt beim Antippen der Etappe auf -->
     <div x-show="peek" x-cloak class="absolute inset-x-0 top-full z-10 flex"
          :class="['justify-start', 'justify-center', 'justify-end'][stageIndex]"
          x-transition:enter="transition ease-out duration-200" x-transition:enter-start="-translate-y-1 opacity-0"
@@ -147,9 +151,9 @@
                           :class="custom ? 'bg-base-100 font-semibold shadow-sm' : 'text-base-content/70'" :aria-pressed="custom" @click="custom = true">Andere</button>
                 </div>
                 <div x-show="custom" class="flex items-center gap-5">
-                  <button type="button" class="size-11 rounded-full bg-base-200 text-xl" aria-label="Weniger" @click="adjust(-1)">−</button>
+                  <button type="button" class="grid size-11 place-items-center rounded-full bg-base-200 transition-colors active:bg-base-300" aria-label="Weniger" @click="nudge($event, -1)"><span class="size-5" x-html="icon('minus')"></span></button>
                   <span class="min-w-20 text-[17px] font-semibold tabular-nums" x-text="duration(chosenMinutes)"></span>
-                  <button type="button" class="size-11 rounded-full bg-base-200 text-xl" aria-label="Mehr" @click="adjust(1)">+</button>
+                  <button type="button" class="grid size-11 place-items-center rounded-full bg-base-200 transition-colors active:bg-base-300" aria-label="Mehr" @click="nudge($event, 1)"><span class="size-5" x-html="icon('plus')"></span></button>
                 </div>
                 <p class="text-[15px] text-base-content/55">fertig <span x-text="endFor(chosenMinutes)"></span></p>
               </div>

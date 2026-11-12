@@ -1,10 +1,12 @@
 // Entwurf der Wäsche-Quest. Gestaltungswerte stehen in DESIGN, der Ablauf in QUEST.
 (() => {
   const DESIGN = {
-    textOut: { duration: 0.1 },
+    textOut: { duration: 0.15 },
     textIn: { duration: 0.25, distance: 8 },
     press: { scale: 0.97, bounce: 0.2, duration: 0.25 },
-    celebrate: { hold: 0.2, pop: 1.12, ripple: 0.4, dots: 6, dotDistance: 46 },
+    // Mini-Celebration: alle Teile laufen gleichzeitig, danach bleibt das Häkchen kurz stehen,
+    // erst dann blendet der Schritt aus. So wird nichts abgeschnitten.
+    celebrate: { pop: 0.3, popScale: 1.12, ripple: 0.45, dots: 6, dotDistance: 46, dotsDuration: 0.48, rest: 0.18 },
     finale: { ring: 0.6, title: 0.3 },
   };
   const EASE_OUT = [0.16, 1, 0.3, 1];
@@ -284,17 +286,21 @@
         const fromHost = this.root.querySelector(`[data-ring-host="${from}"]`);
         const toHost = this.root.querySelector(`[data-ring-host="${to}"]`);
         if (!fromHost || !toHost || QL.reducedMotion) return null;
+        const header = fromHost.closest("header");
+        const origin = header.getBoundingClientRect();
         const a = fromHost.getBoundingClientRect();
         const b = toHost.getBoundingClientRect();
         const traveller = document.createElement("span");
-        traveller.className = "pointer-events-none fixed z-20";
-        Object.assign(traveller.style, { left: `${a.left}px`, top: `${a.top}px`, width: `${a.width}px`, height: `${a.height}px` });
+        traveller.className = "pointer-events-none absolute z-20";
+        Object.assign(traveller.style, { left: `${a.left - origin.left}px`, top: `${a.top - origin.top}px`, width: `${a.width}px`, height: `${a.height}px` });
         traveller.innerHTML = `<svg class="size-full -rotate-90" viewBox="0 0 100 100"><circle cx="50" cy="50" r="${RING.radius}" fill="none" stroke-width="${RING.width}" stroke="var(--color-primary)"/></svg>`;
-        document.body.append(traveller);
+        header.append(traveller);
         fromHost.dataset.travelling = "true";
         this.travelFrom = from;
         fromHost.innerHTML = this.fullRingSvg();
-        await Motion.animate(traveller, { x: [0, b.left - a.left], scale: [1, 0.55, 1], opacity: [1, 0.8, 1] },
+        traveller.dataset.x = String(b.left - a.left);
+        traveller.dataset.y = String(b.top - a.top);
+        await Motion.animate(traveller, { x: [0, b.left - a.left], y: [0, b.top - a.top], scale: [1, 0.55, 1], opacity: [1, 0.8, 1] },
           { duration: RING.travel, ease: [0.65, 0, 0.35, 1] }).finished;
         delete fromHost.dataset.travelling;
         this.travelFrom = null;
@@ -306,7 +312,15 @@
         await this.$nextTick();
         await this.$nextTick();
         const host = this.root.querySelector(`[data-ring-host="${to}"]`);
-        if (host) Motion.animate(host, { opacity: [0, 1] }, { duration: RING.settle });
+        if (host) {
+          // Hat sich das Layout währenddessen verschoben, den Rest mit derselben Verschiebung ausgleichen.
+          const now = traveller.getBoundingClientRect();
+          const target = host.getBoundingClientRect();
+          const x = Number(traveller.dataset.x) + (target.left - now.left);
+          const y = Number(traveller.dataset.y) + (target.top - now.top);
+          Motion.animate(traveller, { x, y }, { duration: 0.12, ease: EASE_OUT });
+          Motion.animate(host, { opacity: [0, 1] }, { duration: RING.settle });
+        }
         await Motion.animate(traveller, { opacity: [1, 0] }, { duration: RING.settle }).finished;
         traveller.remove();
       },
@@ -317,6 +331,17 @@
         this.peek = !this.peek;
         clearTimeout(this.peekTimer);
         if (this.peek) this.peekTimer = setTimeout(() => (this.peek = false), 3000);
+      },
+
+      closePeek() {
+        this.peek = false;
+        clearTimeout(this.peekTimer);
+      },
+
+      // Kurzes Nachgeben für kleine Bedienelemente wie Minus und Plus.
+      nudge(event, sign) {
+        QL.animate(event.currentTarget, { scale: [0.88, 1] }, QL.spring(0.35, 0.25));
+        this.adjust(sign);
       },
 
       // ---------- Ablauf ----------
@@ -351,12 +376,15 @@
         this.checking = true;
         await this.$nextTick();
         const badge = [...this.root.querySelectorAll("[data-celebrate]")].find((el) => el.offsetParent !== null);
+        const c = DESIGN.celebrate;
         if (!badge || QL.reducedMotion) {
-          await wait(DESIGN.celebrate.hold);
+          await wait(c.rest + 0.2);
           return;
         }
-        QL.animate(badge, { scale: [1, DESIGN.celebrate.pop, 1] }, { duration: 0.32, ease: EASE_OUT });
-        QL.animate(badge.querySelector("[data-ripple]"), { scale: [1, 1.7], opacity: [0.5, 0] }, { duration: DESIGN.celebrate.ripple, ease: "easeOut" });
+        const running = [
+          Motion.animate(badge, { scale: [1, c.popScale, 1] }, { duration: c.pop, ease: EASE_OUT }),
+          Motion.animate(badge.querySelector("[data-ripple]"), { scale: [1, 1.7], opacity: [0.5, 0] }, { duration: c.ripple, ease: "easeOut" }),
+        ];
         const layer = badge.querySelector("[data-burst]");
         const spread = badge.offsetWidth / 2;
         layer.replaceChildren();
@@ -366,10 +394,11 @@
           layer.append(dot);
           const angle = (i / DESIGN.celebrate.dots) * Math.PI * 2 - Math.PI / 2;
           const d = spread + DESIGN.celebrate.dotDistance * (spread / 48);
-          Motion.animate(dot, { x: [Math.cos(angle) * spread, Math.cos(angle) * d], y: [Math.sin(angle) * spread, Math.sin(angle) * d], opacity: [1, 0], scale: [1, 0.5] },
-            { duration: 0.42, ease: EASE_OUT });
+          running.push(Motion.animate(dot, { x: [Math.cos(angle) * spread, Math.cos(angle) * d], y: [Math.sin(angle) * spread, Math.sin(angle) * d], opacity: [1, 0], scale: [1, 0.5] },
+            { duration: c.dotsDuration, ease: EASE_OUT }));
         }
-        await wait(DESIGN.celebrate.hold + 0.12);
+        await Promise.all(running.map((animation) => animation.finished));
+        await wait(c.rest);
       },
 
       async complete(event) {
