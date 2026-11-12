@@ -21,7 +21,7 @@
   <!-- Nur im Entwurf: ein Button öffnet die Varianten, damit die Ansicht selbst unverändert bleibt -->
   <div class="flex items-center justify-end pt-2">
     <button type="button" class="h-11 rounded-[12px] px-3 text-[15px] text-base-content/60" @click="sheet = true" :aria-expanded="sheet"
-            x-text="`Varianten · ${views[view]}` + (middleViews.length ? ` · ${middleViews[middle]}` : '')"></button>
+            x-text="middleViews.length ? `Varianten · ${middleViews[middle]}` : 'Varianten'"></button>
   </div>
 
   <!-- Stepper: Etappen als Symbole, der Ring um die aktuelle Etappe zeigt ihre Unterschritte -->
@@ -32,14 +32,14 @@
         <div class="contents">
           <button type="button" class="relative grid size-11 shrink-0 place-items-center rounded-full transition-colors duration-300" :data-node="s"
                   :class="{ 'bg-primary text-primary-content': stageState(s) === 'current', 'bg-primary/15 text-primary': stageState(s) === 'done', 'bg-base-200 text-base-content/40': stageState(s) === 'open' }"
-                  :aria-label="item.name" :tabindex="view === 2 && s === stageIndex ? 0 : -1" @click="togglePeek(s)">
+                  :aria-label="item.name" :tabindex="s === stageIndex ? 0 : -1" @click="togglePeek(s)">
             <span class="size-[22px]" x-html="icon(item.icon)"></span>
             <span class="pointer-events-none absolute -inset-[7px]" :data-ring-host="s"></span>
           </button>
           <template x-if="s < quest.stages.length - 1">
             <div class="relative mx-3 h-0.5 flex-1 rounded-full bg-base-300">
               <div class="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-[550ms] ease-in-out"
-                   :style="`width: ${stageState(s) === 'done' ? 100 : 0}%`"></div>
+                   :style="`width: ${stageState(s) === 'done' || travelFrom === s ? 100 : 0}%`"></div>
             </div>
           </template>
         </div>
@@ -296,15 +296,6 @@
     <div class="flex items-center justify-between">
       <h2 class="text-[20px] font-semibold">Varianten</h2>
       <button type="button" class="h-11 px-2 text-[15px] font-semibold" @click="sheet = false">Fertig</button>
-    </div>
-    <div class="flex flex-col gap-2">
-      <p class="text-[15px] text-base-content/60">Oben: Stepper</p>
-      <div class="grid grid-cols-3 gap-1 rounded-[14px] bg-base-200 p-1" role="group" aria-label="Varianten oben">
-        <template x-for="(name, i) in views" :key="name">
-          <button type="button" class="h-11 rounded-[11px] text-[15px]" :class="view === i && 'bg-base-100 font-semibold shadow-sm'"
-                  :aria-pressed="view === i" @click="view = i" x-text="name"></button>
-        </template>
-      </div>
     </div>
     <div class="flex flex-col gap-2" x-show="middleViews.length">
       <p class="text-[15px] text-base-content/60" x-text="middleKind === 'choose' ? 'Mitte: Zeitwahl' : 'Mitte: laufende Zeit'"></p>

@@ -63,13 +63,13 @@
   };
   const WAIT_SECONDS = 120;
 
-  const SUBSTEP_VIEWS = ["Ring", "Ring wandert", "Antippen"];
   // Varianten für die Mitte, je nach Ansicht verschieden.
   const MIDDLE_VIEWS = {
     choose: ["Leiste", "Drehen", "Fertig um"],
     wait: ["Countdown", "Fertig um", "Segmente"],
   };
-  const RING = { radius: 46, width: 8, gap: 5, sweep: 0.35, travel: 0.55 };
+  // Segmente unterscheiden sich in der Dicke: erledigt und aktiv dick, offen dünn.
+  const RING = { radius: 46, width: 9, thin: 3.5, gap: 6, sweep: 0.35, travel: 0.55, settle: 0.22 };
 
   function duration(minutes) {
     if (minutes >= DAY) {
@@ -119,8 +119,6 @@
   function laundryDraft() {
     return {
       quest: QUEST,
-      views: SUBSTEP_VIEWS,
-      view: 0,
       middle: 0,
       sheet: false,
       endsAt: null,
@@ -136,6 +134,7 @@
       chosenMinutes: 0,
       custom: false,
       peek: false,
+      travelFrom: null,
       peekTimer: null,
       ringFill: {},
       root: null,
@@ -227,7 +226,7 @@
       // ---------- Ring um die aktuelle Etappe ----------
       // Ändert sich dieser Schlüssel, wird der Ring neu gezeichnet.
       get ringKey() {
-        return `${this.screen}|${this.stageIndex}|${this.stepIndex}|${this.checking}|${this.view}`;
+        return `${this.screen}|${this.stageIndex}|${this.stepIndex}|${this.checking}`;
       },
 
       segment(k, n) {
@@ -246,13 +245,15 @@
         const n = this.substeps.length;
         const circles = this.substeps.map((_, k) => {
           const { length, offset } = this.segment(k, n);
-          const track = this.subState(k) === "current"
-            ? "color-mix(in oklch, var(--color-primary) 35%, var(--color-base-300))"
+          const state = this.subState(k);
+          const open = state === "open";
+          const track = state === "current"
+            ? "color-mix(in oklch, var(--color-primary) 40%, transparent)"
             : "var(--color-base-300)";
-          const common = `cx="50" cy="50" r="${RING.radius}" fill="none" stroke-width="${RING.width}" stroke-linecap="round" pathLength="100" stroke-dashoffset="${offset}"`;
+          const base = `cx="50" cy="50" r="${RING.radius}" fill="none" stroke-linecap="butt" pathLength="100" stroke-dashoffset="${offset}"`;
           const filled = length * (this.ringFill[`${s}-${k}`] ?? 0);
-          return `<circle ${common} stroke="${track}" stroke-dasharray="${length} ${100 - length}"/>`
-            + `<circle ${common} data-seg="${k}" stroke="var(--color-primary)" stroke-dasharray="${filled} ${100 - filled}"/>`;
+          return `<circle ${base} stroke-width="${open ? RING.thin : RING.width}" stroke="${track}" stroke-dasharray="${length} ${100 - length}"/>`
+            + `<circle ${base} stroke-width="${RING.width}" data-seg="${k}" stroke="var(--color-primary)" stroke-dasharray="${filled} ${100 - filled}"/>`;
         }).join("");
         return `<svg class="size-full -rotate-90 overflow-visible" viewBox="0 0 100 100" aria-hidden="true">${circles}</svg>${this.clockMarker(n)}`;
       },
@@ -303,11 +304,12 @@
         }, { duration: RING.sweep, ease: EASE_OUT });
       },
 
-      // Variante 2: Der volle Ring wandert entlang der Linie zur nächsten Etappe.
+      // Der volle Ring wandert entlang der Linie zur nächsten Etappe und bleibt dort stehen,
+      // bis der neue, segmentierte Ring darunter gezeichnet ist.
       async travelRing(from, to) {
         const fromHost = this.root.querySelector(`[data-ring-host="${from}"]`);
         const toHost = this.root.querySelector(`[data-ring-host="${to}"]`);
-        if (!fromHost || !toHost || QL.reducedMotion) return;
+        if (!fromHost || !toHost || QL.reducedMotion) return null;
         const a = fromHost.getBoundingClientRect();
         const b = toHost.getBoundingClientRect();
         const traveller = document.createElement("span");
@@ -316,16 +318,28 @@
         traveller.innerHTML = `<svg class="size-full -rotate-90" viewBox="0 0 100 100"><circle cx="50" cy="50" r="${RING.radius}" fill="none" stroke-width="${RING.width}" stroke="var(--color-primary)"/></svg>`;
         document.body.append(traveller);
         fromHost.dataset.travelling = "true";
+        this.travelFrom = from;
         fromHost.innerHTML = this.fullRingSvg();
         await Motion.animate(traveller, { x: [0, b.left - a.left], scale: [1, 0.55, 1], opacity: [1, 0.8, 1] },
           { duration: RING.travel, ease: [0.65, 0, 0.35, 1] }).finished;
-        traveller.remove();
         delete fromHost.dataset.travelling;
+        this.travelFrom = null;
+        return traveller;
+      },
+
+      async settleRing(traveller, to) {
+        if (!traveller) return;
+        await this.$nextTick();
+        await this.$nextTick();
+        const host = this.root.querySelector(`[data-ring-host="${to}"]`);
+        if (host) Motion.animate(host, { opacity: [0, 1] }, { duration: RING.settle });
+        await Motion.animate(traveller, { opacity: [1, 0] }, { duration: RING.settle }).finished;
+        traveller.remove();
       },
 
       // Variante 3: Antippen der aktuellen Etappe zeigt ihre Unterschritte als Symbole.
       togglePeek(s) {
-        if (this.view !== 2 || s !== this.stageIndex) return;
+        if (s !== this.stageIndex) return;
         this.peek = !this.peek;
         clearTimeout(this.peekTimer);
         if (this.peek) this.peekTimer = setTimeout(() => (this.peek = false), 3000);
@@ -476,14 +490,15 @@
       async continueQuest(event) {
         await this.press(event);
         this.peek = false;
-        if (this.view === 1) await this.travelRing(this.stageIndex, this.stageIndex + 1);
+        const from = this.stageIndex;
+        const traveller = await this.travelRing(from, from + 1);
         await this.show(() => {
           this.stageIndex += 1;
           this.stepIndex = 0;
           this.screen = "step";
           this.prepareStep();
         });
-        this.popNode(this.stageIndex);
+        await this.settleRing(traveller, from + 1);
       },
 
       popNode(index) {
