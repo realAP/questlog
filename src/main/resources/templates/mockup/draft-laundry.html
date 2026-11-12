@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Questlog – Entwurf Wäsche', '/js/draft.js')}"></head>
+<body class="bg-base-100 text-base-content">
+<div class="mx-auto flex min-h-dvh max-w-md flex-col px-5" x-data="laundryDraft">
+
+  <!-- Gehört nur zum Entwurf: öffnet die Erklärung der aktuellen Ansicht. -->
+  <div class="flex justify-end pt-2">
+    <button type="button" class="btn btn-ghost btn-sm h-11 min-h-11 font-normal text-base-content/70"
+            @click="notesOpen = true" :aria-expanded="notesOpen">Was passiert hier?</button>
+  </div>
+
+  <!-- Kontext oben -->
+  <header class="flex items-center gap-3 pb-2" x-show="screen === 'step'" x-cloak>
+    <p class="min-w-0 flex-1 text-[15px] text-base-content/60">
+      <span x-text="quest.name"></span> · <span x-text="stage.name"></span><br>
+      Schritt <span x-text="stepIndex + 1"></span> von <span x-text="stage.steps.length"></span>
+    </p>
+    <svg x-show="choice.context === 'ring'" class="size-9 shrink-0 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+      <circle class="ql-ring-track" cx="50" cy="50" r="40" stroke-width="12"/>
+      <circle x-ref="stepRing" class="ql-ring" cx="50" cy="50" r="40" stroke-width="12" pathLength="100"/>
+    </svg>
+  </header>
+
+  <main class="flex flex-1 flex-col">
+
+    <!-- Start -->
+    <section x-show="screen === 'start'" class="flex flex-1 flex-col">
+      <div class="my-auto flex flex-col gap-8 py-10">
+        <h1 data-enter class="text-[34px] font-bold leading-tight" x-text="quest.name"></h1>
+        <ol data-enter class="flex flex-col gap-4">
+          <template x-for="item in quest.stages" :key="item.name">
+            <li class="flex items-baseline justify-between gap-4">
+              <span class="text-[17px]" x-text="item.name"></span>
+              <span class="text-[15px] text-base-content/50" x-show="item.wait" x-text="item.wait && `danach ${item.wait.label}`"></span>
+            </li>
+          </template>
+        </ol>
+      </div>
+      <footer class="pb-6">
+        <button type="button" class="btn btn-primary h-[52px] w-full text-[17px]"
+                :class="choice.shape === 'capsule' ? 'rounded-full' : 'rounded-[14px]'" @click="start($event)">Quest starten</button>
+      </footer>
+    </section>
+
+    <!-- Schritt -->
+    <section x-show="screen === 'step'" x-cloak class="flex flex-1 flex-col">
+      <div class="my-auto py-10">
+        <p data-enter class="text-[34px] font-semibold leading-tight" x-text="step"></p>
+      </div>
+      <footer class="pb-6">
+        <button type="button" class="btn btn-primary h-[52px] w-full text-[17px]"
+                :class="choice.shape === 'capsule' ? 'rounded-full' : 'rounded-[14px]'" @click="complete($event)">Erledigt</button>
+      </footer>
+    </section>
+
+    <!-- Wartezeit -->
+    <section x-show="screen === 'wait' || screen === 'waitDone'" x-cloak class="flex flex-1 flex-col">
+      <div class="my-auto flex flex-col items-center gap-6 py-10 text-center">
+        <div data-enter class="relative grid size-60 place-items-center">
+          <svg class="absolute inset-0 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+            <circle class="ql-ring-track" cx="50" cy="50" r="47" stroke-width="2.5"/>
+            <circle x-ref="timerRing" class="ql-ring transition-[stroke-dashoffset] duration-1000 ease-linear"
+                    cx="50" cy="50" r="47" stroke-width="2.5" pathLength="100" style="stroke-dashoffset: 0"/>
+          </svg>
+          <span x-show="screen === 'wait'" class="relative text-[34px] font-semibold tabular-nums" x-text="remainingText"></span>
+          <span x-show="screen === 'waitDone'" class="relative text-primary">
+            <svg th:replace="~{fragments/icons :: check('size-14')}"></svg>
+          </span>
+        </div>
+        <div data-enter class="flex flex-col gap-1">
+          <p class="text-[20px] font-semibold" x-text="screen === 'wait' ? `${stage.wait?.label} läuft` : `${stage.wait?.label} fertig`"></p>
+          <p class="text-[15px] text-base-content/60" x-show="screen === 'wait'">
+            Erinnerung <span x-text="stage.wait?.reminder"></span>, bis du weitermachst.
+          </p>
+        </div>
+      </div>
+      <footer class="pb-6">
+        <button type="button" x-show="screen === 'wait'" class="btn btn-ghost h-[52px] w-full font-normal text-base-content/60"
+                @click="skipTime()">Zeit vorspulen (nur im Entwurf)</button>
+        <button type="button" x-show="screen === 'waitDone'" class="btn btn-primary h-[52px] w-full text-[17px]"
+                :class="choice.shape === 'capsule' ? 'rounded-full' : 'rounded-[14px]'" @click="continueQuest($event)">
+          Weiter: <span x-text="nextStage?.name"></span>
+        </button>
+      </footer>
+    </section>
+
+    <!-- Abschluss -->
+    <section x-show="screen === 'done'" x-cloak class="flex flex-1 flex-col">
+      <div class="my-auto flex flex-col items-center gap-6 py-10 text-center">
+        <div class="relative grid size-48 place-items-center">
+          <div x-ref="sparks" class="pointer-events-none absolute inset-0"></div>
+          <svg class="absolute inset-0 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+            <circle class="ql-ring-track" cx="50" cy="50" r="44" stroke-width="6"/>
+            <circle x-ref="doneRing" class="ql-ring" cx="50" cy="50" r="44" stroke-width="6" pathLength="100"/>
+          </svg>
+          <span class="relative text-primary"><svg th:replace="~{fragments/icons :: check('size-16')}"></svg></span>
+        </div>
+        <p x-ref="doneTitle" class="text-[28px] font-semibold">Wäsche geschafft</p>
+      </div>
+      <footer class="pb-6">
+        <button type="button" class="btn h-[52px] w-full text-[17px]"
+                :class="choice.shape === 'capsule' ? 'rounded-full' : 'rounded-[14px]'" @click="restart()">Nochmal von vorn</button>
+      </footer>
+    </section>
+  </main>
+
+  <!-- Erklärung der aktuellen Ansicht -->
+  <div x-show="notesOpen" x-cloak class="fixed inset-0 z-10 bg-base-content/20" @click="notesOpen = false"></div>
+  <section x-show="notesOpen" x-cloak role="dialog" aria-label="Was passiert hier?"
+           class="fixed inset-x-0 bottom-0 z-20 mx-auto max-h-[75dvh] max-w-md overflow-y-auto rounded-t-[22px] bg-base-100 px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] shadow-[0_-8px_30px_oklch(0%_0_0/0.12)]"
+           x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-y-8 opacity-0"
+           x-transition:leave="transition ease-in duration-150" x-transition:leave-end="translate-y-8 opacity-0">
+    <div class="flex items-center justify-between">
+      <h2 class="text-[20px] font-semibold">Was passiert hier?</h2>
+      <button type="button" class="btn btn-ghost btn-sm h-11 min-h-11" @click="notesOpen = false">Schließen</button>
+    </div>
+
+    <template x-for="group in ['statisch', 'interaktiv', 'bewegt']" :key="group">
+      <div class="pt-4">
+        <h3 class="text-[13px] font-semibold uppercase tracking-wider text-base-content/50" x-text="group"></h3>
+        <ul class="mt-2 flex flex-col gap-2.5">
+          <template x-for="(item, index) in notes[group]" :key="group + index">
+            <li class="text-[15px] leading-snug">
+              <a class="link font-semibold" :href="`/glossar#${item.anchor}`" x-text="item.term"></a>:
+              <span class="text-base-content/80" x-text="item.text"></span>
+            </li>
+          </template>
+        </ul>
+      </div>
+    </template>
+
+    <template x-if="choices.length">
+      <div class="pt-6">
+        <h3 class="text-[13px] font-semibold uppercase tracking-wider text-base-content/50">Zur Wahl</h3>
+        <template x-for="option in choices" :key="option.key">
+          <div class="pt-3">
+            <p class="pb-1.5 text-[15px]" x-text="option.label"></p>
+            <div class="grid grid-cols-2 gap-1 rounded-[14px] bg-base-200 p-1" role="group" :aria-label="option.label">
+              <template x-for="[value, label] in option.options" :key="value">
+                <button type="button" class="h-11 rounded-[11px] text-[15px]"
+                        :class="choice[option.key] === value ? 'bg-base-100 font-semibold shadow-sm' : ''"
+                        :aria-pressed="choice[option.key] === value"
+                        @click="choice[option.key] = value; replayFinale()" x-text="label"></button>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+    </template>
+  </section>
+</div>
+</body>
+</html>

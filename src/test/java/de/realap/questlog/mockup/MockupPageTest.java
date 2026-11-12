@@ -40,6 +40,15 @@ class MockupPageTest {
   }
 
   @Test
+  void laundryDraftExplainsItsDesignDecisions() throws Exception {
+    mvc.perform(get("/entwurf/waesche"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("x-data=\"laundryDraft\"")))
+        .andExpect(content().string(containsString("Was passiert hier?")))
+        .andExpect(content().string(containsString("/js/draft.js")));
+  }
+
+  @Test
   void unknownIntensityIsNotFound() throws Exception {
     mvc.perform(get("/mockups/wild")).andExpect(status().isNotFound());
   }
