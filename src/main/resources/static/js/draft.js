@@ -1,15 +1,17 @@
 // Entwurf der Wäsche-Quest. Gestaltungswerte stehen in DESIGN, der Ablauf in QUEST.
 (() => {
   const DESIGN = {
-    textOut: { duration: 0.15 },
-    textIn: { duration: 0.25, distance: 8 },
+    // Alle Übergänge nutzen dieselbe weiche Kurve wie der wandernde Ring:
+    // sanft anfahren, sanft abbremsen, eine Bewegung statt vieler.
+    textOut: { duration: 0.32, distance: 14 },
+    textIn: { duration: 0.42, distance: 14 },
     press: { scale: 0.97, bounce: 0.2, duration: 0.25 },
-    // Mini-Celebration: alle Teile laufen gleichzeitig, danach bleibt das Häkchen kurz stehen,
-    // erst dann blendet der Schritt aus. So wird nichts abgeschnitten.
-    celebrate: { pop: 0.3, popScale: 1.12, ripple: 0.45, dots: 6, dotDistance: 46, dotsDuration: 0.48, rest: 0.18 },
+    // Mini-Celebration: Kreis wird grün, das Häkchen zeichnet sich ein, ein langsamer Lichthof.
+    celebrate: { check: 0.42, glow: 0.8, rest: 0.3 },
     finale: { ring: 0.6, title: 0.3 },
   };
   const EASE_OUT = [0.16, 1, 0.3, 1];
+  const EASE_SOFT = [0.65, 0, 0.35, 1];
   const wait = (seconds) => new Promise((resolve) => setTimeout(resolve, QL.reducedMotion ? 0 : seconds * 1000));
 
   const HOUR = 60;
@@ -66,7 +68,7 @@
   const WAIT_SECONDS = 120;
 
   // Segmente unterscheiden sich in der Dicke: erledigt und aktiv dick, offen dünn.
-  const RING = { radius: 46, width: 9, thin: 3.5, gap: 6, sweep: 0.35, travel: 0.55, settle: 0.22 };
+  const RING = { radius: 46, width: 9, thin: 3.5, gap: 6, sweep: 0.5, travel: 0.55, settle: 0.22 };
 
   function duration(minutes) {
     if (minutes >= DAY) {
@@ -156,25 +158,6 @@
       },
       endFor(minutes) {
         return finishedAt(new Date(Date.now() + minutes * 60000));
-      },
-      // Segmente der laufenden Wartezeit: Stunden beim Waschen, Tage beim Trocknen.
-      get waitSegments() {
-        const unit = this.chosenMinutes >= DAY ? DAY : HOUR;
-        const n = Math.max(1, Math.min(12, Math.round(this.chosenMinutes / unit)));
-        const left = this.remaining * n;
-        return Array.from({ length: n }, (_, k) => Math.max(0, Math.min(1, left - k)));
-      },
-      waitRingSvg() {
-        const n = this.waitSegments.length;
-        const gap = n > 1 ? 2 : 0;
-        const circles = this.waitSegments.map((fill, k) => {
-          const length = 100 / n - gap;
-          const offset = -(k * 100) / n - gap / 2;
-          const common = `cx="50" cy="50" r="47" fill="none" stroke-width="2.5" stroke-linecap="round" pathLength="100" stroke-dashoffset="${offset}"`;
-          return `<circle ${common} stroke="var(--color-base-300)" stroke-dasharray="${length} ${100 - length}"/>`
-            + `<circle ${common} stroke="var(--color-primary)" stroke-dasharray="${length * fill} ${100 - length * fill}"/>`;
-        }).join("");
-        return `<svg class="size-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">${circles}</svg>`;
       },
       get waiting() {
         return this.screen === "wait" || this.screen === "waitDone";
@@ -277,7 +260,7 @@
         QL.tween(this.ringFill[key] ?? 0, 1, (v) => {
           this.ringFill[key] = v;
           circle?.setAttribute("stroke-dasharray", `${length * v} ${100 - length * v}`);
-        }, { duration: RING.sweep, ease: EASE_OUT });
+        }, { duration: RING.sweep, ease: EASE_SOFT });
       },
 
       // Der volle Ring wandert entlang der Linie zur nächsten Etappe und bleibt dort stehen,
@@ -353,10 +336,12 @@
 
       async show(change) {
         const parts = this.parts();
-        if (parts.length) await QL.animate(parts, { opacity: 0 }, { duration: DESIGN.textOut.duration });
+        if (parts.length) {
+          await QL.animate(parts, { opacity: 0, y: -DESIGN.textOut.distance }, { duration: DESIGN.textOut.duration, ease: EASE_SOFT });
+        }
         change();
         await this.$nextTick();
-        QL.animate(this.parts(), { opacity: [0, 1], y: [DESIGN.textIn.distance, 0] }, { duration: DESIGN.textIn.duration, ease: EASE_OUT });
+        QL.animate(this.parts(), { opacity: [0, 1], y: [DESIGN.textIn.distance, 0] }, { duration: DESIGN.textIn.duration, ease: EASE_SOFT });
       },
 
       parts() {
@@ -381,23 +366,16 @@
           await wait(c.rest + 0.2);
           return;
         }
+        const tick = badge.querySelector("svg path");
+        tick?.setAttribute("pathLength", "1");
         const running = [
-          Motion.animate(badge, { scale: [1, c.popScale, 1] }, { duration: c.pop, ease: EASE_OUT }),
-          Motion.animate(badge.querySelector("[data-ripple]"), { scale: [1, 1.7], opacity: [0.5, 0] }, { duration: c.ripple, ease: "easeOut" }),
+          Motion.animate(badge.querySelector("[data-ripple]"), { scale: [1, 1.35], opacity: [0.35, 0] }, { duration: c.glow, ease: EASE_OUT }),
         ];
-        const layer = badge.querySelector("[data-burst]");
-        const spread = badge.offsetWidth / 2;
-        layer.replaceChildren();
-        for (let i = 0; i < DESIGN.celebrate.dots; i += 1) {
-          const dot = document.createElement("span");
-          dot.className = "absolute left-1/2 top-1/2 -ml-1 -mt-1 size-2 rounded-full bg-primary";
-          layer.append(dot);
-          const angle = (i / DESIGN.celebrate.dots) * Math.PI * 2 - Math.PI / 2;
-          const d = spread + DESIGN.celebrate.dotDistance * (spread / 48);
-          running.push(Motion.animate(dot, { x: [Math.cos(angle) * spread, Math.cos(angle) * d], y: [Math.sin(angle) * spread, Math.sin(angle) * d], opacity: [1, 0], scale: [1, 0.5] },
-            { duration: c.dotsDuration, ease: EASE_OUT }));
+        if (tick) {
+          tick.style.strokeDasharray = "1";
+          running.push(Motion.animate(tick, { strokeDashoffset: [1, 0] }, { duration: c.check, ease: EASE_SOFT }));
         }
-        await Promise.all(running.map((animation) => animation.finished));
+        await running[running.length - 1].finished;
         await wait(c.rest);
       },
 
