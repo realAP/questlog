@@ -25,42 +25,45 @@
         name: "Waschen",
         icon: "washer",
         steps: [
-          { title: "Alles in den Wäschekorb", icon: "basket" },
-          { title: "Nach unten bringen", icon: "stairs", needs: { icon: "key", label: "Schlüssel" } },
+          { title: "Alles in den Wäschekorb", icon: "basket", scene: "s1" },
+          { title: "Nach unten bringen", icon: "stairs", scene: "s2", needs: { icon: "key", label: "Schlüssel" } },
           {
             title: "Maschine starten",
             icon: "washer",
+            scene: "s3",
+            small: true,
             startsWait: true,
             question: "Wie lange läuft der Waschgang?",
             action: "Waschvorgang starten",
             missing: "Waschmittel",
           },
         ],
-        wait: { label: "Waschgang", presets: [3 * HOUR, 6 * HOUR], preselect: 0, step: 15, min: 15, reminder: "alle 30 Minuten" },
+        wait: { label: "Waschgang", scene: "s4", presets: [3 * HOUR, 6 * HOUR], preselect: 0, step: 15, min: 15, reminder: "alle 30 Minuten" },
       },
       {
         name: "Trocknen",
         icon: "clothesline",
         steps: [
-          { title: "Wäsche holen", icon: "basket", needs: { icon: "key", label: "Schlüssel" } },
-          { title: "Wäsche aufhängen", icon: "clothesline" },
+          { title: "Wäsche holen", icon: "basket", scene: "s5", needs: { icon: "key", label: "Schlüssel" } },
+          { title: "Wäsche aufhängen", icon: "clothesline", scene: "s6" },
           {
             title: "Trocknen lassen",
             icon: "clothesline",
+            scene: "s7",
             startsWait: true,
             question: "Wie lange soll die Wäsche trocknen?",
             action: "Trocknen starten",
           },
         ],
-        wait: { label: "Trockenzeit", presets: [2 * DAY, 3 * DAY, 4 * DAY], preselect: 1, step: 12 * HOUR, min: 12 * HOUR, reminder: "morgens und abends" },
+        wait: { label: "Trockenzeit", scene: "s7", presets: [2 * DAY, 3 * DAY, 4 * DAY], preselect: 1, step: 12 * HOUR, min: 12 * HOUR, reminder: "morgens und abends" },
       },
       {
         name: "Aufräumen",
         icon: "hanger",
         steps: [
-          { title: "Wäsche abnehmen", icon: "clothesline" },
-          { title: "Wegräumen", icon: "hanger" },
-          { title: "Wäscheleine freiräumen", icon: "clothesline" },
+          { title: "Wäsche abnehmen", icon: "clothesline", scene: "s8" },
+          { title: "Wegräumen", icon: "hanger", scene: "s9" },
+          { title: "Ständer wegräumen", icon: "clothesline", scene: "s10" },
         ],
       },
     ],
@@ -109,6 +112,37 @@
     return `${date.toLocaleDateString("de-DE", { weekday: "short" }).replace(".", "")}, ${time}`;
   }
 
+  // Wie lange eine fertige Wartezeit schon wartet: "+20 Min", "+3 Std", "+1 Tag 2 Std".
+  function overdue(minutes) {
+    const t = parts(minutes);
+    if (t.d > 0) return `+${t.d} ${t.d === 1 ? "Tag" : "Tage"}${t.h ? ` ${t.h} Std` : ""}`;
+    if (t.h > 0) return `+${t.h} Std`;
+    return `+${t.m} Min`;
+  }
+
+  // Zeitlinie unter der Wartezeit: Tagesgrenzen als Striche, Wochentage mittig darunter.
+  // Bei fertigen Wartezeiten nimmt die Zeit bis zum Ziel 80 % ein, der Rest ist die Überzeit.
+  function dayMarks(start, end, scale) {
+    const marks = { ticks: [], labels: [] };
+    if (end - start < DAY * 60000) return marks;
+    const bounds = [start];
+    const midnight = new Date(start);
+    midnight.setHours(24, 0, 0, 0);
+    while (midnight.getTime() < end) {
+      bounds.push(midnight.getTime());
+      midnight.setDate(midnight.getDate() + 1);
+    }
+    bounds.push(end);
+    const at = (t) => ((t - start) / (end - start)) * scale;
+    bounds.slice(1, -1).forEach((t) => marks.ticks.push(at(t)));
+    bounds.slice(0, -1).forEach((t, i) => {
+      if (at(bounds[i + 1]) - at(t) < 10) return;
+      const text = new Date(t).toLocaleDateString("de-DE", { weekday: "short" }).replace(".", "");
+      marks.labels.push({ text, at: (at(t) + at(bounds[i + 1])) / 2 });
+    });
+    return marks;
+  }
+
   function laundryDraft() {
     return {
       quest: QUEST,
@@ -119,6 +153,8 @@
       stepIndex: 0,
       remaining: 1,
       timer: null,
+      over: 0,
+      overTimer: null,
       busy: false,
       checking: false,
       chosenMinutes: 0,
@@ -136,6 +172,27 @@
 
       icon(name) {
         return document.getElementById(`icon-${name}`)?.innerHTML ?? "";
+      },
+
+      scene(name) {
+        return name ? document.getElementById(`scene-${name}`)?.innerHTML ?? "" : "";
+      },
+
+      // ---------- Wartezeit als Szene mit Zeitlinie ----------
+      get waitScene() {
+        const name = this.stage.wait?.scene;
+        return this.screen === "waitDone" ? `${name}-done` : name;
+      },
+      get progress() {
+        return this.screen === "waitDone" ? 80 : (1 - this.remaining) * 100;
+      },
+      get overText() {
+        return overdue(this.over);
+      },
+      get marks() {
+        if (!this.endsAt) return { ticks: [], labels: [] };
+        const end = this.endsAt.getTime();
+        return dayMarks(end - this.chosenMinutes * 60000, end, this.screen === "waitDone" ? 80 : 100);
       },
 
       get stage() {
@@ -440,28 +497,27 @@
 
       startTimer() {
         this.endsAt = new Date(Date.now() + this.chosenMinutes * 60000);
-        QL.setRing(this.$refs.timerRing, 1);
         this.timer = setInterval(() => this.tick(1 / WAIT_SECONDS), 1000);
       },
 
       tick(amount) {
         this.remaining = Math.max(0, this.remaining - amount);
-        QL.setRing(this.$refs.timerRing, this.remaining);
         if (this.remaining === 0) this.finishWaiting();
       },
 
       async skipTime() {
         clearInterval(this.timer);
-        const ring = this.$refs.timerRing;
         await QL.tween(this.remaining, 0, (v) => {
           this.remaining = v;
-          QL.setRing(ring, v);
         }, { duration: 1, ease: "easeInOut" });
         this.finishWaiting();
       },
 
+      // Danach läuft die Überzeit im selben Zeitraffer weiter wie die Wartezeit.
       finishWaiting() {
         clearInterval(this.timer);
+        this.over = 0;
+        this.overTimer = setInterval(() => (this.over += this.chosenMinutes / WAIT_SECONDS), 1000);
         this.show(() => {
           this.screen = "waitDone";
         });
@@ -469,6 +525,7 @@
 
       async continueQuest(event) {
         await this.press(event);
+        clearInterval(this.overTimer);
         this.peek = false;
         const from = this.stageIndex;
         const traveller = await this.travelRing(from, from + 1);
@@ -499,6 +556,7 @@
 
       restart() {
         clearInterval(this.timer);
+        clearInterval(this.overTimer);
         this.show(() => {
           this.screen = "start";
           this.stageIndex = 0;

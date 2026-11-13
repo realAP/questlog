@@ -2,6 +2,8 @@
 <html lang="de" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head('Questlog – Entwurf Wäsche', '/js/draft.js')}"></head>
 <body class="bg-base-100 text-base-content">
+<link rel="stylesheet" th:href="@{/css/scenes.css}">
+<div th:replace="~{fragments/scenes :: scenes}"></div>
 
 <!-- Symbole einmal serverseitig gerendert, im Entwurf per Name abrufbar -->
 <div hidden>
@@ -111,14 +113,17 @@
     <section x-show="screen === 'step'" x-cloak class="flex flex-1 flex-col">
       <div class="my-auto flex flex-col items-center gap-6 py-8 text-center" data-enter>
 
-        <!-- Großes Schritt-Symbol, wird beim Abhaken zum Häkchen -->
-        <template x-if="true">
-          <div class="relative grid size-24 place-items-center rounded-full transition-colors duration-300" data-celebrate data-label="Schritt-Symbol"
-               :class="checking ? 'bg-primary text-primary-content' : 'bg-primary/12 text-primary'">
+        <!-- Schritt-Animation. Beim Abhaken tritt sie zurück und das Häkchen erscheint darüber. -->
+        <div class="ql-scene relative grid w-[min(240px,62vw)] place-items-center" data-celebrate data-label="Schritt-Animation">
+          <div class="relative z-10 grid size-24 place-items-center rounded-full bg-primary text-primary-content transition-opacity duration-300"
+               :class="checking ? 'opacity-100' : 'opacity-0'">
             <span data-ripple class="absolute inset-0 rounded-full border-2 border-primary opacity-0"></span>
-            <span class="size-11" x-html="icon(checking ? 'check' : step.icon)"></span>
+            <span class="size-11" x-html="icon('check')"></span>
           </div>
-        </template>
+          <div class="stage absolute inset-0 transition-opacity duration-300" :class="{ small: step.small, 'opacity-15': checking }"
+               x-html="scene(step.scene)"></div>
+          <div class="aspect-square w-full"></div>
+        </div>
 
         <p class="text-[30px] font-semibold leading-tight" x-text="step.title" data-label="Schritt-Titel"></p>
 
@@ -154,7 +159,9 @@
                   <span class="min-w-20 text-[17px] font-semibold tabular-nums" x-text="duration(chosenMinutes)"></span>
                   <button type="button" class="grid size-11 place-items-center rounded-full bg-base-200 transition-colors active:bg-base-300" aria-label="Mehr" @click="nudge($event, 1)"><span class="size-5" x-html="icon('plus')"></span></button>
                 </div>
-                <p class="text-[15px] text-base-content/55">fertig <span x-text="endFor(chosenMinutes)"></span></p>
+                <p class="flex items-center gap-1.5 text-[15px] text-base-content/55">
+                  <span class="size-4" x-html="icon('clock')"></span><span x-text="endFor(chosenMinutes)"></span>
+                </p>
               </div>
             </template>
 
@@ -192,20 +199,40 @@
     <!-- Wartezeit -->
     <section x-show="waiting" x-cloak class="flex flex-1 flex-col">
       <div class="my-auto flex flex-col items-center gap-6 py-8 text-center">
-        <div data-enter class="relative grid size-60 place-items-center" data-label="Timer-Ring">
-          <svg class="absolute inset-0 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
-            <circle class="ql-ring-track" cx="50" cy="50" r="47" stroke-width="2.5"/>
-            <circle x-ref="timerRing" class="ql-ring transition-[stroke-dashoffset] duration-1000 ease-linear"
-                    cx="50" cy="50" r="47" stroke-width="2.5" pathLength="100" style="stroke-dashoffset: 0"/>
-          </svg>
-
-          <span x-show="screen === 'wait'" class="relative max-w-44 text-[20px] font-semibold leading-snug" x-text="wordsText"></span>
-          <span x-show="screen === 'waitDone'" class="relative size-14 text-primary" x-html="icon('check')"></span>
+        <!-- Wartezeit: Szene mit Zeitlinie. Uhr und Uhrzeit oben, solange es läuft; fertig: Haken mit Uhr, unten die Überzeit. -->
+        <div data-enter class="ql-scene w-[min(260px,70vw)]" data-label="Wartezeit-Animation">
+          <div class="stage withtimer">
+            <div x-html="scene(waitScene)"></div>
+            <div class="tl7" :class="stage.wait?.scene === 's4' && 'm4'">
+              <div class="head">
+                <template x-if="screen === 'wait'">
+                  <span class="contents">
+                    <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" style="fill:none;stroke:var(--ink);stroke-width:1.6"/><path d="M9 5.2 V9.2 L11.8 10.9" style="fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round"/></svg>
+                    <span x-text="endText"></span>
+                  </span>
+                </template>
+                <template x-if="screen === 'waitDone'">
+                  <svg viewBox="0 0 24 20" style="width:30px;height:25px" role="img" aria-label="Fertig, wartet"><circle cx="9" cy="9" r="8" style="fill:var(--pr)"/><path d="M5.6 9.2 l2.3 2.3 l4.5 -4.8" style="fill:none;stroke:var(--prc);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round"/><circle cx="17.5" cy="13.5" r="5.6" style="fill:var(--ac);stroke:var(--card);stroke-width:1.6"/><path d="M17.5 10.9 V13.7 L19.4 14.9" style="fill:none;stroke:var(--card);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round"/></svg>
+                </template>
+              </div>
+              <div class="bar">
+                <i class="el transition-[width] duration-1000 ease-linear" :style="`width:${progress}%`"></i>
+                <i class="ov" x-show="screen === 'waitDone'" style="left:80%"></i>
+                <template x-for="t in marks.ticks" :key="t"><i class="tick" :style="`left:${t}%`"></i></template>
+                <svg class="end" viewBox="0 0 18 18" x-show="screen === 'wait'" style="left:100%"><circle cx="9" cy="9" r="7" style="fill:var(--card);stroke:var(--ink);stroke-width:1.6"/><path d="M5.8 9.2 l2.2 2.2 l4.3 -4.6" style="fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round"/></svg>
+                <svg class="end" viewBox="0 0 18 18" x-show="screen === 'waitDone'" style="left:80%"><circle cx="9" cy="9" r="8" style="fill:var(--pr)"/><path d="M5.6 9.2 l2.3 2.3 l4.5 -4.8" style="fill:none;stroke:var(--prc);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round"/></svg>
+                <i class="mk blink transition-[left] duration-1000 ease-linear" x-show="screen === 'wait'" :style="`left:${progress}%`"></i>
+              </div>
+              <div class="row days">
+                <template x-for="l in marks.labels" :key="l.at"><span :style="`left:${l.at}%`" x-text="l.text"></span></template>
+                <span class="late" x-show="screen === 'waitDone'" style="left:90%" x-text="overText"></span>
+              </div>
+            </div>
+          </div>
         </div>
         <div data-enter class="flex flex-col gap-1">
           <p class="text-[20px] font-semibold" x-text="screen === 'wait' ? `${stage.wait?.label} läuft` : `${stage.wait?.label} fertig`"></p>
           <p class="text-[15px] text-base-content/60" x-show="screen === 'wait'">
-            <span x-text="`fertig ${endText}`"></span><br>
             Danach erinnere ich dich <span x-text="stage.wait?.reminder"></span>.
           </p>
         </div>

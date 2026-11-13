@@ -40,13 +40,17 @@ class MockupPageTest {
   }
 
   @Test
-  void laundryDraftRendersWithLabelToggle() throws Exception {
+  void laundryDraftRendersWithLabelToggleAndScenes() throws Exception {
     mvc.perform(get("/entwurf/waesche"))
         .andExpect(status().isOk())
         .andExpect(content().string(containsString("x-data=\"laundryDraft\"")))
         .andExpect(content().string(containsString("id=\"icon-washer\"")))
         .andExpect(content().string(containsString("data-label=\"Erinnerung\"")))
-        .andExpect(content().string(containsString("/js/draft.js")));
+        .andExpect(content().string(containsString("/js/draft.js")))
+        .andExpect(content().string(containsString("/css/scenes.css")))
+        .andExpect(content().string(containsString("id=\"scene-s1\"")))
+        .andExpect(content().string(containsString("id=\"scene-s7-done\"")))
+        .andExpect(content().string(containsString("data-label=\"Wartezeit-Animation\"")));
   }
 
   @Test
