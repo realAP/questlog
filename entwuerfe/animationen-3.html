@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Questlog – Animationen, Runde 3</title>
+<style>
+  :root {
+    --bg: oklch(98.5% 0.006 85); --card: oklch(95.5% 0.008 85); --line: oklch(91% 0.01 85);
+    --ink: oklch(28% 0.015 70); --muted: oklch(28% 0.015 70 / 0.55);
+    --pr: oklch(52% 0.07 165); --pr2: oklch(80% 0.05 165); --ac: oklch(74% 0.11 70); --c3: oklch(86% 0.02 70);
+    --water: oklch(60% 0.05 200 / 0.35); --prc: oklch(98% 0.01 165);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: oklch(21% 0.008 70); --card: oklch(25% 0.01 70); --line: oklch(31% 0.012 70);
+      --ink: oklch(92% 0.008 85); --muted: oklch(92% 0.008 85 / 0.55);
+      --pr: oklch(72% 0.08 165); --pr2: oklch(45% 0.05 165); --ac: oklch(78% 0.1 70); --c3: oklch(40% 0.02 70);
+      --water: oklch(72% 0.05 200 / 0.35); --prc: oklch(20% 0.02 165);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 20px 80px; }
+  h1 { font-size: 28px; margin: 8px 0 4px; }
+  h2 { font-size: 20px; margin: 40px 0 2px; }
+  .hint { color: var(--muted); font-size: 15px; margin: 0 0 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  figure { margin: 0; background: var(--card); border-radius: 20px; padding: 12px 12px 14px; cursor: pointer; }
+  figure:active { transform: scale(0.98); }
+  figcaption { font-size: 14px; margin-top: 6px; }
+  figcaption b { display: block; font-size: 15px; }
+  figcaption span { color: var(--muted); }
+  .stage { aspect-ratio: 1; }
+  .small .stage { padding: 18%; }
+
+  /* Großansicht im Schritt-Layout */
+  #ctx { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column; align-items: center; padding: 40px 20px 32px; z-index: 5; }
+  #ctx.open { display: flex; }
+  #ctx .t { font-size: 28px; font-weight: 700; text-align: center; margin-top: 12px; }
+  #ctx .v { color: var(--muted); font-size: 15px; }
+  #ctx .big { width: min(240px, 62vw); margin: auto 0; }
+  #ctx.small .big { width: min(130px, 34vw); }
+  #ctx .btn { width: 100%; max-width: 420px; height: 52px; border: 0; border-radius: 14px; background: var(--pr); color: var(--prc); font-size: 17px; font-weight: 600; }
+  #ctx .close { color: var(--muted); font-size: 15px; margin-top: 14px; }
+
+  /* Zeichenstil */
+  svg.sc { width: 100%; height: 100%; display: block; overflow: visible; }
+  svg.clip { overflow: hidden; }
+  .sc *:not([transform]) { transform-box: fill-box; }
+  .ln { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .lp { fill: none; stroke: var(--pr); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .fc { fill: var(--card); }
+  .fp { fill: var(--pr); }
+  .ff { fill: var(--line); }
+  .o { transform-origin: center; } .ot { transform-origin: 50% 0; } .ob { transform-origin: 50% 100%; }
+  .ol { transform-origin: 0 50%; } .or { transform-origin: 100% 50%; }
+  .vb { transform-box: view-box !important; }
+  .muted { opacity: 0.35; }
+  text { font: 600 9px system-ui, sans-serif; fill: var(--muted); }
+  .sc g, .sc use, .sc path, .sc circle, .sc rect { animation-iteration-count: infinite; }
+  .rot { transform-box: view-box !important; transform-origin: 60px 68px; }
+  @keyframes spin { to { transform: rotate(360deg) } }
+  .fl { font-size: 10px; font-weight: 700; }
+  .fade { animation: fade var(--d) infinite; }
+  @keyframes fade { 0% { opacity: 0 } 3%,95% { opacity: 1 } 100% { opacity: 0 } }
+
+  /* 1 */
+  .j1 { animation: j1 6s infinite; }
+  @keyframes j1 { 0%,8% { transform: none; opacity: 1; animation-timing-function: ease-out }
+    17% { transform: translate(calc(var(--dx) * .5), -44px) rotate(-60deg); animation-timing-function: ease-in }
+    27% { transform: translate(var(--dx), var(--dy)) rotate(-120deg); opacity: 1 } 30%,89% { transform: translate(var(--dx), calc(var(--dy) + 8px)) rotate(-120deg); opacity: 0 }
+    90% { transform: none; opacity: 0 } 100% { opacity: 1 } }
+  .lid1 { animation: lid1 6s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes lid1 { 0% { transform: none } 6%,78% { transform: rotate(-105deg) } 86%,100% { transform: none } }
+
+  /* 2 */
+  .car2 { animation: car2 10s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes car2 { 0%,20% { transform: none } 50%,100% { transform: translateY(82px) } }
+  .dl2 { animation: dl2 10s infinite cubic-bezier(.65,0,.35,1); transform-origin: 0 50%; }
+  .dr2 { animation: dl2 10s infinite cubic-bezier(.65,0,.35,1); transform-origin: 100% 50%; }
+  @keyframes dl2 { 0%,3% { transform: none } 8%,13% { transform: scaleX(.08) } 18%,50% { transform: none } 55%,100% { transform: scaleX(.08) } }
+  .bk2 { animation: bk2 10s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes bk2 { 0%,7% { transform: none } 13% { transform: translateX(29px) } 20% { transform: translateX(29px) } 50%,56% { transform: translate(29px,82px) } 65%,100% { transform: translate(49px,82px) } }
+  .fd2 > * { opacity: 0; }
+  .fd2 .f2 { animation: f2 10s infinite } .fd2 .f1 { animation: f1 10s infinite } .fd2 .f0 { animation: f0 10s infinite } .fd2 .fk { animation: fk 10s infinite }
+  @keyframes f2 { 0%,28% { opacity: 1 } 29%,100% { opacity: 0 } }
+  @keyframes f1 { 0%,28% { opacity: 0 } 29%,37% { opacity: 1 } 38%,100% { opacity: 0 } }
+  @keyframes f0 { 0%,37% { opacity: 0 } 38%,45% { opacity: 1 } 46%,100% { opacity: 0 } }
+  @keyframes fk { 0%,45% { opacity: 0 } 46%,100% { opacity: 1 } }
+  .ar2 { animation: ar2 10s infinite; opacity: 0; }
+  @keyframes ar2 { 0%,19% { opacity: 0 } 22%,48% { opacity: 1 } 51%,100% { opacity: 0 } }
+  .key2 { animation: key2 10s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes key2 { 0%,64% { opacity: 0; transform: translateX(-4px) } 67%,69% { opacity: 1; transform: none } 74%,78% { opacity: 1; transform: rotate(90deg) } 82%,100% { opacity: 0; transform: rotate(90deg) } }
+  .door2 { animation: door2 10s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes door2 { 0%,77% { transform: none } 84%,100% { transform: scaleX(.15) } }
+  .ap2 { animation: ap2 10s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes ap2 { 0%,1% { transform: none } 4%,8% { transform: scaleX(.15) } 12%,100% { transform: none } }
+
+  /* 3 */
+  .ld3 { animation: ld3 7s infinite; opacity: 0; }
+  @keyframes ld3 { 0%,8% { transform: none; opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 10% { opacity: 1 }
+    16%,18% { transform: translateY(-18px); animation-timing-function: cubic-bezier(.65,0,.35,1) }
+    30% { transform: translate(-53px,-16px) scale(.45) rotate(-15deg); opacity: 1 } 32%,100% { transform: translate(-53px,-16px) scale(.45); opacity: 0 } }
+  .door3 { animation: door3 7s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes door3 { 0%,60% { transform: scaleX(.12) } 70% { transform: scaleX(1) } 73% { transform: scale(.96) } 76%,92% { transform: none } 100% { transform: scaleX(.12) } }
+  .lid3 { animation: lid3 7s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes lid3 { 0%,2% { transform: none } 8%,58% { transform: rotate(105deg) } 66%,100% { transform: none } }
+  .led3 { animation: led3 7s infinite ease-in-out; }
+  @keyframes led3 { 0%,76% { opacity: .2 } 80% { opacity: 1 } 86% { opacity: .55 } 92%,96% { opacity: 1 } 100% { opacity: .2 } }
+  /* ---------- 4 Programmphasen ---------- */
+  .w4a { animation: w4a 12s infinite ease-in-out; } .w4b { animation: w4b 12s infinite ease-in-out; } .f4 { animation: f4 12s infinite; }
+  @keyframes w4a { 0% { transform: translateY(22px) } 8%,36% { transform: none } 42%,100% { transform: translateY(22px) } }
+  @keyframes w4b { 0%,42% { transform: translateY(22px) } 50%,62% { transform: none } 68%,100% { transform: translateY(22px) } }
+  @keyframes f4 { 0%,8% { opacity: 0 } 12%,34% { opacity: 1 } 38%,100% { opacity: 0 } }
+  .d4 { animation: d4 12s infinite; }
+  @keyframes d4 { 0%,8% { transform: none; animation-timing-function: linear } 36% { transform: rotate(360deg) } 42% { transform: rotate(360deg); animation-timing-function: linear }
+    62% { transform: rotate(720deg) } 68% { transform: rotate(720deg); animation-timing-function: cubic-bezier(.6,0,.4,1) } 88%,100% { transform: rotate(3240deg) } }
+  .sh4 { animation: sh4 12s infinite linear; }
+  @keyframes sh4 { 0%,70% { transform: none } 71%,73%,75%,77%,79%,81%,83%,85% { transform: translateX(1px) } 72%,74%,76%,78%,80%,82%,84% { transform: translateX(-1px) } 86%,100% { transform: none } }
+  .s4 { fill: var(--line); } .s4-1 { fill: var(--pr); }
+  .s4-2 { animation: s4-2 12s infinite; } .s4-3 { animation: s4-3 12s infinite; } .s4-4 { animation: s4-4 12s infinite; } .s4-5 { animation: s4-5 12s infinite; }
+  @keyframes s4-2 { 0%,7% { fill: var(--line) } 8%,97% { fill: var(--pr) } 100% { fill: var(--line) } }
+  @keyframes s4-3 { 0%,35% { fill: var(--line) } 36%,97% { fill: var(--pr) } 100% { fill: var(--line) } }
+  @keyframes s4-4 { 0%,67% { fill: var(--line) } 68%,97% { fill: var(--pr) } 100% { fill: var(--line) } }
+  @keyframes s4-5 { 0%,87% { fill: var(--line) } 88%,97% { fill: var(--pr) } 100% { fill: var(--line) } }
+
+
+  /* 5 */
+  .pan5 { animation: pan5 12s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes pan5 { 0%,26% { transform: none } 32%,70% { transform: translateX(-120px) } 76%,100% { transform: translateX(-240px) } }
+  .x5-1 { animation: x5-1 12s infinite; } .x5-2 { animation: x5-2 12s infinite; } .x5-3 { animation: x5-3 12s infinite; }
+  @keyframes x5-1 { 0%,26% { opacity: 1; transform: none } 29%,100% { opacity: 0; transform: scale(.94) } }
+  @keyframes x5-2 { 0%,29% { opacity: 0; transform: scale(1.06) } 32%,70% { opacity: 1; transform: none } 73%,100% { opacity: 0; transform: scale(.94) } }
+  @keyframes x5-3 { 0%,73% { opacity: 0; transform: scale(1.06) } 76%,100% { opacity: 1; transform: none } }
+  .ph1 { animation: ph1 12s infinite; } .ph2 { animation: ph2 12s infinite; } .ph3 { animation: ph3 12s infinite; }
+  @keyframes ph1 { 0%,27% { opacity: 1 } 31%,100% { opacity: 0 } }
+  @keyframes ph2 { 0%,27% { opacity: 0 } 31%,71% { opacity: 1 } 75%,100% { opacity: 0 } }
+  @keyframes ph3 { 0%,71% { opacity: 0 } 75%,100% { opacity: 1 } }
+  .c5d { animation: c5d 12s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes c5d { 0%,4% { transform: none } 22%,100% { transform: translateY(64px) } }
+  .c5u { animation: c5u 12s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes c5u { 0%,80% { transform: translateY(64px) } 94%,100% { transform: none } }
+  .d5 { animation: d5 12s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes d5 { 0%,33% { transform: none } 38%,64% { transform: scaleX(.15) } 69%,100% { transform: none } }
+  .l5 { animation: l5 12s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes l5 { 0%,33% { transform: none } 38%,64% { transform: rotate(105deg) } 69%,100% { transform: none } }
+  .u5-1,.u5-2,.u5-3 { animation: 12s infinite; opacity: 0; }
+  .u5-1 { animation-name: u5-1 } .u5-2 { animation-name: u5-2 } .u5-3 { animation-name: u5-3 }
+  @keyframes u5-1 { 0%,38% { transform: none; opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 39% { opacity: 1 } 42% { transform: translate(8px,-14px) } 48% { transform: translate(53px,16px) rotate(15deg); opacity: 1 } 50%,100% { transform: translate(53px,18px); opacity: 0 } }
+  @keyframes u5-2 { 0%,46% { transform: none; opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 47% { opacity: 1 } 50% { transform: translate(8px,-14px) } 56% { transform: translate(53px,16px) rotate(-15deg); opacity: 1 } 58%,100% { transform: translate(53px,18px); opacity: 0 } }
+  @keyframes u5-3 { 0%,54% { transform: none; opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 55% { opacity: 1 } 58% { transform: translate(8px,-14px) } 64% { transform: translate(53px,16px) rotate(15deg); opacity: 1 } 66%,100% { transform: translate(53px,18px); opacity: 0 } }
+
+  /* 6 */
+  .h6-1,.h6-2,.h6-3 { animation: 7s infinite linear; transform-origin: center; }
+  .h6-1 { animation-name: h6-1 } .h6-2 { animation-name: h6-2 } .h6-3 { animation-name: h6-3 }
+  @keyframes h6-1 { 0%,4% { transform: translate(24px,58px) scale(.6); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 6% { opacity: 1 } 15% { transform: none }
+    20%,35% { transform: translateY(2.9px) } 40%,55% { transform: translateY(5.1px) } 60%,88% { transform: translateY(7.3px); opacity: 1 } 98%,100% { transform: none; opacity: 0 } }
+  @keyframes h6-2 { 0%,24% { transform: translate(0,58px) scale(.6); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 26% { opacity: 1 } 35% { transform: translateY(4px) }
+    40%,55% { transform: translateY(7px) } 60%,88% { transform: translateY(10px); opacity: 1 } 98%,100% { transform: none; opacity: 0 } }
+  @keyframes h6-3 { 0%,44% { transform: translate(-24px,58px) scale(.6); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 46% { opacity: 1 } 55% { transform: translateY(5.1px) }
+    60%,88% { transform: translateY(7.3px); opacity: 1 } 98%,100% { transform: none; opacity: 0 } }
+  .l6 { animation: l6 7s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes l6 { 0% { transform: none } 4%,58% { transform: rotate(-105deg) } 66%,100% { transform: none } }
+
+  /* 7 */
+  .stage.withtimer { aspect-ratio: auto; }
+  .stage.withtimer svg { aspect-ratio: 1; height: auto; }
+  .timer { margin-top: 8px; text-align: center; font-size: 12px; color: var(--muted); }
+  .timer b { color: var(--ink); font-weight: 600; }
+  .timer .bar { height: 4px; border-radius: 2px; background: var(--line); margin: 0 14% 6px; overflow: hidden; }
+  .timer .bar i { display: block; height: 100%; width: 42%; background: var(--pr); border-radius: 2px; }
+  .timer .days svg { width: 64px; height: auto; display: block; margin: 0 auto 5px; }
+  .timer.row { display: flex; align-items: center; justify-content: center; gap: 8px; text-align: left; }
+  .timer .care { width: 26px; height: 26px; flex: none; }
+  #ctx .timer { font-size: 15px; } #ctx .timer .care { width: 34px; height: 34px; } #ctx .timer .days svg { width: 90px; }
+  .orb7 { animation: spin 12s infinite linear; transform-box: view-box !important; transform-origin: 60px 112px; }
+  .cnt7 { animation: spin 12s infinite linear reverse; transform-origin: center; }
+  .night7 { animation: night7 12s infinite ease-in-out; opacity: 0; }
+  @keyframes night7 { 0%,25% { opacity: 0 } 50% { opacity: .07 } 75%,100% { opacity: 0 } }
+  .star7 { animation: star7 12s infinite ease-in-out; opacity: 0; }
+  @keyframes star7 { 0%,36% { opacity: 0 } 46%,56% { opacity: 1 } 66%,100% { opacity: 0 } }
+  .wet7 { animation: wet7 12s infinite linear; fill: var(--ink); }
+  @keyframes wet7 { 0% { opacity: .32 } 70%,94% { opacity: 0 } 100% { opacity: .32 } }
+  .dv7 { animation: dv7 12s infinite; }
+  @keyframes dv7 { 0%,55% { opacity: 1 } 70%,94% { opacity: 0 } 100% { opacity: 1 } }
+  .k7v { animation: k7v 3s infinite ease-out; opacity: 0; }
+  @keyframes k7v { 0% { opacity: 0; transform: none } 30% { opacity: .9 } 100% { opacity: 0; transform: translateY(-16px) } }
+  .k7-sw { animation: k7-sw 4s infinite ease-in-out alternate; transform-origin: 50% 0; }
+  @keyframes k7-sw { from { transform: rotate(-3deg) } to { transform: rotate(3deg) } }
+  .k7c-w { animation: k7c-w 4s infinite ease-in-out; stroke-dasharray: 26 200; stroke-dashoffset: 26; }
+  @keyframes k7c-w { 0% { stroke-dashoffset: 26 } 100% { stroke-dashoffset: -110 } }
+  .k7c-b { animation: k7c-b 4s infinite ease-in-out; transform-origin: 50% 0; }
+  @keyframes k7c-b { 0%,20% { transform: rotate(0) } 45% { transform: rotate(-12deg) } 70% { transform: rotate(4deg) } 85%,100% { transform: rotate(0) } }
+
+  /* 8 */
+  .k8s { animation: k8s 8s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes k8s { 0%,6% { transform: none; opacity: 1 } 10% { transform: translateY(-4px) } 22% { transform: translate(20px,44px) } 30% { transform: translate(20px,44px) scaleY(.5) }
+    34% { transform: translate(20px,46px) scale(.8,.5); opacity: 1 } 38%,92% { transform: translate(20px,48px) scale(.7,.4); opacity: 0 } 93% { transform: none; opacity: 0 } 100% { transform: none; opacity: 1 } }
+  .k8h { animation: k8h 8s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes k8h { 0%,10% { transform: none; opacity: 1 } 14%,48% { transform: translateY(-2.8px) } 52% { transform: translateY(-6.8px) } 62% { transform: translate(-20px,34px) } 68% { transform: translate(-20px,34px) scaleY(.5) }
+    70% { transform: translate(-20px,36px) scale(.8,.5); opacity: 1 } 74%,92% { transform: translate(-20px,38px) scale(.7,.4); opacity: 0 } 93% { transform: none; opacity: 0 } 100% { transform: none; opacity: 1 } }
+  .k8p1 { animation: k8p1 8s infinite; } .k8p2 { animation: k8p2 8s infinite; }
+  @keyframes k8p1 { 0%,32% { opacity: 0; transform: scale(.9) } 38% { opacity: 1; transform: scale(1.06) } 50%,90% { opacity: 1; transform: none } 96%,100% { opacity: 0 } }
+  @keyframes k8p2 { 0%,68% { opacity: 0; transform: scale(.9) } 74% { opacity: 1; transform: scale(1.06) } 84%,90% { opacity: 1; transform: none } 96%,100% { opacity: 0 } }
+
+  /* 9 */
+  .k9e-1,.k9e-2,.k9e-3,.k9e-4 { animation: 6s infinite; }
+  .k9e-1 { animation-name: k9e-1 } .k9e-2 { animation-name: k9e-2 } .k9e-3 { animation-name: k9e-3 } .k9e-4 { animation-name: k9e-4 }
+  @keyframes k9e-1 { 0% { transform: translate(var(--dx),var(--dy)); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 3% { opacity: 1 } 16%,86% { transform: none; opacity: 1 } 94%,100% { opacity: 0 } }
+  @keyframes k9e-2 { 0%,14% { transform: translate(var(--dx),var(--dy)); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 17% { opacity: 1 } 30%,86% { transform: none; opacity: 1 } 94%,100% { opacity: 0 } }
+  @keyframes k9e-3 { 0%,28% { transform: translate(var(--dx),var(--dy)); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 31% { opacity: 1 } 44%,86% { transform: none; opacity: 1 } 94%,100% { opacity: 0 } }
+  @keyframes k9e-4 { 0%,42% { transform: translate(var(--dx),var(--dy)); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 45% { opacity: 1 } 58%,86% { transform: none; opacity: 1 } 94%,100% { opacity: 0 } }
+  .k9e-s { animation: k9e-s 6s infinite; opacity: 0; transform-origin: center; }
+  @keyframes k9e-s { 0%,60% { opacity: 0; transform: scale(.2) } 66% { opacity: 1; transform: scale(1) rotate(45deg) } 76%,100% { opacity: 0; transform: scale(.4) rotate(90deg) } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <path id="shirtP" d="M-6 -11 L-13 -7 L-10 -1 L-7 -3 V11 H7 V-3 L10 -1 L13 -7 L6 -11 Q0 -7 -6 -11 Z"/>
+    <path id="pantsP" d="M-8 -11 H8 L9.5 11 H2.5 L0 -1 L-2.5 11 H-9.5 Z"/>
+    <path id="sockP" d="M-4 -11 H3 V3 L8 6 Q11 9 8 11 H-1 Q-4 11 -4 7 Z"/>
+    <g id="shirt"><use href="#shirtP" style="fill:var(--ac);stroke:var(--ink);stroke-width:2;stroke-linejoin:round"/></g>
+    <g id="pants"><use href="#pantsP" style="fill:var(--c3);stroke:var(--ink);stroke-width:2;stroke-linejoin:round"/><path d="M-8 -7 H8" style="fill:none;stroke:var(--ink);stroke-width:1.5;opacity:.6"/></g>
+    <g id="sock"><use href="#sockP" style="fill:var(--pr2);stroke:var(--ink);stroke-width:2;stroke-linejoin:round"/></g>
+    <g id="hbody" style="stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round">
+      <rect x="-17" y="-32" width="34" height="32" rx="3" style="fill:var(--card)"/>
+      <path d="M-8 -25 V-7 M0 -25 V-7 M8 -25 V-7" style="fill:none;opacity:.45"/>
+    </g>
+    <rect id="hlid" x="-19" y="-37" width="38" height="5" rx="2" style="fill:var(--card);stroke:var(--ink);stroke-width:2.5"/>
+    <g id="hamper"><use href="#hbody"/><use href="#hlid"/></g>
+    <g id="washerBody" style="stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round">
+      <rect x="32" y="18" width="56" height="84" rx="8" style="fill:var(--card)"/><path d="M32 34 H88" style="fill:none"/><circle cx="46" cy="26" r="3.5" style="fill:none"/>
+    </g>
+    <clipPath id="drum"><circle cx="60" cy="68" r="15"/></clipPath>
+    <path id="star" d="M0 -5 l1.4 3.6 l3.6 1.4 l-3.6 1.4 l-1.4 3.6 l-1.4 -3.6 l-3.6 -1.4 l3.6 -1.4 z"/>
+    <rect id="foldS" x="-14" y="-5" width="28" height="10" rx="3" style="fill:var(--ac);stroke:var(--ink);stroke-width:2"/>
+    <rect id="foldP" x="-14" y="-5" width="28" height="10" rx="3" style="fill:var(--c3);stroke:var(--ink);stroke-width:2"/>
+    <rect id="foldK" x="-9" y="-4" width="18" height="8" rx="3" style="fill:var(--pr2);stroke:var(--ink);stroke-width:2"/>
+  </defs>
+</svg>
+<main>
+  <h1>Animationen, Runde 3</h1>
+  <p class="hint">Der ganze Ablauf mit deiner aktuellen Auswahl, Schritt 1 bis 9. Tippen zeigt die Variante groß im Schritt. <a href="animationen-2.html" style="color:var(--pr)">Runde 2</a> · <a href="animationen.html" style="color:var(--pr)">Runde 1</a></p>
+  <h2>1 · Alles in den Wäschekorb</h2>
+  <p class="hint">1A, das letzte Teil ist jetzt eine Hose statt eines Handtuchs.</p>
+  <div class="grid" data-step="Alles in den Wäschekorb" data-btn="Erledigt">
+    <figure data-v="A"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <path class="ln muted" d="M4 110 H116"/>
+      <g class="j1" style="--dx:70px;--dy:-4px"><use href="#sock" x="14" y="99"/></g>
+      <g class="j1" style="--dx:52px;--dy:-4px;animation-delay:1.2s"><use href="#shirt" x="32" y="99"/></g>
+      <g class="j1" style="--dx:34px;--dy:-4px;animation-delay:2.4s"><use href="#pants" x="50" y="99"/></g>
+      <g transform="translate(84 110)"><use href="#hbody"/><g class="lid1 ol"><use href="#hlid"/></g></g>
+    </svg></div><figcaption><b>A · Reinwerfen</b><span>Deckel auf, Socke, Shirt und Hose fliegen nacheinander hinein, Deckel zu.</span></figcaption></figure>
+  </div>
+
+  <h2>2 · Nach unten bringen</h2>
+  <p class="hint">Mehr Details: Wohnungstür im 2. Stock, Aufzug mit Türen und Etagenanzeige, Kellertür mit Schlüssel, dahinter die Maschine.</p>
+  <div class="grid" data-step="Nach unten bringen" data-btn="Erledigt">
+    <figure data-v="D3"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <rect class="ln" x="6" y="6" width="108" height="108" rx="4"/>
+      <path class="ln muted" d="M6 32 H48 M72 32 H114 M6 58 H48 M72 58 H114 M6 84 H48 M72 84 H114"/>
+      <rect x="48" y="6" width="24" height="108" style="fill:var(--line);opacity:.6"/><path class="ln" d="M48 6 V114 M72 6 V114"/>
+      <text x="10" y="17">2</text><text x="10" y="43">1</text><text x="10" y="69">EG</text><text x="10" y="95">K</text>
+      <rect x="22" y="12" width="14" height="20" rx="1.5" style="fill:var(--card);stroke:var(--ink);stroke-width:2"/>
+      <g class="ap2 ol"><rect x="22" y="12" width="14" height="20" rx="1.5" style="fill:var(--c3);stroke:var(--ink);stroke-width:2"/><circle cx="33" cy="22.5" r="1" style="fill:var(--ink)"/></g>
+      <rect x="82" y="11" width="24" height="15" rx="3" style="fill:var(--ink)"/>
+      <g class="fd2" style="font:700 10px system-ui,sans-serif;fill:var(--ac)"><text class="f2" x="94" y="22" text-anchor="middle" style="fill:var(--ac)">2</text><text class="f1" x="94" y="22" text-anchor="middle" style="fill:var(--ac)">1</text><text class="f0" x="94" y="22" text-anchor="middle" style="fill:var(--ac)">EG</text><text class="fk" x="94" y="22" text-anchor="middle" style="fill:var(--ac)">K</text></g>
+      <path class="ar2" d="M85 16.5 l2 2.5 l2 -2.5" style="fill:none;stroke:var(--ac);stroke-width:1.5;stroke-linecap:round"/>
+      <rect x="93" y="94" width="12" height="17" rx="2" style="fill:var(--card);stroke:var(--ink);stroke-width:1.5"/><circle cx="99" cy="104" r="3.5" style="fill:none;stroke:var(--ink);stroke-width:1.5"/><path d="M93 97.5 H105" style="stroke:var(--ink);stroke-width:1.2"/>
+      <rect class="ln" x="90" y="91" width="18" height="23" rx="1.5"/>
+      <g class="door2 ol"><rect x="90" y="91" width="18" height="23" rx="1.5" style="fill:var(--c3);stroke:var(--ink);stroke-width:2.5"/><circle cx="104" cy="103" r="1.2" style="fill:var(--ink)"/></g>
+      <g class="key2 o"><g transform="translate(86 103)" class="lp"><circle r="2.6"/><path d="M2.6 0 H8 M6.5 0 V2.2"/></g></g>
+      <g class="car2"><rect x="50" y="10" width="20" height="22" rx="1.5" style="fill:var(--card);stroke:var(--ink);stroke-width:2"/></g>
+      <g class="bk2"><g transform="translate(31 32) scale(.4)"><path d="M-15 -32 Q-8 -42 0 -35 Q8 -43 15 -32 Z" style="fill:var(--ac);stroke:var(--ink);stroke-width:3;stroke-linejoin:round"/><use href="#hamper"/></g></g>
+      <g class="car2"><g class="dl2"><rect x="50" y="10" width="10" height="22" style="fill:var(--line);stroke:var(--ink);stroke-width:1.5"/></g><g class="dr2"><rect x="60" y="10" width="10" height="22" style="fill:var(--line);stroke:var(--ink);stroke-width:1.5"/></g></g>
+    </svg></div><figcaption><b>D3 · Aufzug mit Details</b><span>Aus der Wohnung in den Aufzug, Türen zu, runter von 2 nach K, Türen auf, zur Kellertür, Schlüssel dreht, Tür auf.</span></figcaption></figure>
+  </div>
+
+  <h2>3 · Maschine starten</h2>
+  <p class="hint">Ruhiger: die Teile gleiten aus dem Korb in die Trommel, der Deckel klappt zur anderen Seite auf und ist nicht mehr im Weg.</p>
+  <div class="grid small" data-step="Maschine starten" data-btn="Waschvorgang starten">
+    <figure data-v="E3"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <g style="stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round"><rect x="10" y="22" width="58" height="84" rx="8" style="fill:var(--card)"/><path d="M10 38 H68" style="fill:none"/><circle cx="20" cy="30" r="3.5" style="fill:none"/></g>
+      <circle class="ln muted" cx="39" cy="72" r="14"/>
+      <circle class="fp led3" cx="58" cy="30" r="3"/>
+      <g class="ld3"><use href="#shirt" x="92" y="88"/></g>
+      <g class="ld3" style="animation-delay:.9s"><use href="#pants" x="92" y="88"/></g>
+      <g class="ld3" style="animation-delay:1.8s"><use href="#sock" x="92" y="88"/></g>
+      <g transform="translate(92 108)"><use href="#hbody"/><g class="lid3 or"><use href="#hlid"/></g></g>
+      <g class="door3 ol"><circle cx="39" cy="72" r="20" style="fill:var(--card);fill-opacity:.4;stroke:var(--ink);stroke-width:2.5"/><path class="ln" d="M55 66 v12"/></g>
+    </svg></div><figcaption><b>E3 · Einladen und starten</b><span>Hochheben, sanft in die Trommel, Tür klickt zu, Lämpchen an.</span></figcaption></figure>
+  </div>
+
+  <h2>4 · Waschgang läuft</h2>
+  <p class="hint">Wie Runde 2, die Phasen eines Waschgangs, nur mit Leiste, ohne Text.</p>
+  <div class="grid" data-step="Waschgang läuft" data-btn="Zurück zur Übersicht">
+    <figure data-v="E2"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <g class="sh4">
+        <use href="#washerBody"/><circle class="ln" cx="60" cy="68" r="21"/>
+        <g clip-path="url(#drum)">
+          <g class="w4a"><rect x="40" y="70" width="40" height="22" style="fill:var(--water)"/>
+            <g class="f4" style="fill:var(--card);stroke:var(--ink);stroke-width:1"><circle cx="50" cy="70" r="2.5"/><circle cx="57" cy="69" r="3"/><circle cx="66" cy="70" r="2.2"/><circle cx="71" cy="69.5" r="2.6"/></g>
+          </g>
+          <g class="w4b"><rect x="40" y="70" width="40" height="22" style="fill:var(--water);opacity:.55"/></g>
+          <g class="d4 rot"><use href="#shirt" transform="translate(60 59) scale(.55)"/><use href="#sock" transform="translate(53 74) scale(.55) rotate(120)"/><use href="#towel" transform="translate(68 74) scale(.5) rotate(-120)"/></g>
+        </g>
+        <circle class="ln muted" cx="60" cy="68" r="15"/>
+        <circle class="fp" cx="78" cy="26" r="3"/>
+      </g>
+      <rect class="s4 s4-1" x="24" y="106" width="12" height="3" rx="1.5"/><rect class="s4 s4-2" x="39" y="106" width="12" height="3" rx="1.5"/>
+      <rect class="s4 s4-3" x="54" y="106" width="12" height="3" rx="1.5"/><rect class="s4 s4-4" x="69" y="106" width="12" height="3" rx="1.5"/>
+      <rect class="s4 s4-5" x="84" y="106" width="12" height="3" rx="1.5"/>
+    </svg></div><figcaption><b>E2 · Phasen</b><span>Einlaufen, Waschen mit Schaum, Spülen, Schleudern mit Wackeln, Fertig. Hier 12 Sekunden statt Stunden.</span></figcaption></figure>
+  </div>
+
+
+  <h2>5 · Wäsche holen</h2>
+  <p class="hint">Drei Phasen: runter, ausladen, hoch. Oben zeigt eine Leiste mit drei Feldern, in welcher Phase man ist. Zwei Arten, den Szenenwechsel zu zeigen.</p>
+  <div class="grid" data-step="Wäsche holen" data-btn="Erledigt">
+    <figure data-v="A"><div class="stage"><svg class="sc clip" viewBox="0 0 120 120">
+      <g class="pan5"><g transform="translate(0 0)">
+        <rect class="ln" x="44" y="20" width="32" height="94" rx="3"/>
+        <text class="fl" x="84" y="32">2</text><text class="fl" x="84" y="110" style="fill:var(--pr)">K</text>
+        <g class="c5d"><rect x="48" y="24" width="24" height="22" rx="2" style="fill:var(--card);stroke:var(--ink);stroke-width:2"/><g transform="translate(60 45) scale(.42)"><use href="#hamper"/></g></g>
+      </g><g transform="translate(120 0)">
+        <g style="stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round"><rect x="10" y="28" width="58" height="84" rx="8" style="fill:var(--card)"/><path d="M10 44 H68" style="fill:none"/><circle cx="20" cy="36" r="3.5" style="fill:none"/></g>
+        <circle class="ln muted" cx="39" cy="78" r="14"/>
+        <g class="u5-1"><use href="#shirt" transform="translate(39 78) scale(.55)"/></g>
+        <g class="u5-2"><use href="#pants" transform="translate(40 78) scale(.55)"/></g>
+        <g class="u5-3"><use href="#sock" transform="translate(41 78) scale(.55)"/></g>
+        <g class="d5 ol"><circle cx="39" cy="78" r="20" style="fill:var(--card);fill-opacity:.4;stroke:var(--ink);stroke-width:2.5"/><path class="ln" d="M55 72 v12"/></g>
+        <g transform="translate(92 112) scale(.85)"><use href="#hbody"/><g class="l5 or"><use href="#hlid"/></g></g>
+      </g><g transform="translate(240 0)">
+        <rect class="ln" x="44" y="20" width="32" height="94" rx="3"/>
+        <text class="fl" x="84" y="32" style="fill:var(--pr)">2</text><text class="fl" x="84" y="110">K</text>
+        <g class="c5u"><rect x="48" y="24" width="24" height="22" rx="2" style="fill:var(--card);stroke:var(--ink);stroke-width:2"/><g transform="translate(60 45) scale(.42)"><path d="M-15 -32 Q-8 -42 0 -35 Q8 -43 15 -32 Z" style="fill:var(--ac);stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round"/><use href="#hamper"/></g></g>
+      </g></g>
+      <g>
+        <rect x="21" y="3" width="24" height="11" rx="5.5" class="ff"/><rect x="48" y="3" width="24" height="11" rx="5.5" class="ff"/><rect x="75" y="3" width="24" height="11" rx="5.5" class="ff"/>
+        <g class="ph1"><rect x="21" y="3" width="24" height="11" rx="5.5" class="fp"/></g>
+        <g class="ph2"><rect x="48" y="3" width="24" height="11" rx="5.5" class="fp"/></g>
+        <g class="ph3"><rect x="75" y="3" width="24" height="11" rx="5.5" class="fp"/></g>
+        <g style="fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round">
+          <path d="M33 5.5 v6 M30.5 9 l2.5 2.5 l2.5 -2.5"/><rect x="56.5" y="5" width="7" height="7" rx="1.2"/><circle cx="60" cy="9" r="1.8"/><path d="M87 11.5 v-6 M84.5 8 l2.5 -2.5 l2.5 2.5"/>
+        </g>
+      </g>
+    </svg></div><figcaption><b>A · Kamera fährt</b><span>Die Szenen liegen nebeneinander, das Bild schwenkt von einer zur nächsten. Man sieht, dass es weitergeht.</span></figcaption></figure>
+    <figure data-v="B"><div class="stage"><svg class="sc clip" viewBox="0 0 120 120">
+      <g class="x5-1 o"><g transform="translate(0 0)">
+        <rect class="ln" x="44" y="20" width="32" height="94" rx="3"/>
+        <text class="fl" x="84" y="32">2</text><text class="fl" x="84" y="110" style="fill:var(--pr)">K</text>
+        <g class="c5d"><rect x="48" y="24" width="24" height="22" rx="2" style="fill:var(--card);stroke:var(--ink);stroke-width:2"/><g transform="translate(60 45) scale(.42)"><use href="#hamper"/></g></g>
+      </g></g><g class="x5-2 o"><g transform="translate(0 0)">
+        <g style="stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round"><rect x="10" y="28" width="58" height="84" rx="8" style="fill:var(--card)"/><path d="M10 44 H68" style="fill:none"/><circle cx="20" cy="36" r="3.5" style="fill:none"/></g>
+        <circle class="ln muted" cx="39" cy="78" r="14"/>
+        <g class="u5-1"><use href="#shirt" transform="translate(39 78) scale(.55)"/></g>
+        <g class="u5-2"><use href="#pants" transform="translate(40 78) scale(.55)"/></g>
+        <g class="u5-3"><use href="#sock" transform="translate(41 78) scale(.55)"/></g>
+        <g class="d5 ol"><circle cx="39" cy="78" r="20" style="fill:var(--card);fill-opacity:.4;stroke:var(--ink);stroke-width:2.5"/><path class="ln" d="M55 72 v12"/></g>
+        <g transform="translate(92 112) scale(.85)"><use href="#hbody"/><g class="l5 or"><use href="#hlid"/></g></g>
+      </g></g><g class="x5-3 o"><g transform="translate(0 0)">
+        <rect class="ln" x="44" y="20" width="32" height="94" rx="3"/>
+        <text class="fl" x="84" y="32" style="fill:var(--pr)">2</text><text class="fl" x="84" y="110">K</text>
+        <g class="c5u"><rect x="48" y="24" width="24" height="22" rx="2" style="fill:var(--card);stroke:var(--ink);stroke-width:2"/><g transform="translate(60 45) scale(.42)"><path d="M-15 -32 Q-8 -42 0 -35 Q8 -43 15 -32 Z" style="fill:var(--ac);stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round"/><use href="#hamper"/></g></g>
+      </g></g>
+      <g>
+        <rect x="21" y="3" width="24" height="11" rx="5.5" class="ff"/><rect x="48" y="3" width="24" height="11" rx="5.5" class="ff"/><rect x="75" y="3" width="24" height="11" rx="5.5" class="ff"/>
+        <g class="ph1"><rect x="21" y="3" width="24" height="11" rx="5.5" class="fp"/></g>
+        <g class="ph2"><rect x="48" y="3" width="24" height="11" rx="5.5" class="fp"/></g>
+        <g class="ph3"><rect x="75" y="3" width="24" height="11" rx="5.5" class="fp"/></g>
+        <g style="fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round">
+          <path d="M33 5.5 v6 M30.5 9 l2.5 2.5 l2.5 -2.5"/><rect x="56.5" y="5" width="7" height="7" rx="1.2"/><circle cx="60" cy="9" r="1.8"/><path d="M87 11.5 v-6 M84.5 8 l2.5 -2.5 l2.5 2.5"/>
+        </g>
+      </g>
+    </svg></div><figcaption><b>B · Szenenschnitt</b><span>Die Szene blendet aus und die nächste ein, mit leichtem Zoom. Ruhiger, aber weniger Richtung.</span></figcaption></figure>
+  </div>
+
+  <h2>6 · Wäsche aufhängen</h2>
+  <p class="hint">Shirt, Hose und Socke sind wieder erkennbar, ohne Klammern über den Draht gehängt.</p>
+  <div class="grid" data-step="Wäsche aufhängen" data-btn="Erledigt">
+    <figure data-v="E3"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <path class="ln" d="M14 112 V26 M106 112 V26"/>
+      <path class="ln" style="stroke-width:1.8" d="M14 32 Q60 36 106 32">
+        <animate attributeName="d" dur="7s" repeatCount="indefinite" keyTimes="0;0.15;0.2;0.35;0.4;0.55;0.6;0.88;0.98;1"
+                 values="M14 32 Q60 36 106 32;M14 32 Q60 36 106 32;M14 32 Q60 44 106 32;M14 32 Q60 44 106 32;M14 32 Q60 50 106 32;M14 32 Q60 50 106 32;M14 32 Q60 56 106 32;M14 32 Q60 56 106 32;M14 32 Q60 36 106 32;M14 32 Q60 36 106 32"/>
+      </path>
+      <g class="h6-1"><use href="#shirt" x="36" y="44.5"/></g>
+      <g class="h6-2"><use href="#pants" x="60" y="45"/></g>
+      <g class="h6-3"><use href="#sock" x="84" y="44.5"/></g>
+      <g transform="translate(60 112) scale(.7)"><use href="#hbody"/><g class="l6 ol"><use href="#hlid"/></g></g>
+    </svg></div><figcaption><b>E3 · Übergehängt</b><span>Aus dem Korb hoch an den Draht, die Leine hängt mit jedem Teil mehr durch.</span></figcaption></figure>
+  </div>
+
+  <h2>7 · Trocknen lassen</h2>
+  <p class="hint">Die Zeit steht jetzt klein unter der Animation, als eigenes Element. Der Mond bleibt aufrecht. Drei Arten, Zeit und Trocknen zu zeigen.</p>
+  <div class="grid" data-step="Trockenzeit läuft" data-btn="Zurück zur Übersicht">
+    <figure data-v="A"><div class="stage withtimer"><svg class="sc clip" viewBox="0 0 120 120">
+      <defs><mask id="moona" maskUnits="userSpaceOnUse" x="40" y="184" width="40" height="40"><circle cx="60" cy="204" r="8" fill="white"/><circle cx="64.5" cy="200" r="7" fill="black"/></mask></defs>
+      <rect class="night7" x="0" y="0" width="120" height="120" style="fill:var(--ink)"/>
+      <g style="fill:var(--ac)"><use href="#star" class="star7" x="22" y="16"/><use href="#star" class="star7" x="98" y="26" style="animation-delay:.6s"/><use href="#star" class="star7" x="80" y="10" style="animation-delay:1.2s"/></g>
+      <g class="orb7">
+        <g style="stroke:var(--ac);stroke-width:2.5;stroke-linecap:round"><path d="M60 5 v3 M60 32 v3 M45 20 h3 M72 20 h3 M49.4 9.4 l2.1 2.1 M68.5 28.5 l2.1 2.1 M49.4 30.6 l2.1 -2.1 M68.5 11.5 l2.1 -2.1"/></g>
+        <circle cx="60" cy="20" r="7.5" style="fill:var(--ac)"/>
+        <g class="cnt7"><circle cx="60" cy="204" r="8" style="fill:var(--pr2)" mask="url(#moona)"/></g>
+      </g>
+      <path class="ln" d="M14 114 V58 M106 114 V58"/>
+      <path class="ln" style="stroke-width:1.8" d="M14 62 Q60 72 106 62"/>
+      <g class="k7-sw"><use href="#shirt" x="36" y="76.6"/><use href="#shirtP" class="wet7" x="36" y="76.6"/></g>
+      <g class="k7-sw" style="animation-delay:-1.3s"><use href="#pants" x="60" y="78"/><use href="#pantsP" class="wet7" x="60" y="78"/></g>
+      <g class="k7-sw" style="animation-delay:-2.6s"><use href="#sock" x="84" y="76.6"/><use href="#sockP" class="wet7" x="84" y="76.6"/></g>
+      <g class="dv7">
+        <path class="lp k7v" d="M36 62 q-3 -4 0 -8 t0 -8"/>
+        <path class="lp k7v" d="M60 63 q-3 -4 0 -8 t0 -8" style="animation-delay:1s"/>
+        <path class="lp k7v" d="M84 62 q-3 -4 0 -8 t0 -8" style="animation-delay:2s"/>
+      </g>
+    </svg><div class="timer"><div class="bar"><i></i></div><div class="tt"><b>noch 1 Tag 6 Std</b> · fertig Sa, 18:00</div></div></div><figcaption><b>A · Leiste + Verdunsten</b><span>Dünne Fortschrittsleiste mit Restzeit. Feuchtigkeit steigt als Dampf nach oben weg, bis die Wäsche trocken ist.</span></figcaption></figure>
+    <figure data-v="B"><div class="stage withtimer"><svg class="sc clip" viewBox="0 0 120 120">
+      <defs><mask id="moonb" maskUnits="userSpaceOnUse" x="40" y="184" width="40" height="40"><circle cx="60" cy="204" r="8" fill="white"/><circle cx="64.5" cy="200" r="7" fill="black"/></mask></defs>
+      <rect class="night7" x="0" y="0" width="120" height="120" style="fill:var(--ink)"/>
+      <g style="fill:var(--ac)"><use href="#star" class="star7" x="22" y="16"/><use href="#star" class="star7" x="98" y="26" style="animation-delay:.6s"/><use href="#star" class="star7" x="80" y="10" style="animation-delay:1.2s"/></g>
+      <g class="orb7">
+        <g style="stroke:var(--ac);stroke-width:2.5;stroke-linecap:round"><path d="M60 5 v3 M60 32 v3 M45 20 h3 M72 20 h3 M49.4 9.4 l2.1 2.1 M68.5 28.5 l2.1 2.1 M49.4 30.6 l2.1 -2.1 M68.5 11.5 l2.1 -2.1"/></g>
+        <circle cx="60" cy="20" r="7.5" style="fill:var(--ac)"/>
+        <g class="cnt7"><circle cx="60" cy="204" r="8" style="fill:var(--pr2)" mask="url(#moonb)"/></g>
+      </g>
+      <path class="ln" d="M14 114 V58 M106 114 V58"/>
+      <path class="ln" style="stroke-width:1.8" d="M14 62 Q60 72 106 62"/>
+      <g class="k7c-b"><use href="#shirt" x="36" y="76.6"/><use href="#shirtP" class="wet7" x="36" y="76.6"/></g>
+      <g class="k7c-b" style="animation-delay:-1.3s"><use href="#pants" x="60" y="78"/><use href="#pantsP" class="wet7" x="60" y="78"/></g>
+      <g class="k7c-b" style="animation-delay:-2.6s"><use href="#sock" x="84" y="76.6"/><use href="#sockP" class="wet7" x="84" y="76.6"/></g>
+      <path class="lp k7c-w" d="M-10 98 H100 q8 0 8 -6 t-6 -6"/><path class="lp k7c-w" d="M-10 106 H90" style="animation-delay:.25s"/>
+    </svg><div class="timer"><div class="days"><svg viewBox="0 0 70 14"><circle cx="7" cy="7" r="5.5" class="fp"/><circle cx="35" cy="7" r="5.5" style="fill:none;stroke:var(--pr);stroke-width:2"/><path d="M35 1.5 A5.5 5.5 0 0 1 35 12.5 Z" class="fp"/><circle cx="63" cy="7" r="5.5" style="fill:none;stroke:var(--line);stroke-width:2"/></svg></div><div class="tt"><b>Tag 2 von 3</b> · fertig Sa, 18:00</div></div></div><figcaption><b>B · Tage + Wind</b><span>Ein Punkt pro Tag, halb gefüllt ist heute. Der Wind weht die Wäsche trocken.</span></figcaption></figure>
+    <figure data-v="C"><div class="stage withtimer"><svg class="sc clip" viewBox="0 0 120 120">
+      <defs><mask id="moonc" maskUnits="userSpaceOnUse" x="40" y="184" width="40" height="40"><circle cx="60" cy="204" r="8" fill="white"/><circle cx="64.5" cy="200" r="7" fill="black"/></mask></defs>
+      <rect class="night7" x="0" y="0" width="120" height="120" style="fill:var(--ink)"/>
+      <g style="fill:var(--ac)"><use href="#star" class="star7" x="22" y="16"/><use href="#star" class="star7" x="98" y="26" style="animation-delay:.6s"/><use href="#star" class="star7" x="80" y="10" style="animation-delay:1.2s"/></g>
+      <g class="orb7">
+        <g style="stroke:var(--ac);stroke-width:2.5;stroke-linecap:round"><path d="M60 5 v3 M60 32 v3 M45 20 h3 M72 20 h3 M49.4 9.4 l2.1 2.1 M68.5 28.5 l2.1 2.1 M49.4 30.6 l2.1 -2.1 M68.5 11.5 l2.1 -2.1"/></g>
+        <circle cx="60" cy="20" r="7.5" style="fill:var(--ac)"/>
+        <g class="cnt7"><circle cx="60" cy="204" r="8" style="fill:var(--pr2)" mask="url(#moonc)"/></g>
+      </g>
+      <path class="ln" d="M14 114 V58 M106 114 V58"/>
+      <path class="ln" style="stroke-width:1.8" d="M14 62 Q60 72 106 62"/>
+      <g class="k7-sw"><use href="#shirt" x="36" y="76.6"/><use href="#shirtP" class="wet7" x="36" y="76.6"/></g>
+      <g class="k7-sw" style="animation-delay:-1.3s"><use href="#pants" x="60" y="78"/><use href="#pantsP" class="wet7" x="60" y="78"/></g>
+      <g class="k7-sw" style="animation-delay:-2.6s"><use href="#sock" x="84" y="76.6"/><use href="#sockP" class="wet7" x="84" y="76.6"/></g>
+      <g class="dv7">
+        <path class="lp k7v" d="M36 62 q-3 -4 0 -8 t0 -8"/>
+        <path class="lp k7v" d="M60 63 q-3 -4 0 -8 t0 -8" style="animation-delay:1s"/>
+        <path class="lp k7v" d="M84 62 q-3 -4 0 -8 t0 -8" style="animation-delay:2s"/>
+      </g>
+    </svg><div class="timer row"><svg class="care" viewBox="0 0 24 24"><defs><clipPath id="carefill"><rect x="3" y="3" width="18" height="18" rx="1"/></clipPath></defs><rect x="3" y="13" width="18" height="8" class="fp" style="opacity:.35" clip-path="url(#carefill)"/><rect x="3" y="3" width="18" height="18" rx="1.5" style="fill:none;stroke:var(--ink);stroke-width:1.8"/><path d="M3.5 6.5 Q12 12 20.5 6.5" style="fill:none;stroke:var(--ink);stroke-width:1.8"/></svg><div class="tt"><b>noch 1 Tag 6 Std</b><br>fertig Sa, 18:00</div></div></div><figcaption><b>C · Pflegesymbol</b><span>Das Pflegesymbol für Leinentrocknung (Quadrat mit Bogen) füllt sich mit der Zeit. Dazu Dampf nach oben.</span></figcaption></figure>
+  </div>
+
+  <h2>8 · Wäsche abnehmen</h2>
+  <p class="hint">8C ohne Klammern, passend zu 6: abnehmen und gleich falten.</p>
+  <div class="grid" data-step="Wäsche abnehmen" data-btn="Erledigt">
+    <figure data-v="C3"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <path class="ln" d="M14 112 V26 M106 112 V26"/>
+      <path class="ln" style="stroke-width:1.8" d="M14 32 Q60 50 106 32">
+        <animate attributeName="d" dur="8s" repeatCount="indefinite" keyTimes="0;0.08;0.12;0.48;0.52;0.92;0.98;1"
+                 values="M14 32 Q60 50 106 32;M14 32 Q60 50 106 32;M14 32 Q60 43 106 32;M14 32 Q60 43 106 32;M14 32 Q60 36 106 32;M14 32 Q60 36 106 32;M14 32 Q60 50 106 32;M14 32 Q60 50 106 32"/>
+      </path>
+      <g class="k8p1 o"><use href="#foldS" x="60" y="100"/></g>
+      <g class="k8p2 o"><use href="#foldP" x="60" y="90"/></g>
+      <g class="k8s"><use href="#shirt" transform="translate(40 50.3) scale(1.1)"/></g>
+      <g class="k8h"><use href="#pants" transform="translate(80 50.3) scale(1.1)"/></g>
+    </svg></div><figcaption><b>C3 · Abnehmen und falten</b><span>Shirt vom Draht, zusammenlegen, dann die Hose obendrauf. Die Leine wird dabei wieder gerade.</span></figcaption></figure>
+  </div>
+
+  <h2>9 · Wegräumen</h2>
+  <p class="hint">9E aus Runde 1, die Päckchen haben jetzt die Farben von Shirt, Hose und Socken.</p>
+  <div class="grid" data-step="Wegräumen" data-btn="Erledigt">
+    <figure data-v="E"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <rect class="ln" x="30" y="20" width="60" height="84" rx="4"/><path class="ln" d="M60 20 V104 M30 62 H90"/>
+      <g class="k9e-1" style="--dx:15px;--dy:70px"><use href="#foldS" transform="translate(45 56) scale(.85)"/></g>
+      <g class="k9e-2" style="--dx:-15px;--dy:70px"><use href="#foldP" transform="translate(75 56) scale(.85)"/></g>
+      <g class="k9e-3" style="--dx:15px;--dy:30px"><use href="#foldK" transform="translate(45 99)"/></g>
+      <g class="k9e-4" style="--dx:-15px;--dy:30px"><use href="#foldS" transform="translate(75 98) scale(.85)"/></g>
+      <path class="k9e-s" d="M98 14 l2 -6 l2 6 l6 2 l-6 2 l-2 6 l-2 -6 l-6 -2 z" style="fill:var(--pr)"/>
+    </svg></div><figcaption><b>E · Regal</b><span>Die Fächer füllen sich nacheinander, am Ende ein kleines Funkeln.</span></figcaption></figure>
+  </div>
+
+</main>
+
+<div id="ctx" role="dialog" aria-modal="true">
+  <div class="v"></div>
+  <div class="t"></div>
+  <div class="big"></div>
+  <button class="btn" type="button"></button>
+  <div class="close">Irgendwo tippen zum Schließen</div>
+</div>
+
+<script>
+  const ctx = document.getElementById("ctx");
+  document.querySelectorAll("figure").forEach((fig) => {
+    fig.addEventListener("click", () => {
+      const grid = fig.closest(".grid");
+      ctx.querySelector(".t").textContent = grid.dataset.step;
+      ctx.querySelector(".v").textContent = "Variante " + fig.dataset.v;
+      ctx.querySelector(".btn").textContent = grid.dataset.btn;
+      ctx.querySelector(".big").innerHTML = fig.querySelector(".stage").innerHTML;
+      ctx.classList.toggle("small", grid.classList.contains("small"));
+      ctx.classList.add("open");
+    });
+  });
+  ctx.addEventListener("click", () => ctx.classList.remove("open"));
+</script>
+</body>
+</html>
