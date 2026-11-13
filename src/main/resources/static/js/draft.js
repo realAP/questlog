@@ -343,7 +343,6 @@
         await Motion.animate(traveller, { x: [0, b.left - a.left], y: [0, b.top - a.top], scale: [1, 0.55, 1], opacity: [1, 0.8, 1] },
           { duration: RING.travel, ease: [0.65, 0, 0.35, 1] }).finished;
         delete fromHost.dataset.travelling;
-        this.travelFrom = null;
         return traveller;
       },
 
@@ -423,15 +422,18 @@
           await wait(c.rest + 0.2);
           return;
         }
-        const tick = badge.querySelector("svg path");
+        const tick = badge.querySelector("[data-tick] svg path");
         tick?.setAttribute("pathLength", "1");
-        const running = [
-          Motion.animate(badge.querySelector("[data-ripple]"), { scale: [1, 1.35], opacity: [0.35, 0] }, { duration: c.glow, ease: EASE_OUT }),
-        ];
+        // Erst blendet die Szene aus und der Kreis ein, danach Häkchen und Lichthof.
+        const after = 0.3;
         if (tick) {
           tick.style.strokeDasharray = "1";
-          running.push(Motion.animate(tick, { strokeDashoffset: [1, 0] }, { duration: c.check, ease: EASE_SOFT }));
+          tick.style.strokeDashoffset = "1";
         }
+        const running = [
+          Motion.animate(badge.querySelector("[data-ripple]"), { scale: [1, 1.35], opacity: [0.35, 0] }, { duration: c.glow, delay: after + 0.15, ease: EASE_OUT }),
+        ];
+        if (tick) running.push(Motion.animate(tick, { strokeDashoffset: [1, 0] }, { duration: c.check, delay: after, ease: EASE_SOFT }));
         await running[running.length - 1].finished;
         await wait(c.rest);
       },
@@ -530,6 +532,7 @@
         const traveller = await this.travelRing(from, from + 1);
         await this.show(() => {
           this.stageIndex += 1;
+          this.travelFrom = null;
           this.stepIndex = 0;
           this.screen = "step";
           this.prepareStep();

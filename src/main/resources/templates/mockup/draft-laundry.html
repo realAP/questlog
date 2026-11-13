@@ -111,10 +111,11 @@
         <div class="ql-scene relative grid shrink-0 place-items-center" style="width: var(--scene); height: var(--scene)" data-celebrate data-label="Schritt-Animation">
           <div class="stage absolute inset-0 transition-opacity duration-200" :class="checking ? 'opacity-0' : 'opacity-100 delay-150'"
                x-html="scene(step.scene)"></div>
-          <div class="relative grid size-24 place-items-center rounded-full bg-primary text-primary-content transition-[opacity,scale] duration-200"
-               :class="checking ? 'opacity-100 scale-100 delay-200' : 'opacity-0 scale-90'">
+          <!-- Kreis erscheint hell und wird grün, dann zeichnet sich das Häkchen ein, mit Lichthof -->
+          <div class="relative grid size-24 place-items-center rounded-full transition-[opacity,scale,background-color,color] duration-300"
+               :class="checking ? 'opacity-100 scale-100 delay-150 bg-primary text-primary-content' : 'opacity-0 scale-90 bg-primary/12 text-primary'">
             <span data-ripple class="absolute inset-0 rounded-full border-2 border-primary opacity-0"></span>
-            <span class="size-11" x-html="icon('check')"></span>
+            <span data-tick class="size-11" x-html="icon('check')"></span>
           </div>
         </div>
 

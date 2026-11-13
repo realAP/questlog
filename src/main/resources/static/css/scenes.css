@@ -148,8 +148,8 @@ svg.sc text { font: 600 9px system-ui, sans-serif; fill: var(--muted); }
 .e5-pp2 { animation: e5-pp2 26s infinite cubic-bezier(.65,0,.35,1); }
 .e5-pp3 { animation: e5-pp3 26s infinite cubic-bezier(.65,0,.35,1); }
 .tl7 .head svg { width: 18px; height: 18px; }
-.tl7.m4 { margin-top: -15%; }
-.tl7:not(.m4) { margin-top: -5%; }
+.tl7.m4 { margin-top: calc(-15% + 14px); }
+.tl7:not(.m4) { margin-top: calc(-6.7% + 14px); }
 .tl7 .head { margin-bottom: 6px; }
 .tl7 .bar .ov { border-radius: 0 3px 3px 0; }
 .tl7 .row.days span.late { color: var(--ac); font-weight: 700; }
