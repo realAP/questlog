@@ -11,7 +11,6 @@
   .ql-scene { --pr2: oklch(45% 0.05 165); --c3: oklch(40% 0.02 70); --water: oklch(72% 0.05 200 / 0.35); --wick: oklch(50% 0.05 72); }
 }
 .ql-scene .stage { aspect-ratio: 1; }
-.ql-scene .stage.small { padding: 18%; }
 svg.sc { width: 100%; height: 100%; display: block; overflow: visible; }
 svg.clip { overflow: hidden; }
 .sc *:not([transform]) { transform-box: fill-box; }
@@ -162,7 +161,7 @@ svg.sc text { font: 600 9px system-ui, sans-serif; fill: var(--muted); }
     30% { transform: translate(-53px,-16px) scale(.45) rotate(-15deg); opacity: 1 } 32%,100% { transform: translate(-53px,-16px) scale(.45); opacity: 0 } }
 @keyframes door3 { 0%,60% { transform: scaleX(.12) } 70% { transform: scaleX(1) } 73% { transform: scale(.96) } 76%,92% { transform: none } 100% { transform: scaleX(.12) } }
 @keyframes lid3 { 0%,2% { transform: none } 8%,58% { transform: rotate(105deg) } 66%,100% { transform: none } }
-@keyframes led3 { 0%,76% { opacity: .2 } 80% { opacity: 1 } 86% { opacity: .55 } 92%,96% { opacity: 1 } 100% { opacity: .2 } }
+@keyframes led3 { 0%,85% { opacity: .2 } 88% { opacity: 1 } 91% { opacity: .55 } 94%,97% { opacity: 1 } 100% { opacity: .2 } }
 @keyframes w4a { 0% { transform: translateY(22px) } 8%,36% { transform: none } 42%,100% { transform: translateY(22px) } }
 @keyframes w4b { 0%,42% { transform: translateY(22px) } 50%,62% { transform: none } 68%,100% { transform: translateY(22px) } }
 @keyframes f4 { 0%,8% { opacity: 0 } 12%,34% { opacity: 1 } 38%,100% { opacity: 0 } }
@@ -250,3 +249,9 @@ svg.sc text { font: 600 9px system-ui, sans-serif; fill: var(--muted); }
 @keyframes e5-pp1 { 0% { opacity: 0 } 0.00% { opacity: 0 } 29.42% { opacity: 0 } 30.58% { opacity: 1 } 45.58% { opacity: 1 } 46.73% { opacity: 0 } 100% { opacity: 0 } }
 @keyframes e5-pp2 { 0% { opacity: 0 } 0.00% { opacity: 0 } 45.58% { opacity: 0 } 46.73% { opacity: 1 } 65.58% { opacity: 1 } 66.73% { opacity: 0 } 100% { opacity: 0 } }
 @keyframes e5-pp3 { 0% { opacity: 0 } 0.00% { opacity: 0 } 65.58% { opacity: 0 } 66.73% { opacity: 1 } 100.00% { opacity: 1 } 100% { opacity: 1 } }
+
+/* Schritt 3: Waschmittel ins Fach, zwischen Einladen und Türe zu */
+.pour3 { animation: pour3 7s infinite cubic-bezier(.65,0,.35,1); opacity: 0; transform-box: view-box !important; transform-origin: 46px 8px; }
+@keyframes pour3 { 0%,70% { opacity: 0; transform: translateY(-6px) } 72% { opacity: 1; transform: none } 75%,80% { opacity: 1; transform: rotate(-115deg) translate(-2px,-6px) } 82% { opacity: 1; transform: none } 84%,100% { opacity: 0; transform: translateY(-6px) } }
+.drop3 { animation: drop3 7s infinite ease-in; opacity: 0; }
+@keyframes drop3 { 0%,75.5% { opacity: 0; transform: none } 76% { opacity: 1 } 78.5% { opacity: 1; transform: translateY(9px) } 79%,100% { opacity: 0; transform: translateY(9px) } }
