@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Questlog – Entwurf Wäsche', '/js/draft.js')}"></head>
+<body class="bg-base-100 text-base-content">
+<link rel="stylesheet" th:href="@{/css/scenes.css}">
+<div th:replace="~{fragments/scenes :: scenes}"></div>
+
+<!-- Symbole einmal serverseitig gerendert, im Entwurf per Name abrufbar -->
+<div hidden>
+  <template id="icon-washer"><svg th:replace="~{fragments/icons :: washer('size-full')}"></svg></template>
+  <template id="icon-clothesline"><svg th:replace="~{fragments/icons :: clothesline('size-full')}"></svg></template>
+  <template id="icon-hanger"><svg th:replace="~{fragments/icons :: hanger('size-full')}"></svg></template>
+  <template id="icon-basket"><svg th:replace="~{fragments/icons :: basket('size-full')}"></svg></template>
+  <template id="icon-stairs"><svg th:replace="~{fragments/icons :: stairs('size-full')}"></svg></template>
+  <template id="icon-key"><svg th:replace="~{fragments/icons :: key('size-full')}"></svg></template>
+  <template id="icon-detergent"><svg th:replace="~{fragments/icons :: detergent('size-full')}"></svg></template>
+  <template id="icon-clock"><svg th:replace="~{fragments/icons :: clock('size-full')}"></svg></template>
+  <template id="icon-check"><svg th:replace="~{fragments/icons :: check('size-full')}"></svg></template>
+  <template id="icon-plus"><svg th:replace="~{fragments/icons :: plus('size-full')}"></svg></template>
+  <template id="icon-minus"><svg th:replace="~{fragments/icons :: minus('size-full')}"></svg></template>
+</div>
+
+<div class="mx-auto flex min-h-dvh max-w-md flex-col px-5" x-data="laundryDraft" :data-labels="labels" style="--scene: min(80vw, 34dvh, 340px)">
+
+  <!-- Stepper: Etappen als Symbole, der Ring um die aktuelle Etappe zeigt ihre Unterschritte -->
+  <header class="relative pt-3 pb-1" x-show="screen !== 'start' && screen !== 'done'" x-cloak
+          x-effect="ringKey; $nextTick(() => updateRings())">
+    <div class="flex items-center px-[7px] py-[7px]" data-label="Stepper">
+      <template x-for="(item, s) in quest.stages" :key="item.name">
+        <div class="contents">
+          <button type="button" class="relative grid size-11 shrink-0 place-items-center rounded-full transition-colors duration-300" :data-node="s"
+                  :class="{ 'bg-primary text-primary-content': stageState(s) === 'current', 'bg-primary/15 text-primary': stageState(s) === 'done', 'bg-base-200 text-base-content/40': stageState(s) === 'open' }"
+                  :aria-label="item.name" :tabindex="s === stageIndex ? 0 : -1" @click="togglePeek(s)">
+            <span class="size-[22px]" x-html="icon(item.icon)"></span>
+            <span class="pointer-events-none absolute -inset-[7px]" :data-ring-host="s"></span>
+          </button>
+          <template x-if="s < quest.stages.length - 1">
+            <div class="relative mx-3 h-0.5 flex-1 rounded-full bg-base-300">
+              <div class="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-[550ms] ease-in-out"
+                   :style="`width: ${stageState(s) === 'done' || travelFrom === s ? 100 : 0}%`"></div>
+            </div>
+          </template>
+        </div>
+      </template>
+    </div>
+
+    <!-- Antippen irgendwo schließt die Symbolreihe wieder -->
+    <div x-show="peek" x-cloak class="fixed inset-0 z-[9]" @click="closePeek()"></div>
+    <!-- Unterschritte als Symbole, klappt beim Antippen der Etappe auf -->
+    <div x-show="peek" x-cloak class="absolute inset-x-0 top-full z-10 flex"
+         :class="['justify-start', 'justify-center', 'justify-end'][stageIndex]"
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="-translate-y-1 opacity-0"
+         x-transition:leave="transition ease-in duration-150" x-transition:leave-end="-translate-y-1 opacity-0">
+      <div class="flex items-center gap-2 rounded-[18px] bg-base-100 p-2 shadow-[0_4px_20px_oklch(0%_0_0/0.12)]" data-label="Unterschritte">
+        <template x-for="(sub, k) in substeps" :key="stage.name + k">
+          <span class="grid size-9 place-items-center rounded-full"
+                :class="subState(k) === 'current' ? 'bg-primary text-primary-content' : subState(k) === 'done' ? 'bg-primary/15 text-primary' : 'bg-base-200 text-base-content/40'">
+            <span class="size-[18px]" x-html="icon(subState(k) === 'done' ? 'check' : sub.icon)"></span>
+          </span>
+        </template>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex flex-1 flex-col">
+
+    <!-- Übersicht -->
+    <section x-show="screen === 'start'" class="flex flex-1 flex-col">
+      <div class="flex flex-1 flex-col items-center justify-evenly gap-8 py-6">
+        <div data-enter class="flex flex-col items-center gap-3 text-center" data-label="Quest-Kopf">
+          <span class="grid size-20 place-items-center rounded-[24px] bg-primary text-primary-content">
+            <span class="size-10" x-html="icon(quest.icon)"></span>
+          </span>
+          <span class="text-[13px] font-semibold uppercase tracking-[0.14em] text-primary">Quest</span>
+          <h1 class="text-[34px] font-bold leading-none" x-text="quest.name"></h1>
+          <p class="text-[15px] text-base-content/55" x-text="`${quest.stages.length} Etappen · ${quest.stages.filter((s) => s.wait).length} Wartezeiten`"></p>
+        </div>
+        <ol data-enter class="flex flex-col" data-label="Ablauf">
+          <template x-for="(item, s) in quest.stages" :key="item.name">
+            <li class="flex flex-col">
+              <div class="flex items-center gap-4">
+                <span class="grid size-[46px] shrink-0 place-items-center rounded-full"
+                      :class="s === 0 ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content/55'">
+                  <span class="size-[23px]" x-html="icon(item.icon)"></span>
+                </span>
+                <span class="text-[20px]" :class="s === 0 && 'font-semibold'" x-text="item.name"></span>
+              </div>
+              <template x-if="item.wait">
+                <div class="flex min-h-14 items-center gap-4">
+                  <span class="mx-[22px] w-0.5 self-stretch bg-base-300"></span>
+                  <span class="flex items-center gap-1.5 text-[15px] text-base-content/55">
+                    <span class="size-4" x-html="icon('clock')"></span>
+                    <span x-text="`${item.wait.label} · ${duration(item.wait.presets[0])} bis ${duration(item.wait.presets.at(-1))}`"></span>
+                  </span>
+                </div>
+              </template>
+            </li>
+          </template>
+        </ol>
+      </div>
+      <footer class="mt-auto pt-4 pb-6">
+        <button type="button" class="btn btn-primary h-[52px] w-full rounded-[14px] text-[17px]" data-label="Hauptaktion" @click="start($event)">Quest starten</button>
+      </footer>
+    </section>
+
+    <!-- Schritt -->
+    <section x-show="screen === 'step'" x-cloak class="flex flex-1 flex-col">
+      <div class="flex flex-col items-center gap-6 pt-6 text-center" data-enter>
+
+        <!-- Schritt-Animation. Beim Abhaken blendet sie aus, danach zeichnet sich das Häkchen allein ein. -->
+        <div class="ql-scene relative grid shrink-0 place-items-center" style="width: var(--scene); height: var(--scene)" data-celebrate data-label="Schritt-Animation">
+          <div class="stage absolute inset-0 transition-opacity duration-200" :class="checking ? 'opacity-0' : 'opacity-100 delay-150'"
+               x-html="scene(step.scene)"></div>
+          <!-- Kreis erscheint hell und wird grün, dann zeichnet sich das Häkchen ein, mit Lichthof -->
+          <div class="relative grid size-24 place-items-center rounded-full transition-[opacity,scale,background-color,color] duration-300"
+               :class="checking ? 'opacity-100 scale-100 delay-150 bg-primary text-primary-content' : 'opacity-0 scale-90 bg-primary/12 text-primary'">
+            <span data-ripple class="absolute inset-0 rounded-full border-2 border-primary opacity-0"></span>
+            <span data-tick class="size-11" x-html="icon('check')"></span>
+          </div>
+        </div>
+
+        <p class="text-[30px] font-semibold leading-tight" x-text="step.title" data-label="Schritt-Titel"></p>
+
+        <!-- Voraussetzung als Erinnerung: nur ein Hinweis, nichts zum Abhaken -->
+        <template x-if="step.needs">
+          <div class="flex items-center gap-2.5 rounded-full bg-accent/25 py-2 pr-4 pl-2" data-label="Erinnerung">
+            <span class="grid size-8 place-items-center rounded-full bg-base-100 text-base-content/80">
+              <span class="size-[18px]" x-html="icon(step.needs.icon)"></span>
+            </span>
+            <span class="text-[15px]"><span x-text="step.needs.label"></span> nicht vergessen</span>
+          </div>
+        </template>
+
+        <!-- Zeitwahl im Schritt, der die Wartezeit startet -->
+        <template x-if="step.startsWait">
+          <div class="flex w-full flex-col items-center gap-3" data-label="Zeitwahl">
+
+            <!-- Vorgaben als Leiste, darunter wann es fertig ist -->
+            <template x-if="true">
+              <div class="flex w-full flex-col items-center gap-3">
+                <p class="text-[15px] text-base-content/55" x-text="step.question"></p>
+                <div x-show="!custom" class="flex h-[52px] w-full rounded-full bg-base-200 p-1" role="group" aria-label="Dauer">
+                  <template x-for="preset in stage.wait.presets" :key="preset">
+                    <button type="button" class="h-11 flex-1 rounded-full text-[15px] transition-colors"
+                            :class="chosenMinutes === preset ? 'bg-base-100 font-semibold shadow-sm' : 'text-base-content/70'"
+                            :aria-pressed="chosenMinutes === preset" @click="choosePreset(preset)" x-text="duration(preset)"></button>
+                  </template>
+                  <button type="button" class="h-11 flex-1 rounded-full text-[15px] text-base-content/70" @click="custom = true">Andere</button>
+                </div>
+                <div x-show="custom" x-cloak class="flex h-[52px] w-full items-center gap-1 rounded-full bg-base-200 p-1" role="group" aria-label="Eigene Dauer">
+                  <button type="button" class="grid size-11 place-items-center rounded-full bg-base-100 shadow-sm" aria-label="Weniger" @click="nudge($event, -1)"><span class="size-5" x-html="icon('minus')"></span></button>
+                  <span class="flex-1 text-[17px] font-semibold tabular-nums" x-text="duration(chosenMinutes)"></span>
+                  <button type="button" class="grid size-11 place-items-center rounded-full bg-base-100 shadow-sm" aria-label="Mehr" @click="nudge($event, 1)"><span class="size-5" x-html="icon('plus')"></span></button>
+                  <button type="button" class="h-11 rounded-full px-3 text-[15px] text-base-content/70" @click="custom = false">Vorgaben</button>
+                </div>
+                <p class="flex items-center gap-1.5 text-[15px] text-base-content/55">
+                  <span class="size-4" x-html="icon('clock')"></span><span x-text="endFor(chosenMinutes)"></span>
+                </p>
+              </div>
+            </template>
+
+          </div>
+        </template>
+      </div>
+
+      <footer class="mt-auto flex flex-col gap-1 pt-4 pb-6">
+        <button type="button" x-show="step.missing" class="mx-auto mb-2 flex h-11 items-center gap-2 rounded-full border-[1.5px] border-base-300 pr-4 pl-2 text-[15px] text-base-content/80 active:bg-base-200"
+                data-label="Zweitaktion" @click="reportMissing($event)">
+          <span class="relative grid size-7 place-items-center rounded-full bg-error/12 text-error">
+            <span class="size-4" x-html="icon('detergent')"></span>
+            <span class="absolute h-[2px] w-5 rotate-45 rounded-full bg-error"></span>
+          </span>
+          <span x-text="`${step.missing} fehlt`"></span>
+        </button>
+        <button type="button" class="btn btn-primary h-[52px] w-full rounded-[14px] text-[17px]" data-label="Hauptaktion"
+                @click="complete($event)" x-text="step.startsWait ? step.action : 'Erledigt'"></button>
+      </footer>
+    </section>
+
+    <!-- Etwas fehlt -->
+    <section x-show="screen === 'missing'" x-cloak class="flex flex-1 flex-col">
+      <div class="my-auto flex flex-col items-center gap-5 py-10 text-center">
+        <span data-enter class="relative grid size-24 place-items-center rounded-full bg-error/12 text-error" data-label="Schritt-Symbol">
+          <span class="size-11" x-html="icon('detergent')"></span>
+          <span class="absolute h-[3px] w-14 rotate-45 rounded-full bg-error"></span>
+        </span>
+        <p data-enter class="text-[30px] font-semibold leading-tight" x-text="`${step.missing ?? ''} fehlt`" data-label="Schritt-Titel"></p>
+        <p data-enter class="max-w-xs text-[17px] text-base-content/65">Die Quest wartet hier und geht an dieser Stelle weiter.</p>
+      </div>
+      <footer class="mt-auto flex flex-col gap-2 pt-4 pb-6">
+        <a class="btn h-[52px] w-full rounded-[14px] border-2 border-base-300 bg-transparent text-[17px] font-semibold" :href="shoppingLink" data-label="Zweitaktion">
+          Auf die Einkaufsliste
+        </a>
+        <button type="button" class="btn btn-primary h-[52px] w-full rounded-[14px] text-[17px]" data-label="Hauptaktion"
+                @click="resolveMissing($event)" x-text="`${step.missing ?? ''} ist da`"></button>
+      </footer>
+    </section>
+
+    <!-- Wartezeit -->
+    <section x-show="waiting" x-cloak class="flex flex-1 flex-col">
+      <div class="flex flex-col items-center gap-6 pt-6 text-center">
+        <!-- Wartezeit: Szene mit Zeitlinie. Uhr und Uhrzeit oben, solange es läuft; fertig: Haken mit Uhr, unten die Überzeit. -->
+        <div data-enter class="ql-scene" style="width: var(--scene)" data-label="Wartezeit-Animation">
+          <div class="withtimer">
+            <div style="height: var(--scene)" x-html="scene(waitScene)"></div>
+            <div class="tl7" :class="stage.wait?.scene === 's4' && 'm4'">
+              <div class="head">
+                <template x-if="screen === 'wait'">
+                  <span class="contents">
+                    <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" style="fill:none;stroke:var(--ink);stroke-width:1.6"/><path d="M9 5.2 V9.2 L11.8 10.9" style="fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round"/></svg>
+                    <span x-text="endText"></span>
+                  </span>
+                </template>
+                <template x-if="screen === 'waitDone'">
+                  <svg viewBox="0 0 24 20" style="width:30px;height:25px" role="img" aria-label="Fertig, wartet"><circle cx="9" cy="9" r="8" style="fill:var(--pr)"/><path d="M5.6 9.2 l2.3 2.3 l4.5 -4.8" style="fill:none;stroke:var(--prc);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round"/><circle cx="17.5" cy="13.5" r="5.6" style="fill:var(--ac);stroke:var(--card);stroke-width:1.6"/><path d="M17.5 10.9 V13.7 L19.4 14.9" style="fill:none;stroke:var(--card);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round"/></svg>
+                </template>
+              </div>
+              <div class="bar">
+                <i class="el transition-[width] duration-1000 ease-linear" :style="`width:${progress}%`"></i>
+                <i class="ov" x-show="screen === 'waitDone'" style="left:80%"></i>
+                <template x-for="t in marks.ticks" :key="t"><i class="tick" :style="`left:${t}%`"></i></template>
+                <svg class="end" viewBox="0 0 18 18" x-show="screen === 'wait'" style="left:100%"><circle cx="9" cy="9" r="7" style="fill:var(--card);stroke:var(--ink);stroke-width:1.6"/><path d="M5.8 9.2 l2.2 2.2 l4.3 -4.6" style="fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round"/></svg>
+                <svg class="end" viewBox="0 0 18 18" x-show="screen === 'waitDone'" style="left:80%"><circle cx="9" cy="9" r="8" style="fill:var(--pr)"/><path d="M5.6 9.2 l2.3 2.3 l4.5 -4.8" style="fill:none;stroke:var(--prc);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round"/></svg>
+                <i class="mk blink transition-[left] duration-1000 ease-linear" x-show="screen === 'wait'" :style="`left:${progress}%`"></i>
+              </div>
+              <div class="row days">
+                <template x-for="l in marks.labels" :key="l.at"><span :style="`left:${l.at}%`" x-text="l.text"></span></template>
+                <span class="late" x-show="screen === 'waitDone'" style="left:90%" x-text="overText"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div data-enter class="flex flex-col gap-1">
+          <p class="text-[20px] font-semibold" x-text="screen === 'wait' ? `${stage.wait?.label} läuft` : `${stage.wait?.label} fertig`"></p>
+          <p class="text-[15px] text-base-content/60" x-show="screen === 'wait'">
+            Danach erinnere ich dich <span x-text="stage.wait?.reminder"></span>.
+          </p>
+        </div>
+      </div>
+      <footer class="mt-auto pt-4 pb-6">
+        <button type="button" x-show="screen === 'wait'" class="btn btn-ghost h-[52px] w-full font-normal text-base-content/60"
+                @click="skipTime()">Zeit vorspulen (nur im Entwurf)</button>
+        <button type="button" x-show="screen === 'waitDone'" class="btn btn-primary h-[52px] w-full rounded-[14px] text-[17px]" data-label="Hauptaktion"
+                @click="continueQuest($event)">Weiter: <span x-text="nextStage?.name"></span></button>
+      </footer>
+    </section>
+
+    <!-- Abschluss: das Regal füllt sich, dann setzt sich ein grüner Haken oben drauf und es funkelt -->
+    <section x-show="screen === 'done'" x-cloak class="flex flex-1 flex-col">
+      <div class="flex flex-col items-center gap-6 pt-16 text-center">
+        <div x-ref="finale" class="ql-scene ql-finale" style="width: var(--scene); height: var(--scene)" data-label="Abschluss">
+          <svg class="shelf" viewBox="0 0 110 110" aria-hidden="true"><rect x="24" y="22" width="62" height="84" rx="4" style="fill:none;stroke:var(--ink);stroke-width:2.5"/><path d="M55 22 V106 M24 62 H86" style="stroke:var(--ink);stroke-width:2.5"/><rect class="pk pk0" x="28" y="48" width="24" height="10" rx="3" style="fill:var(--ac);stroke:var(--ink);stroke-width:2"/><rect class="pk pk1" x="56" y="48" width="24" height="10" rx="3" style="fill:var(--c3);stroke:var(--ink);stroke-width:2"/><rect class="pk pk2" x="33" y="80" width="14" height="10" rx="3" style="fill:var(--pr2);stroke:var(--ink);stroke-width:2"/><rect class="pk pk3" x="56" y="80" width="24" height="10" rx="3" style="fill:var(--ac);stroke:var(--ink);stroke-width:2"/></svg>
+          <span class="disc"></span><span class="chk" x-html="icon('check')"></span>
+          <svg class="sp" viewBox="-12 -12 24 24" style="left:10%;top:-4%;width:18px;height:18px;animation-delay:0s" aria-hidden="true"><path d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/></svg><svg class="sp" viewBox="-12 -12 24 24" style="left:90%;top:4%;width:14px;height:14px;animation-delay:0.08s" aria-hidden="true"><path d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/></svg><svg class="sp" viewBox="-12 -12 24 24" style="left:94%;top:70%;width:16px;height:16px;animation-delay:0.16s" aria-hidden="true"><path d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/></svg><svg class="sp" viewBox="-12 -12 24 24" style="left:0%;top:60%;width:12px;height:12px;animation-delay:0.24s" aria-hidden="true"><path d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/></svg>
+        </div>
+        <p x-ref="doneTitle" class="ql-finale-title text-[28px] font-semibold">Wäsche geschafft</p>
+      </div>
+      <footer class="mt-auto pt-4 pb-6">
+        <button type="button" class="btn h-[52px] w-full rounded-[14px] text-[17px]" @click="restart()">Nochmal von vorn</button>
+      </footer>
+    </section>
+  </main>
+</div>
+</body>
+</html>

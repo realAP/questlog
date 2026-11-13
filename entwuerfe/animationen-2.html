@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Questlog – Animationen, Runde 2</title>
+<style>
+  :root {
+    --bg: oklch(98.5% 0.006 85); --card: oklch(95.5% 0.008 85); --line: oklch(91% 0.01 85);
+    --ink: oklch(28% 0.015 70); --muted: oklch(28% 0.015 70 / 0.55);
+    --pr: oklch(52% 0.07 165); --pr2: oklch(80% 0.05 165); --ac: oklch(74% 0.11 70); --c3: oklch(86% 0.02 70);
+    --water: oklch(60% 0.05 200 / 0.35); --prc: oklch(98% 0.01 165);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: oklch(21% 0.008 70); --card: oklch(25% 0.01 70); --line: oklch(31% 0.012 70);
+      --ink: oklch(92% 0.008 85); --muted: oklch(92% 0.008 85 / 0.55);
+      --pr: oklch(72% 0.08 165); --pr2: oklch(45% 0.05 165); --ac: oklch(78% 0.1 70); --c3: oklch(40% 0.02 70);
+      --water: oklch(72% 0.05 200 / 0.35); --prc: oklch(20% 0.02 165);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 20px 80px; }
+  h1 { font-size: 28px; margin: 8px 0 4px; }
+  h2 { font-size: 20px; margin: 40px 0 2px; }
+  .hint { color: var(--muted); font-size: 15px; margin: 0 0 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  figure { margin: 0; background: var(--card); border-radius: 20px; padding: 12px 12px 14px; cursor: pointer; }
+  figure:active { transform: scale(0.98); }
+  figcaption { font-size: 14px; margin-top: 6px; }
+  figcaption b { display: block; font-size: 15px; }
+  figcaption span { color: var(--muted); }
+  .stage { aspect-ratio: 1; }
+  .small .stage { padding: 18%; }
+
+  /* Großansicht im Schritt-Layout */
+  #ctx { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column; align-items: center; padding: 40px 20px 32px; z-index: 5; }
+  #ctx.open { display: flex; }
+  #ctx .t { font-size: 28px; font-weight: 700; text-align: center; margin-top: 12px; }
+  #ctx .v { color: var(--muted); font-size: 15px; }
+  #ctx .big { width: min(240px, 62vw); margin: auto 0; }
+  #ctx.small .big { width: min(130px, 34vw); }
+  #ctx .btn { width: 100%; max-width: 420px; height: 52px; border: 0; border-radius: 14px; background: var(--pr); color: var(--prc); font-size: 17px; font-weight: 600; }
+  #ctx .close { color: var(--muted); font-size: 15px; margin-top: 14px; }
+
+  /* Zeichenstil */
+  svg.sc { width: 100%; height: 100%; display: block; overflow: visible; }
+  svg.clip { overflow: hidden; }
+  .sc *:not([transform]) { transform-box: fill-box; }
+  .ln { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .lp { fill: none; stroke: var(--pr); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .fc { fill: var(--card); }
+  .fp { fill: var(--pr); }
+  .ff { fill: var(--line); }
+  .o { transform-origin: center; } .ot { transform-origin: 50% 0; } .ob { transform-origin: 50% 100%; }
+  .ol { transform-origin: 0 50%; } .or { transform-origin: 100% 50%; }
+  .vb { transform-box: view-box !important; }
+  .muted { opacity: 0.35; }
+  text { font: 600 9px system-ui, sans-serif; fill: var(--muted); }
+  .sc g, .sc use, .sc path, .sc circle, .sc rect { animation-iteration-count: infinite; }
+
+  .soft { animation-timing-function: cubic-bezier(.65,0,.35,1) !important; }
+  .rot { transform-box: view-box !important; transform-origin: 60px 68px; }
+  @keyframes spin { to { transform: rotate(360deg) } }
+
+  /* ---------- 1 Wäschekorb mit Klappdeckel ---------- */
+  .j1 { animation: j1 6s infinite; }
+  @keyframes j1 { 0%,8% { transform: none; opacity: 1; animation-timing-function: ease-out }
+    17% { transform: translate(calc(var(--dx) * .5), -44px) rotate(-60deg); animation-timing-function: ease-in }
+    27% { transform: translate(var(--dx), var(--dy)) rotate(-120deg); opacity: 1 } 30%,89% { transform: translate(var(--dx), calc(var(--dy) + 8px)) rotate(-120deg); opacity: 0 }
+    90% { transform: none; opacity: 0 } 100% { opacity: 1 } }
+  .lid1 { animation: lid1 6s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes lid1 { 0% { transform: none } 6%,78% { transform: rotate(-105deg) } 86%,100% { transform: none } }
+
+  .j2 { animation: j2 6.6s infinite; }
+  @keyframes j2 { 0%,6% { transform: none; opacity: 1; animation-timing-function: cubic-bezier(.16,1,.3,1) }
+    12%,15% { transform: translateY(-24px) rotate(-8deg); animation-timing-function: ease-out }
+    21% { transform: translate(calc(var(--dx) * .6), -46px) rotate(70deg); animation-timing-function: ease-in }
+    28% { transform: translate(var(--dx), var(--dy)) rotate(140deg); opacity: 1 } 31%,87% { transform: translate(var(--dx), calc(var(--dy) + 8px)) rotate(140deg); opacity: 0 }
+    88% { transform: none; opacity: 0 } 100% { opacity: 1 } }
+  .lid2 { animation: lid2 6.6s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes lid2 { 0% { transform: none } 5%,78% { transform: rotate(-105deg) } 86%,100% { transform: none } }
+
+  .j3 { animation: j3 6s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes j3 { 0%,6% { transform: none; opacity: 1 } 22% { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 1 }
+    25%,90% { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0 } 91% { transform: none; opacity: 0 } 100% { opacity: 1 } }
+  .lid3c { animation: lid3c 6s infinite cubic-bezier(.65,0,.35,1); transform-origin: 50% 0; }
+  @keyframes lid3c { 0%,66% { transform: none } 76%,90% { transform: translateY(12px) scaleY(2.4) } 98%,100% { transform: none } }
+  .sp1 { animation: sp1 6s infinite; opacity: 0; transform-origin: center; }
+  @keyframes sp1 { 0%,74% { opacity: 0; transform: scale(.2) } 80% { opacity: 1; transform: scale(1) rotate(45deg) } 90%,100% { opacity: 0; transform: scale(.4) rotate(90deg) } }
+
+  /* ---------- 2 Aufzug, Schlüssel, Kellertür ---------- */
+  .car2 { animation: car2 7.5s infinite; }
+  @keyframes car2 { 0%,10% { transform: none; opacity: 1; animation-timing-function: cubic-bezier(.65,0,.35,1) } 50%,88% { transform: translateY(76px); opacity: 1 }
+    94% { transform: translateY(76px); opacity: 0 } 95% { transform: none; opacity: 0 } 100% { opacity: 1 } }
+  .bk2 { animation: bk2 7.5s infinite; }
+  @keyframes bk2 { 0%,10% { transform: none; opacity: 1; animation-timing-function: cubic-bezier(.65,0,.35,1) } 50%,54% { transform: translateY(76px); animation-timing-function: cubic-bezier(.65,0,.35,1) }
+    64%,88% { transform: translate(40px,76px); opacity: 1 } 94% { transform: translate(40px,76px); opacity: 0 } 95% { transform: none; opacity: 0 } 100% { opacity: 1 } }
+  .fl { font-size: 10px; font-weight: 700; }
+  .fl2 { animation: fl2 7.5s infinite; } .fl1 { animation: fl1 7.5s infinite; } .fl0 { animation: fl0 7.5s infinite; } .flk { animation: flk 7.5s infinite; }
+  @keyframes fl2 { 0%,14% { fill: var(--pr) } 18%,96% { fill: var(--muted) } 100% { fill: var(--pr) } }
+  @keyframes fl1 { 0%,18% { fill: var(--muted) } 23% { fill: var(--pr) } 28%,100% { fill: var(--muted) } }
+  @keyframes fl0 { 0%,30% { fill: var(--muted) } 35% { fill: var(--pr) } 40%,100% { fill: var(--muted) } }
+  @keyframes flk { 0%,44% { fill: var(--muted) } 48%,92% { fill: var(--pr) } 96%,100% { fill: var(--muted) } }
+  .key2 { animation: key2 7.5s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes key2 { 0%,62% { opacity: 0; transform: translateX(-4px) } 66%,70% { opacity: 1; transform: none } 76%,82% { opacity: 1; transform: rotate(90deg) } 88%,100% { opacity: 0; transform: rotate(90deg) } }
+  .door2 { animation: door2 7.5s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes door2 { 0%,78% { transform: none } 84%,92% { transform: scaleX(.18) } 99%,100% { transform: none } }
+
+  /* ---------- 3 Einladen und starten ---------- */
+  .ld3 { animation: ld3 7s infinite; opacity: 0; }
+  @keyframes ld3 { 0%,10% { transform: none; opacity: 0; animation-timing-function: ease-out } 12% { opacity: 1 }
+    20% { transform: translate(-26px,-40px) rotate(-90deg); animation-timing-function: ease-in }
+    28% { transform: translate(-53px,-14px) rotate(-180deg) scale(.5); opacity: 1 } 31%,100% { transform: translate(-53px,-14px) scale(.5); opacity: 0 } }
+  .door3 { animation: door3 7s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes door3 { 0%,52% { transform: scaleX(.12) } 62% { transform: scaleX(1) } 65% { transform: scale(.96) } 68%,92% { transform: none } 100% { transform: scaleX(.12) } }
+  .lid3 { animation: lid3 7s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes lid3 { 0%,3% { transform: none } 10%,56% { transform: rotate(-105deg) } 64%,100% { transform: none } }
+  .led3 { animation: led3 7s infinite ease-in-out; }
+  @keyframes led3 { 0%,68% { opacity: .2 } 72% { opacity: 1 } 80% { opacity: .55 } 88%,92% { opacity: 1 } 98%,100% { opacity: .2 } }
+
+  /* ---------- 4 Programmphasen ---------- */
+  .w4a { animation: w4a 12s infinite ease-in-out; } .w4b { animation: w4b 12s infinite ease-in-out; } .f4 { animation: f4 12s infinite; }
+  @keyframes w4a { 0% { transform: translateY(22px) } 8%,36% { transform: none } 42%,100% { transform: translateY(22px) } }
+  @keyframes w4b { 0%,42% { transform: translateY(22px) } 50%,62% { transform: none } 68%,100% { transform: translateY(22px) } }
+  @keyframes f4 { 0%,8% { opacity: 0 } 12%,34% { opacity: 1 } 38%,100% { opacity: 0 } }
+  .d4 { animation: d4 12s infinite; }
+  @keyframes d4 { 0%,8% { transform: none; animation-timing-function: linear } 36% { transform: rotate(360deg) } 42% { transform: rotate(360deg); animation-timing-function: linear }
+    62% { transform: rotate(720deg) } 68% { transform: rotate(720deg); animation-timing-function: cubic-bezier(.6,0,.4,1) } 88%,100% { transform: rotate(3240deg) } }
+  .sh4 { animation: sh4 12s infinite linear; }
+  @keyframes sh4 { 0%,70% { transform: none } 71%,73%,75%,77%,79%,81%,83%,85% { transform: translateX(1px) } 72%,74%,76%,78%,80%,82%,84% { transform: translateX(-1px) } 86%,100% { transform: none } }
+  .s4 { fill: var(--line); } .s4-1 { fill: var(--pr); }
+  .s4-2 { animation: s4-2 12s infinite; } .s4-3 { animation: s4-3 12s infinite; } .s4-4 { animation: s4-4 12s infinite; } .s4-5 { animation: s4-5 12s infinite; }
+  @keyframes s4-2 { 0%,7% { fill: var(--line) } 8%,97% { fill: var(--pr) } 100% { fill: var(--line) } }
+  @keyframes s4-3 { 0%,35% { fill: var(--line) } 36%,97% { fill: var(--pr) } 100% { fill: var(--line) } }
+  @keyframes s4-4 { 0%,67% { fill: var(--line) } 68%,97% { fill: var(--pr) } 100% { fill: var(--line) } }
+  @keyframes s4-5 { 0%,87% { fill: var(--line) } 88%,97% { fill: var(--pr) } 100% { fill: var(--line) } }
+  .p4 { font-size: 9px; fill: var(--ink); opacity: 0; }
+  .p4-1 { animation: p4-1 12s infinite } .p4-2 { animation: p4-2 12s infinite } .p4-3 { animation: p4-3 12s infinite } .p4-4 { animation: p4-4 12s infinite } .p4-5 { animation: p4-5 12s infinite }
+  @keyframes p4-1 { 0%,7% { opacity: 1 } 9%,98% { opacity: 0 } 100% { opacity: 1 } }
+  @keyframes p4-2 { 0%,7% { opacity: 0 } 9%,35% { opacity: 1 } 37%,100% { opacity: 0 } }
+  @keyframes p4-3 { 0%,35% { opacity: 0 } 37%,67% { opacity: 1 } 69%,100% { opacity: 0 } }
+  @keyframes p4-4 { 0%,67% { opacity: 0 } 69%,87% { opacity: 1 } 89%,100% { opacity: 0 } }
+  @keyframes p4-5 { 0%,87% { opacity: 0 } 89%,97% { opacity: 1 } 99%,100% { opacity: 0 } }
+
+  /* ---------- 5 Wäsche holen ---------- */
+  .s5-1 { animation: s5-1 10s infinite; } .s5-2 { animation: s5-2 10s infinite; } .s5-3 { animation: s5-3 10s infinite; }
+  @keyframes s5-1 { 0% { opacity: 0 } 2%,20% { opacity: 1 } 24%,100% { opacity: 0 } }
+  @keyframes s5-2 { 0%,20% { opacity: 0 } 24%,76% { opacity: 1 } 80%,100% { opacity: 0 } }
+  @keyframes s5-3 { 0%,78% { opacity: 0 } 82%,96% { opacity: 1 } 100% { opacity: 0 } }
+  .c5d { animation: c5d 10s infinite; }
+  @keyframes c5d { 0%,4% { transform: none; animation-timing-function: cubic-bezier(.65,0,.35,1) } 18%,100% { transform: translateY(70px) } }
+  .c5u { animation: c5u 10s infinite; }
+  @keyframes c5u { 0%,82% { transform: translateY(70px); animation-timing-function: cubic-bezier(.65,0,.35,1) } 96%,100% { transform: none } }
+  .d5 { animation: d5 10s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes d5 { 0%,26% { transform: none } 32%,66% { transform: scaleX(.15) } 74%,100% { transform: none } }
+  .l5 { animation: l5 10s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes l5 { 0%,26% { transform: none } 32%,68% { transform: rotate(-105deg) } 74%,100% { transform: none } }
+  .u5-1,.u5-2,.u5-3 { animation: 10s infinite; opacity: 0; }
+  .u5-1 { animation-name: u5-1 } .u5-2 { animation-name: u5-2 } .u5-3 { animation-name: u5-3 }
+  @keyframes u5-1 { 0%,34% { transform: none; opacity: 0; animation-timing-function: ease-out } 35% { opacity: 1 } 40% { transform: translate(25px,-26px) rotate(90deg); animation-timing-function: ease-in } 46%,78% { transform: translate(51px,18px) rotate(180deg); opacity: 1 } 80%,100% { transform: translate(51px,18px); opacity: 0 } }
+  @keyframes u5-2 { 0%,44% { transform: none; opacity: 0; animation-timing-function: ease-out } 45% { opacity: 1 } 50% { transform: translate(25px,-26px) rotate(90deg); animation-timing-function: ease-in } 56%,78% { transform: translate(51px,18px) rotate(180deg); opacity: 1 } 80%,100% { transform: translate(51px,18px); opacity: 0 } }
+  @keyframes u5-3 { 0%,54% { transform: none; opacity: 0; animation-timing-function: ease-out } 55% { opacity: 1 } 60% { transform: translate(25px,-26px) rotate(90deg); animation-timing-function: ease-in } 66%,78% { transform: translate(51px,18px) rotate(180deg); opacity: 1 } 80%,100% { transform: translate(51px,18px); opacity: 0 } }
+
+  .d5b { animation: d5b 6s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes d5b { 0%,6% { transform: none } 16%,72% { transform: scaleX(.15) } 82%,100% { transform: none } }
+  .l5b { animation: l5b 6s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes l5b { 0%,6% { transform: none } 14%,72% { transform: rotate(-105deg) } 80%,100% { transform: none } }
+  .u5b { animation: u5b 6s infinite; opacity: 0; }
+  @keyframes u5b { 0%,14% { transform: none; opacity: 0; animation-timing-function: ease-out } 15% { opacity: 1 } 24% { transform: translate(25px,-26px) rotate(90deg); animation-timing-function: ease-in } 34%,80% { transform: translate(51px,18px) rotate(180deg); opacity: 1 } 82%,100% { transform: translate(51px,18px); opacity: 0 } }
+
+  /* ---------- 6 Aufhängen: übergehängt, Leine hängt durch ---------- */
+  .h6-1,.h6-2,.h6-3 { animation: 7s infinite linear; transform-origin: center; }
+  .h6-1 { animation-name: h6-1 } .h6-2 { animation-name: h6-2 } .h6-3 { animation-name: h6-3 }
+  @keyframes h6-1 { 0%,4% { transform: translate(24px,58px) scale(.6); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 6% { opacity: 1 } 15% { transform: none }
+    20%,35% { transform: translateY(2.9px) } 40%,55% { transform: translateY(5.1px) } 60%,88% { transform: translateY(7.3px); opacity: 1 } 98%,100% { transform: none; opacity: 0 } }
+  @keyframes h6-2 { 0%,24% { transform: translate(0,58px) scale(.6); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 26% { opacity: 1 } 35% { transform: translateY(4px) }
+    40%,55% { transform: translateY(7px) } 60%,88% { transform: translateY(10px); opacity: 1 } 98%,100% { transform: none; opacity: 0 } }
+  @keyframes h6-3 { 0%,44% { transform: translate(-24px,58px) scale(.6); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 46% { opacity: 1 } 55% { transform: translateY(5.1px) }
+    60%,88% { transform: translateY(7.3px); opacity: 1 } 98%,100% { transform: none; opacity: 0 } }
+  .l6 { animation: l6 7s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes l6 { 0% { transform: none } 4%,58% { transform: rotate(-105deg) } 66%,100% { transform: none } }
+
+  /* ---------- 7 Trocknen: Tag und Nacht, Wind, wird trocken ---------- */
+  .orb7 { animation: spin 12s infinite linear; transform-box: view-box !important; transform-origin: 60px 112px; }
+  .night7 { animation: night7 12s infinite ease-in-out; opacity: 0; }
+  @keyframes night7 { 0%,25% { opacity: 0 } 50% { opacity: .07 } 75%,100% { opacity: 0 } }
+  .star7 { animation: star7 12s infinite ease-in-out; opacity: 0; }
+  @keyframes star7 { 0%,36% { opacity: 0 } 46%,56% { opacity: 1 } 66%,100% { opacity: 0 } }
+  .wet7 { animation: wet7 12s infinite linear; fill: var(--ink); }
+  @keyframes wet7 { 0% { opacity: .32 } 70%,94% { opacity: 0 } 100% { opacity: .32 } }
+  .dv7 { animation: dv7 12s infinite; }
+  @keyframes dv7 { 0%,30% { opacity: 1 } 40%,94% { opacity: 0 } 100% { opacity: 1 } }
+  .k7b { animation: k7b 2.6s infinite ease-in; opacity: 0; }
+  @keyframes k7b { 0% { opacity: 0; transform: none } 10% { opacity: 1 } 85% { opacity: 1; transform: translateY(26px) } 100% { opacity: 0; transform: translateY(28px) } }
+  .k7c-w { animation: k7c-w 4s infinite ease-in-out; stroke-dasharray: 26 200; stroke-dashoffset: 26; }
+  @keyframes k7c-w { 0% { stroke-dashoffset: 26 } 100% { stroke-dashoffset: -110 } }
+  .k7c-b { animation: k7c-b 4s infinite ease-in-out; transform-origin: 50% 0; }
+  @keyframes k7c-b { 0%,20% { transform: rotate(0) } 45% { transform: rotate(-12deg) } 70% { transform: rotate(4deg) } 85%,100% { transform: rotate(0) } }
+
+  /* ---------- 8 Abnehmen: rückwärts zu 6 ---------- */
+  .h8-1,.h8-2,.h8-3 { animation: 7s infinite linear; transform-origin: center; }
+  .h8-1 { animation-name: h8-1 } .h8-2 { animation-name: h8-2 } .h8-3 { animation-name: h8-3 }
+  @keyframes h8-3 { 0%,20% { transform: translateY(7.3px); opacity: 1; animation-timing-function: ease-in } 28% { transform: translate(-24px,58px) scale(.6); opacity: 1 } 29%,88% { transform: translate(-24px,58px) scale(.6); opacity: 0 }
+    89% { transform: translateY(-6px); opacity: 0; animation-timing-function: ease-out } 98%,100% { transform: translateY(7.3px); opacity: 1 } }
+  @keyframes h8-2 { 0%,20% { transform: translateY(10px); opacity: 1 } 25%,40% { transform: translateY(7px); animation-timing-function: ease-in } 48% { transform: translate(0,58px) scale(.6); opacity: 1 } 49%,88% { transform: translate(0,58px) scale(.6); opacity: 0 }
+    89% { transform: translateY(-4px); opacity: 0; animation-timing-function: ease-out } 98%,100% { transform: translateY(10px); opacity: 1 } }
+  @keyframes h8-1 { 0%,20% { transform: translateY(7.3px); opacity: 1 } 25%,40% { transform: translateY(5.1px) } 45%,60% { transform: translateY(2.9px); animation-timing-function: ease-in } 68% { transform: translate(24px,58px) scale(.6); opacity: 1 } 69%,88% { transform: translate(24px,58px) scale(.6); opacity: 0 }
+    89% { transform: translateY(-6px); opacity: 0; animation-timing-function: ease-out } 98%,100% { transform: translateY(7.3px); opacity: 1 } }
+  .l8 { animation: l8 7s infinite cubic-bezier(.65,0,.35,1); }
+  @keyframes l8 { 0%,12% { transform: none } 18%,72% { transform: rotate(-105deg) } 78%,100% { transform: none } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <path id="shirt" d="M-6 -11 L-13 -7 L-10 -1 L-7 -3 V11 H7 V-3 L10 -1 L13 -7 L6 -11 Q0 -7 -6 -11 Z" style="fill:var(--ac);stroke:var(--ink);stroke-width:2;stroke-linejoin:round"/>
+    <path id="shirt2" d="M-6 -11 L-13 -7 L-10 -1 L-7 -3 V11 H7 V-3 L10 -1 L13 -7 L6 -11 Q0 -7 -6 -11 Z" style="fill:var(--pr2);stroke:var(--ink);stroke-width:2;stroke-linejoin:round"/>
+    <path id="sock" d="M-4 -11 H3 V3 L8 6 Q11 9 8 11 H-1 Q-4 11 -4 7 Z" style="fill:var(--pr2);stroke:var(--ink);stroke-width:2;stroke-linejoin:round"/>
+    <g id="towel" style="fill:var(--c3);stroke:var(--ink);stroke-width:2;stroke-linejoin:round"><rect x="-9" y="-11" width="18" height="22" rx="2"/><path d="M-9 6 H9" style="fill:none"/></g>
+    <!-- Wäschekorb: Kasten mit Klappdeckel, Nullpunkt = Mitte unten -->
+    <g id="hbody" style="stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round">
+      <rect x="-17" y="-32" width="34" height="32" rx="3" style="fill:var(--card)"/>
+      <path d="M-8 -25 V-7 M0 -25 V-7 M8 -25 V-7" style="fill:none;opacity:.45"/>
+    </g>
+    <rect id="hlid" x="-19" y="-37" width="38" height="5" rx="2" style="fill:var(--card);stroke:var(--ink);stroke-width:2.5"/>
+    <g id="hamper"><use href="#hbody"/><use href="#hlid"/></g>
+    <!-- Wäsche über den Draht gehängt, Nullpunkt = Mitte oben am Draht -->
+    <g id="dr1" style="stroke:var(--ink);stroke-width:2;stroke-linejoin:round"><rect x="-10" y="-2" width="20" height="22" rx="2.5" style="fill:var(--ac)"/><path d="M-10 6 H10" style="fill:none;opacity:.5"/></g>
+    <g id="dr2" style="stroke:var(--ink);stroke-width:2;stroke-linejoin:round"><rect x="-9" y="-2" width="18" height="26" rx="2.5" style="fill:var(--c3)"/><path d="M-9 8 H9" style="fill:none;opacity:.5"/></g>
+    <g id="dr3" style="stroke:var(--ink);stroke-width:2;stroke-linejoin:round"><rect x="-4" y="-2" width="8" height="16" rx="2" style="fill:var(--pr2)"/><path d="M-4 5 H4" style="fill:none;opacity:.5"/></g>
+    <g id="washerBody" style="stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round">
+      <rect x="32" y="18" width="56" height="84" rx="8" style="fill:var(--card)"/><path d="M32 34 H88" style="fill:none"/><circle cx="46" cy="26" r="3.5" style="fill:none"/>
+    </g>
+    <g id="washerLeft" style="stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round">
+      <rect x="10" y="22" width="58" height="84" rx="8" style="fill:var(--card)"/><path d="M10 38 H68" style="fill:none"/><circle cx="20" cy="30" r="3.5" style="fill:none"/>
+    </g>
+    <clipPath id="drum"><circle cx="60" cy="68" r="15"/></clipPath>
+    <path id="star" d="M0 -5 l1.4 3.6 l3.6 1.4 l-3.6 1.4 l-1.4 3.6 l-1.4 -3.6 l-3.6 -1.4 l3.6 -1.4 z"/>
+  </defs>
+</svg>
+
+<main>
+  <h1>Animationen, Runde 2</h1>
+  <p class="hint">Nach deinem Feedback überarbeitet. Tippen zeigt die Variante groß im Schritt. <a href="animationen.html" style="color:var(--pr)">Runde 1</a> bleibt zum Vergleich.</p>
+
+  <h2>1 · Alles in den Wäschekorb</h2>
+  <p class="hint">Neu: Korb als Kasten mit Klappdeckel, die Wäsche liegt am Boden und wird eingesammelt.</p>
+  <div class="grid" data-step="Alles in den Wäschekorb" data-btn="Erledigt">
+    <figure data-v="A"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <path class="ln muted" d="M4 110 H116"/>
+      <g class="j1" style="--dx:70px;--dy:-4px"><use href="#sock" x="14" y="99"/></g>
+      <g class="j1" style="--dx:52px;--dy:-4px;animation-delay:1.2s"><use href="#shirt2" x="32" y="99"/></g>
+      <g class="j1" style="--dx:34px;--dy:-4px;animation-delay:2.4s"><use href="#towel" x="50" y="99"/></g>
+      <g transform="translate(84 110)"><use href="#hbody"/><g class="lid1 ol"><use href="#hlid"/></g></g>
+    </svg></div><figcaption><b>A · Reinwerfen</b><span>Deckel auf, die Teile vom Boden fliegen nacheinander hinein, Deckel zu.</span></figcaption></figure>
+
+    <figure data-v="B"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <path class="ln muted" d="M4 110 H116"/>
+      <g class="j2" style="--dx:70px;--dy:-4px"><use href="#sock" x="14" y="99"/></g>
+      <g class="j2" style="--dx:52px;--dy:-4px;animation-delay:1.4s"><use href="#shirt2" x="32" y="99"/></g>
+      <g class="j2" style="--dx:34px;--dy:-4px;animation-delay:2.8s"><use href="#towel" x="50" y="99"/></g>
+      <g transform="translate(84 110)"><use href="#hbody"/><g class="lid2 ol"><use href="#hlid"/></g></g>
+    </svg></div><figcaption><b>B · Aufheben, dann werfen</b><span>Jedes Teil wird erst hochgehoben, kurz gehalten und dann geworfen.</span></figcaption></figure>
+
+    <figure data-v="C"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <rect x="6" y="6" width="108" height="108" rx="16" style="fill:var(--line);opacity:.45"/>
+      <rect x="44" y="48" width="32" height="24" rx="3" style="fill:var(--card);stroke:var(--ink);stroke-width:2.5"/>
+      <rect x="48" y="52" width="24" height="16" rx="2" style="fill:var(--line)"/>
+      <g class="j3" style="--dx:40px;--dy:36px"><use href="#sock" transform="translate(20 24) rotate(30)"/></g>
+      <g class="j3" style="--dx:-36px;--dy:34px;animation-delay:.7s"><use href="#shirt" transform="translate(96 26) rotate(-20)"/></g>
+      <g class="j3" style="--dx:38px;--dy:-34px;animation-delay:1.4s"><use href="#towel" transform="translate(22 94) rotate(15)"/></g>
+      <g class="j3" style="--dx:-38px;--dy:-32px;animation-delay:2.1s"><use href="#shirt2" transform="translate(98 92) rotate(-35)"/></g>
+      <g class="lid3c"><rect x="44" y="36" width="32" height="10" rx="2" vector-effect="non-scaling-stroke" style="fill:var(--card);stroke:var(--ink);stroke-width:2.5"/></g>
+      <path class="sp1" d="M86 40 l2 -6 l2 6 l6 2 l-6 2 l-2 6 l-2 -6 l-6 -2 z" style="fill:var(--pr)"/>
+    </svg></div><figcaption><b>C · Von oben</b><span>Draufsicht aufs Zimmer: die Teile gleiten in den Korb, der Boden wird frei, Deckel zu.</span></figcaption></figure>
+  </div>
+
+  <h2>2 · Nach unten bringen</h2>
+  <p class="hint">Neu auf Basis von D: Aufzug vom 2. Stock in den Keller, dann Schlüssel und Kellertür.</p>
+  <div class="grid" data-step="Nach unten bringen" data-btn="Erledigt">
+    <figure data-v="D2"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <rect class="ln" x="12" y="8" width="100" height="102" rx="4"/>
+      <path class="ln muted" d="M44 34 H112 M44 58 H112 M44 82 H112"/>
+      <path class="ln" d="M44 8 V110"/>
+      <text class="fl fl2" x="50" y="25">2</text><text class="fl fl1" x="50" y="49">1</text>
+      <text class="fl fl0" x="50" y="73">EG</text><text class="fl flk" x="50" y="99">K</text>
+      <rect class="ln" x="90" y="86" width="18" height="24" rx="1.5"/>
+      <g class="door2 ol"><rect x="90" y="86" width="18" height="24" rx="1.5" style="fill:var(--line);stroke:var(--ink);stroke-width:2.5"/></g>
+      <g class="key2 o"><g transform="translate(80 97)" class="lp"><circle r="3.2"/><path d="M3.2 0 H9 M7.5 0 V2.6"/></g></g>
+      <g class="car2"><rect x="16" y="12" width="24" height="21" rx="2" style="fill:var(--card);stroke:var(--ink);stroke-width:2"/></g>
+      <g class="bk2"><g transform="translate(28 33) scale(.42)"><use href="#hamper"/></g></g>
+    </svg></div><figcaption><b>D2 · Aufzug und Schlüssel</b><span>Der Aufzug fährt mit dem Korb von 2 nach K, die Etage leuchtet mit. Unten dreht sich der Schlüssel, die Tür geht auf.</span></figcaption></figure>
+  </div>
+
+  <h2>3 · Maschine starten</h2>
+  <p class="hint">Neu auf Basis von E: erst einladen wie bei 5C, dann Tür zu, dann geht das Lämpchen an. Bleibt dezent.</p>
+  <div class="grid small" data-step="Maschine starten" data-btn="Waschvorgang starten">
+    <figure data-v="E2"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <use href="#washerLeft"/>
+      <circle class="ln muted" cx="39" cy="72" r="14"/>
+      <circle class="fp led3" cx="58" cy="30" r="3"/>
+      <g class="ld3"><use href="#shirt" x="92" y="88"/></g>
+      <g class="ld3" style="animation-delay:.8s"><use href="#sock" x="92" y="88"/></g>
+      <g class="ld3" style="animation-delay:1.6s"><use href="#towel" x="92" y="88"/></g>
+      <g transform="translate(92 108)"><use href="#hbody"/><g class="lid3 ol"><use href="#hlid"/></g></g>
+      <g class="door3 ol"><circle cx="39" cy="72" r="20" style="fill:var(--card);fill-opacity:.4;stroke:var(--ink);stroke-width:2.5"/><path class="ln" d="M55 66 v12"/></g>
+    </svg></div><figcaption><b>E2 · Einladen und starten</b><span>Die Wäsche wandert aus dem Korb in die Trommel, die Tür klickt zu, das Lämpchen geht an.</span></figcaption></figure>
+  </div>
+
+  <h2>4 · Waschgang läuft</h2>
+  <p class="hint">Neu auf Basis von E: die echten Phasen eines Waschgangs, mit Namen und Fortschrittsleiste.</p>
+  <div class="grid" data-step="Waschgang läuft" data-btn="Zurück zur Übersicht">
+    <figure data-v="E2"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <g class="sh4">
+        <use href="#washerBody"/><circle class="ln" cx="60" cy="68" r="21"/>
+        <g clip-path="url(#drum)">
+          <g class="w4a"><rect x="40" y="70" width="40" height="22" style="fill:var(--water)"/>
+            <g class="f4" style="fill:var(--card);stroke:var(--ink);stroke-width:1"><circle cx="50" cy="70" r="2.5"/><circle cx="57" cy="69" r="3"/><circle cx="66" cy="70" r="2.2"/><circle cx="71" cy="69.5" r="2.6"/></g>
+          </g>
+          <g class="w4b"><rect x="40" y="70" width="40" height="22" style="fill:var(--water);opacity:.55"/></g>
+          <g class="d4 rot"><use href="#shirt" transform="translate(60 59) scale(.55)"/><use href="#sock" transform="translate(53 74) scale(.55) rotate(120)"/><use href="#towel" transform="translate(68 74) scale(.5) rotate(-120)"/></g>
+        </g>
+        <circle class="ln muted" cx="60" cy="68" r="15"/>
+        <circle class="fp" cx="78" cy="26" r="3"/>
+      </g>
+      <rect class="s4 s4-1" x="24" y="106" width="12" height="3" rx="1.5"/><rect class="s4 s4-2" x="39" y="106" width="12" height="3" rx="1.5"/>
+      <rect class="s4 s4-3" x="54" y="106" width="12" height="3" rx="1.5"/><rect class="s4 s4-4" x="69" y="106" width="12" height="3" rx="1.5"/>
+      <rect class="s4 s4-5" x="84" y="106" width="12" height="3" rx="1.5"/>
+      <text class="p4 p4-1" x="60" y="119" text-anchor="middle">Wasser läuft ein</text>
+      <text class="p4 p4-2" x="60" y="119" text-anchor="middle">Waschen</text>
+      <text class="p4 p4-3" x="60" y="119" text-anchor="middle">Spülen</text>
+      <text class="p4 p4-4" x="60" y="119" text-anchor="middle">Schleudern</text>
+      <text class="p4 p4-5" x="60" y="119" text-anchor="middle">Fertig</text>
+    </svg></div><figcaption><b>E2 · Phasen</b><span>Wasser läuft ein, Waschen mit Schaum, Abpumpen und Spülen mit klarem Wasser, Schleudern mit Wackeln, Fertig. Im Durchlauf hier 12 Sekunden statt Stunden.</span></figcaption></figure>
+  </div>
+
+  <h2>5 · Wäsche holen</h2>
+  <p class="hint">Zwei Wege zum Vergleich: die ganze Runde mit Aufzug, oder nur das Ausladen.</p>
+  <div class="grid" data-step="Wäsche holen" data-btn="Erledigt">
+    <figure data-v="A2"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <g class="s5-1">
+        <rect class="ln" x="40" y="10" width="40" height="100" rx="4"/>
+        <text class="fl" x="86" y="24">2</text><text class="fl" x="86" y="106" style="fill:var(--pr)">K</text>
+        <g class="c5d"><rect x="46" y="14" width="28" height="22" rx="2" style="fill:var(--card);stroke:var(--ink);stroke-width:2"/><g transform="translate(60 36) scale(.45)"><use href="#hamper"/></g></g>
+      </g>
+      <g class="s5-2">
+        <use href="#washerLeft"/><circle class="ln muted" cx="39" cy="72" r="14"/>
+        <g class="u5-1"><use href="#shirt" transform="translate(39 72) scale(.55)"/></g>
+        <g class="u5-2"><use href="#sock" transform="translate(41 72) scale(.55)"/></g>
+        <g class="u5-3"><use href="#towel" transform="translate(40 72) scale(.5)"/></g>
+        <g class="d5 ol"><circle cx="39" cy="72" r="20" style="fill:var(--card);fill-opacity:.4;stroke:var(--ink);stroke-width:2.5"/><path class="ln" d="M55 66 v12"/></g>
+        <g transform="translate(90 108)"><use href="#hbody"/><g class="l5 ol"><use href="#hlid"/></g></g>
+      </g>
+      <g class="s5-3">
+        <rect class="ln" x="40" y="10" width="40" height="100" rx="4"/>
+        <text class="fl" x="86" y="24" style="fill:var(--pr)">2</text><text class="fl" x="86" y="106">K</text>
+        <g class="c5u"><rect x="46" y="14" width="28" height="22" rx="2" style="fill:var(--card);stroke:var(--ink);stroke-width:2"/>
+          <g transform="translate(60 36) scale(.45)"><path d="M-15 -32 Q-8 -42 0 -35 Q8 -43 15 -32 Z" style="fill:var(--ac);stroke:var(--ink);stroke-width:3"/><use href="#hbody"/><use href="#hlid" transform="translate(0 -6) rotate(-8)"/></g></g>
+      </g>
+    </svg></div><figcaption><b>A2 · Die ganze Runde</b><span>Kurz mit dem leeren Korb runter, unten Tür auf und ausladen, voll wieder hoch. Das Ausladen bekommt die meiste Zeit.</span></figcaption></figure>
+
+    <figure data-v="B2"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <rect x="80" y="6" width="34" height="16" rx="8" style="fill:var(--line)"/><text x="97" y="17" text-anchor="middle">Keller</text>
+      <use href="#washerLeft"/><circle class="ln muted" cx="39" cy="72" r="14"/>
+      <g class="u5b"><use href="#shirt" transform="translate(39 72) scale(.55)"/></g>
+      <g class="u5b" style="animation-delay:.9s"><use href="#sock" transform="translate(41 72) scale(.55)"/></g>
+      <g class="u5b" style="animation-delay:1.8s"><use href="#towel" transform="translate(40 72) scale(.5)"/></g>
+      <g class="d5b ol"><circle cx="39" cy="72" r="20" style="fill:var(--card);fill-opacity:.4;stroke:var(--ink);stroke-width:2.5"/><path class="ln" d="M55 66 v12"/></g>
+      <g transform="translate(90 108)"><use href="#hbody"/><g class="l5b ol"><use href="#hlid"/></g></g>
+    </svg></div><figcaption><b>B2 · Nur ausladen</b><span>Tür auf, Wäsche im Bogen in den Korb, Tür zu. Der Weg steckt nur im Schild „Keller“.</span></figcaption></figure>
+  </div>
+
+  <h2>6 · Wäsche aufhängen</h2>
+  <p class="hint">Neu aus E und D: aus dem Korb hoch, übergehängt statt geklammert, die Leine hängt mit jedem Teil mehr durch.</p>
+  <div class="grid" data-step="Wäsche aufhängen" data-btn="Erledigt">
+    <figure data-v="E2"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <path class="ln" d="M14 112 V26 M106 112 V26"/>
+      <path class="ln" style="stroke-width:1.8" d="M14 32 Q60 36 106 32">
+        <animate attributeName="d" dur="7s" repeatCount="indefinite" keyTimes="0;0.15;0.2;0.35;0.4;0.55;0.6;0.88;0.98;1"
+                 values="M14 32 Q60 36 106 32;M14 32 Q60 36 106 32;M14 32 Q60 44 106 32;M14 32 Q60 44 106 32;M14 32 Q60 50 106 32;M14 32 Q60 50 106 32;M14 32 Q60 56 106 32;M14 32 Q60 56 106 32;M14 32 Q60 36 106 32;M14 32 Q60 36 106 32"/>
+      </path>
+      <g class="h6-1"><use href="#dr1" x="36" y="33.5"/></g>
+      <g class="h6-2"><use href="#dr2" x="60" y="34"/></g>
+      <g class="h6-3"><use href="#dr3" x="84" y="33.5"/></g>
+      <g transform="translate(60 112) scale(.7)"><use href="#hbody"/><g class="l6 ol"><use href="#hlid"/></g></g>
+    </svg></div><figcaption><b>E2 · Übergehängt</b><span>Die Teile springen aus dem Korb über den Draht, ohne Klammern.</span></figcaption></figure>
+  </div>
+
+  <h2>7 · Trocknen lassen</h2>
+  <p class="hint">Neu aus D und C: Sonne und Mond oben frei, Wind zieht durch, die Wäsche wird sichtbar trocken.</p>
+  <div class="grid" data-step="Trockenzeit läuft" data-btn="Zurück zur Übersicht">
+    <figure data-v="D2"><div class="stage"><svg class="sc clip" viewBox="0 0 120 120">
+      <rect class="night7" x="0" y="0" width="120" height="120" style="fill:var(--ink)"/>
+      <g style="fill:var(--ac)"><use href="#star" class="star7" x="22" y="16"/><use href="#star" class="star7" x="98" y="26" style="animation-delay:.6s"/><use href="#star" class="star7" x="80" y="10" style="animation-delay:1.2s"/></g>
+      <g class="orb7">
+        <g style="stroke:var(--ac);stroke-width:2.5;stroke-linecap:round"><path d="M60 5 v3 M60 32 v3 M45 20 h3 M72 20 h3 M49.4 9.4 l2.1 2.1 M68.5 28.5 l2.1 2.1 M49.4 30.6 l2.1 -2.1 M68.5 11.5 l2.1 -2.1"/></g>
+        <circle cx="60" cy="20" r="7.5" style="fill:var(--ac)"/>
+        <circle cx="60" cy="204" r="8" style="fill:var(--ac)"/><circle cx="64.5" cy="200.5" r="7" style="fill:var(--card)"/>
+      </g>
+      <path class="ln" d="M14 112 V58 M106 112 V58"/>
+      <path class="ln" style="stroke-width:1.8" d="M14 62 Q60 72 106 62"/>
+      <g class="k7c-b"><use href="#dr1" x="36" y="65.6"/><rect class="wet7" x="26" y="63.6" width="20" height="22" rx="2.5"/></g>
+      <g class="k7c-b" style="animation-delay:.15s"><use href="#dr2" x="60" y="67"/><rect class="wet7" x="51" y="65" width="18" height="26" rx="2.5"/></g>
+      <g class="k7c-b" style="animation-delay:.3s"><use href="#dr3" x="84" y="65.6"/><rect class="wet7" x="80" y="63.6" width="8" height="16" rx="2"/></g>
+      <g class="dv7" style="fill:var(--water)">
+        <path class="k7b" d="M36 88 q-2.5 4 0 5 q2.5 -1 0 -5z"/>
+        <path class="k7b" d="M58 93 q-2.5 4 0 5 q2.5 -1 0 -5z" style="animation-delay:.9s"/>
+        <path class="k7b" d="M64 93 q-2.5 4 0 5 q2.5 -1 0 -5z" style="animation-delay:1.7s"/>
+        <path class="k7b" d="M84 82 q-2.5 4 0 5 q2.5 -1 0 -5z" style="animation-delay:.5s"/>
+      </g>
+      <path class="lp k7c-w" d="M-10 98 H100 q8 0 8 -6 t-6 -6"/>
+      <path class="lp k7c-w" d="M-10 106 H90" style="animation-delay:.25s"/>
+    </svg></div><figcaption><b>D2 · Tage vergehen</b><span>Sonne und Mond wechseln sich oben ab. Am Anfang ist die Wäsche dunkler und tropft, mit jedem Windstoß wird sie heller und trocken.</span></figcaption></figure>
+  </div>
+
+  <h2>8 · Wäsche abnehmen</h2>
+  <p class="hint">Wie 6, nur rückwärts: die Teile springen in den Korb, die Leine wird wieder gerade.</p>
+  <div class="grid" data-step="Wäsche abnehmen" data-btn="Erledigt">
+    <figure data-v="6R"><div class="stage"><svg class="sc" viewBox="0 0 120 120">
+      <path class="ln" d="M14 112 V26 M106 112 V26"/>
+      <path class="ln" style="stroke-width:1.8" d="M14 32 Q60 56 106 32">
+        <animate attributeName="d" dur="7s" repeatCount="indefinite" keyTimes="0;0.2;0.25;0.4;0.45;0.6;0.65;0.88;0.98;1"
+                 values="M14 32 Q60 56 106 32;M14 32 Q60 56 106 32;M14 32 Q60 50 106 32;M14 32 Q60 50 106 32;M14 32 Q60 44 106 32;M14 32 Q60 44 106 32;M14 32 Q60 36 106 32;M14 32 Q60 36 106 32;M14 32 Q60 56 106 32;M14 32 Q60 56 106 32"/>
+      </path>
+      <g class="h8-1"><use href="#dr1" x="36" y="33.5"/></g>
+      <g class="h8-2"><use href="#dr2" x="60" y="34"/></g>
+      <g class="h8-3"><use href="#dr3" x="84" y="33.5"/></g>
+      <g transform="translate(60 112) scale(.7)"><use href="#hbody"/><g class="l8 ol"><use href="#hlid"/></g></g>
+    </svg></div><figcaption><b>6 rückwärts</b><span>Deckel auf, ein Teil nach dem anderen vom Draht in den Korb, Deckel zu.</span></figcaption></figure>
+  </div>
+</main>
+
+<div id="ctx" role="dialog" aria-modal="true">
+  <div class="v"></div>
+  <div class="t"></div>
+  <div class="big"></div>
+  <button class="btn" type="button"></button>
+  <div class="close">Irgendwo tippen zum Schließen</div>
+</div>
+
+<script>
+  const ctx = document.getElementById("ctx");
+  document.querySelectorAll("figure").forEach((fig) => {
+    fig.addEventListener("click", () => {
+      const grid = fig.closest(".grid");
+      ctx.querySelector(".t").textContent = grid.dataset.step;
+      ctx.querySelector(".v").textContent = "Variante " + fig.dataset.v;
+      ctx.querySelector(".btn").textContent = grid.dataset.btn;
+      ctx.querySelector(".big").innerHTML = fig.querySelector(".stage").innerHTML;
+      ctx.classList.toggle("small", grid.classList.contains("small"));
+      ctx.classList.add("open");
+    });
+  });
+  ctx.addEventListener("click", () => ctx.classList.remove("open"));
+</script>
+</body>
+</html>
