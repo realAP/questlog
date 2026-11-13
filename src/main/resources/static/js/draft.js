@@ -8,7 +8,6 @@
     press: { scale: 0.97, bounce: 0.2, duration: 0.25 },
     // Mini-Celebration: Kreis wird grün, das Häkchen zeichnet sich ein, ein langsamer Lichthof.
     celebrate: { check: 0.42, glow: 0.8, rest: 0.3 },
-    finale: { ring: 0.6, title: 0.3 },
   };
   const EASE_OUT = [0.16, 1, 0.3, 1];
   const EASE_SOFT = [0.65, 0, 0.35, 1];
@@ -547,28 +546,14 @@
         });
       },
 
-      // Rückblick: die Etappen werden nacheinander grün, die Linien dazwischen laufen voll.
-      // Danach der Ring, das Häkchen, ein kurzes Funkeln und der Titel. Zusammen gut 3 Sekunden.
+      // Abschluss: das Regal füllt sich, dann grüner Haken und Funkeln. Die Abfolge steckt im CSS
+      // (.ql-finale.play), hier wird sie nur neu gestartet.
       async celebrate() {
-        const nodes = [...this.root.querySelectorAll("[data-sum-node]")];
-        const lines = [...this.root.querySelectorAll("[data-sum-line]")];
-        const sparkles = [...this.root.querySelectorAll("[data-sparkle]")];
-        const { doneRing: ring, doneTitle: title, doneCheck: check } = this.$refs;
-        nodes.forEach((n) => (n.style.opacity = "0"));
-        lines.forEach((l) => (l.style.width = "0%"));
-        sparkles.forEach((sp) => (sp.style.opacity = "0"));
-        QL.setRing(ring, 0);
-        check.style.opacity = "0";
-        title.style.opacity = "0";
+        const parts = [this.$refs.finale, this.$refs.doneTitle];
+        parts.forEach((el) => el.classList.remove("play"));
         await this.$nextTick();
-        for (let k = 0; k < nodes.length; k += 1) {
-          await QL.animate(nodes[k], { opacity: [0, 1], scale: [0.6, 1] }, QL.spring(0.35, 0.3))?.finished;
-          if (lines[k]) await QL.tween(0, 100, (v) => (lines[k].style.width = `${v}%`), { duration: 0.3, ease: EASE_SOFT });
-        }
-        await QL.tween(0, 1, (v) => QL.setRing(ring, v), { duration: DESIGN.finale.ring, ease: EASE_OUT });
-        QL.animate(check, { opacity: [0, 1], scale: [0.7, 1] }, QL.spring(0.4, 0.35));
-        sparkles.forEach((sp, k) => QL.animate(sp, { opacity: [0, 1, 0], scale: [0.2, 1, 0.5], rotate: [0, 90] }, { duration: 0.9, delay: k * 0.08, ease: EASE_OUT }));
-        QL.animate(title, { opacity: [0, 1], y: [DESIGN.textIn.distance, 0] }, { duration: DESIGN.finale.title, ease: EASE_OUT });
+        void this.$refs.finale.offsetWidth;
+        parts.forEach((el) => el.classList.add("play"));
       },
 
       restart() {

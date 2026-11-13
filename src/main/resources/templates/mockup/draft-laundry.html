@@ -245,37 +245,15 @@
       </footer>
     </section>
 
-    <!-- Abschluss: erst laufen die drei Etappen kurz nacheinander durch, dann die Feier -->
+    <!-- Abschluss: das Regal füllt sich, dann setzt sich ein grüner Haken oben drauf und es funkelt -->
     <section x-show="screen === 'done'" x-cloak class="flex flex-1 flex-col">
-      <div class="flex flex-col items-center gap-10 pt-10 text-center">
-        <div class="flex w-full max-w-xs items-center" data-label="Rückblick">
-          <template x-for="(item, s) in quest.stages" :key="item.name">
-            <div class="contents">
-              <span class="relative grid size-12 shrink-0 place-items-center rounded-full bg-base-200 text-base-content/40">
-                <span class="size-6" x-html="icon(item.icon)"></span>
-                <span data-sum-node class="absolute inset-0 grid place-items-center rounded-full bg-primary text-primary-content opacity-0">
-                  <span class="size-6" x-html="icon('check')"></span>
-                </span>
-              </span>
-              <template x-if="s < quest.stages.length - 1">
-                <span class="relative mx-2 h-0.5 flex-1 rounded-full bg-base-300"><span data-sum-line class="absolute inset-y-0 left-0 w-0 rounded-full bg-primary"></span></span>
-              </template>
-            </div>
-          </template>
+      <div class="flex flex-col items-center gap-6 pt-16 text-center">
+        <div x-ref="finale" class="ql-scene ql-finale" style="width: var(--scene); height: var(--scene)" data-label="Abschluss">
+          <svg class="shelf" viewBox="0 0 110 110" aria-hidden="true"><rect x="24" y="22" width="62" height="84" rx="4" style="fill:none;stroke:var(--ink);stroke-width:2.5"/><path d="M55 22 V106 M24 62 H86" style="stroke:var(--ink);stroke-width:2.5"/><rect class="pk pk0" x="28" y="48" width="24" height="10" rx="3" style="fill:var(--ac);stroke:var(--ink);stroke-width:2"/><rect class="pk pk1" x="56" y="48" width="24" height="10" rx="3" style="fill:var(--c3);stroke:var(--ink);stroke-width:2"/><rect class="pk pk2" x="33" y="80" width="14" height="10" rx="3" style="fill:var(--pr2);stroke:var(--ink);stroke-width:2"/><rect class="pk pk3" x="56" y="80" width="24" height="10" rx="3" style="fill:var(--ac);stroke:var(--ink);stroke-width:2"/></svg>
+          <span class="disc"></span><span class="chk" x-html="icon('check')"></span>
+          <svg class="sp" viewBox="-12 -12 24 24" style="left:10%;top:-4%;width:18px;height:18px;animation-delay:0s" aria-hidden="true"><path d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/></svg><svg class="sp" viewBox="-12 -12 24 24" style="left:90%;top:4%;width:14px;height:14px;animation-delay:0.08s" aria-hidden="true"><path d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/></svg><svg class="sp" viewBox="-12 -12 24 24" style="left:94%;top:70%;width:16px;height:16px;animation-delay:0.16s" aria-hidden="true"><path d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/></svg><svg class="sp" viewBox="-12 -12 24 24" style="left:0%;top:60%;width:12px;height:12px;animation-delay:0.24s" aria-hidden="true"><path d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/></svg>
         </div>
-        <div class="relative grid size-48 place-items-center" x-ref="doneBadge">
-          <svg class="absolute inset-0 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
-            <circle class="ql-ring-track" cx="50" cy="50" r="44" stroke-width="6"/>
-            <circle x-ref="doneRing" class="ql-ring" cx="50" cy="50" r="44" stroke-width="6" pathLength="100"/>
-          </svg>
-          <span x-ref="doneCheck" class="relative size-16 text-primary opacity-0" x-html="icon('check')"></span>
-          <template x-for="(p, k) in [[-10, 8, 18], [102, 22, 14], [88, 96, 16], [2, 84, 12]]" :key="k">
-            <svg data-sparkle class="absolute opacity-0" viewBox="-12 -12 24 24" :style="`left:${p[0]}%;top:${p[1]}%;width:${p[2]}px;height:${p[2]}px`" aria-hidden="true">
-              <path d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z" fill="var(--color-primary)"/>
-            </svg>
-          </template>
-        </div>
-        <p x-ref="doneTitle" class="text-[28px] font-semibold">Wäsche geschafft</p>
+        <p x-ref="doneTitle" class="ql-finale-title text-[28px] font-semibold">Wäsche geschafft</p>
       </div>
       <footer class="mt-auto pt-4 pb-6">
         <button type="button" class="btn h-[52px] w-full rounded-[14px] text-[17px]" @click="restart()">Nochmal von vorn</button>
