@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Questlog – Login, Übersicht, Zurück</title>
+<style>
+
+  :root { color-scheme: light dark;
+    --color-base-100: oklch(98.5% 0.006 85); --color-base-200: oklch(95.5% 0.008 85); --color-base-300: oklch(91% 0.01 85);
+    --color-base-content: oklch(28% 0.015 70); --color-primary: oklch(52% 0.07 165); --color-primary-content: oklch(98% 0.01 165);
+    --color-accent: oklch(74% 0.11 70); --color-error: oklch(58% 0.15 30); }
+  @media (prefers-color-scheme: dark) { :root {
+    --color-base-100: oklch(21% 0.008 70); --color-base-200: oklch(25% 0.01 70); --color-base-300: oklch(31% 0.012 70);
+    --color-base-content: oklch(92% 0.008 85); --color-primary: oklch(72% 0.08 165); --color-primary-content: oklch(20% 0.02 165);
+    --color-accent: oklch(78% 0.1 70); --color-error: oklch(70% 0.13 30); } }
+  :root { --bg: var(--color-base-100); --c2: var(--color-base-200); --c3l: var(--color-base-300); --tx: var(--color-base-content);
+    --mu: color-mix(in oklch, var(--tx) 55%, transparent); --p: var(--color-primary); --pc: var(--color-primary-content); --a: var(--color-accent); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--tx); font: 16px/1.4 system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+  main { max-width: 1240px; margin: 0 auto; padding: 24px 20px 80px; }
+  main > h1 { font-size: 28px; margin: 8px 0 4px; } h2 { font-size: 20px; margin: 40px 0 2px; }
+  .hint { color: var(--mu); font-size: 15px; margin: 0 0 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; }
+  figure { margin: 0; cursor: zoom-in; } figcaption { font-size: 14px; margin-top: 8px; } figcaption b { display: block; font-size: 15px; } figcaption span { color: var(--mu); }
+  .frame { width: 250px; height: 541px; overflow: hidden; border-radius: 34px; box-shadow: 0 0 0 1px var(--c3l); }
+  .phone { width: 393px; height: 852px; transform: scale(.6361); transform-origin: 0 0; position: relative; background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+  .status { height: 59px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; font-weight: 600; font-size: 16px; }
+  .status .isl { width: 124px; height: 36px; border-radius: 20px; background: #000; }
+  .homebar { position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; margin-left: -67px; border-radius: 3px; background: var(--tx); opacity: .8; }
+  .screen { flex: 1; display: flex; flex-direction: column; padding: 0 20px 34px; min-height: 0; position: relative; }
+  .i { width: 22px; height: 22px; flex: none; }
+  .btn { height: 52px; width: 100%; border: 0; border-radius: 14px; background: var(--p); color: var(--pc); font: 600 17px system-ui, sans-serif; }
+  .btn.sm { height: 44px; font-size: 15px; margin-top: 14px; } .btn.bottom { margin-top: auto; }
+  /* Login */
+  .logo { width: 72px; height: 72px; display: block; }
+  .lg { flex: 1; display: flex; flex-direction: column; }
+  .lg h1 { margin: 14px 0 0; font-size: 30px; font-weight: 700; letter-spacing: -.01em; }
+  .form { display: flex; flex-direction: column; gap: 14px; margin-top: 28px; }
+  .fld { display: flex; flex-direction: column; gap: 6px; } .lb { font-size: 14px; color: var(--mu); } .lb:empty { display: none; }
+  .inp { height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: 12px; background: var(--c2); border: 1.5px solid var(--c3l); font-size: 17px; }
+  .inp .v { flex: 1; } .fi { color: var(--mu); width: 20px; height: 20px; } .fe { color: var(--mu); width: 20px; height: 20px; }
+  .fld.err .inp { border-color: var(--color-error); }
+  .msg { min-height: 20px; font-size: 15px; color: var(--color-error); margin: -4px 0 -6px; visibility: hidden; } .msg.on { visibility: visible; }
+  .l1 { padding-top: 6vh; padding-top: 48px; align-items: stretch; } .l1 .logo, .l1 h1 { align-self: center; }
+  .l2 { justify-content: center; } .l2 .logo, .l2 h1, .l2 .sub { align-self: center; } .l2 .sub { margin: 4px 0 0; color: var(--mu); }
+  .l2 .form { margin-bottom: 40px; }
+  .l3 { padding-top: 40px; } .l3 .brand { display: flex; align-items: center; gap: 12px; } .l3 .logo { width: 44px; height: 44px; } .l3 h1 { margin: 0; font-size: 26px; }
+  /* Übersicht */
+  .ov { display: flex; flex-direction: column; }
+  .hd { display: flex; justify-content: space-between; align-items: flex-end; padding: 8px 0 6px; }
+  .hd .date { margin: 0; font-size: 14px; color: var(--mu); } .hd h1 { margin: 0; font-size: 32px; font-weight: 700; }
+  .me { width: 36px; height: 36px; border-radius: 50%; background: var(--c2); display: grid; place-items: center; font-weight: 600; color: var(--mu); }
+  .sec { margin: 22px 0 8px; font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mu); } .sec.in { margin-top: 0; }
+  .qc { display: block; padding: 16px; border-radius: 20px; background: var(--c2); }
+  .qc.call { box-shadow: inset 0 0 0 1.5px color-mix(in oklch, var(--a) 70%, transparent); }
+  .qh { display: flex; align-items: center; gap: 12px; } .qi { width: 46px; height: 46px; border-radius: 14px; background: var(--p); color: var(--pc); display: grid; place-items: center; }
+  .qt { flex: 1; display: flex; flex-direction: column; } .qt b { font-size: 19px; } .qt span { font-size: 14px; color: var(--mu); } .cv { color: var(--mu); width: 18px; height: 18px; }
+  .smini { display: flex; align-items: center; margin: 16px 0 0; }
+  .sn { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--c3l); color: var(--mu); }
+  .sn .i { width: 16px; height: 16px; } .sn.cur { background: var(--p); color: var(--pc); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px color-mix(in oklch, var(--p) 45%, transparent); }
+  .sn.done { background: color-mix(in oklch, var(--p) 18%, transparent); color: var(--p); }
+  .sl { flex: 1; height: 2px; margin: 0 8px; border-radius: 1px; background: var(--c3l); } .sl.done { background: var(--p); }
+  .tlm { margin-top: 14px; } .tbar { position: relative; height: 6px; border-radius: 3px; background: var(--c3l); }
+  .tbar i { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 3px; background: var(--p); } .tbar i.ov { left: 80%; right: 0; width: auto; background: var(--a); border-radius: 0 3px 3px 0; }
+  .tbar b { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--p); border: 2px solid var(--c2); }
+  .tlab { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 14px; color: var(--mu); } .tlab .i { width: 16px; height: 16px; } .tlab.late { color: var(--a); font-weight: 600; justify-content: flex-end; }
+  .empty { padding: 16px; border-radius: 16px; border: 1.5px dashed var(--c3l); color: var(--mu); font-size: 15px; }
+  .focus { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 18px 16px; border-radius: 24px; background: var(--c2); margin-top: 14px; }
+  .focus b { font-size: 22px; } .focus > span { font-size: 15px; color: var(--mu); } .focus .tlm { width: 100%; } .focus .tlab { justify-content: center; }
+  .scn { width: 190px; height: 190px; } .scn.big { width: min(80vw, 300px); height: min(80vw, 300px); }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+  .tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 18px 10px 14px; border-radius: 20px; background: var(--c2); text-align: center; }
+  .tile .ring { position: relative; width: 72px; height: 72px; display: grid; place-items: center; margin-bottom: 8px; color: var(--p); }
+  .tile .ring svg { position: absolute; inset: 0; } .tile .ring .i { width: 28px; height: 28px; }
+  .trk { fill: none; stroke: var(--c3l); stroke-width: 6; } .arc { fill: none; stroke: var(--p); stroke-width: 6; stroke-linecap: round; }
+  .tile b { font-size: 17px; } .tile > span { font-size: 13px; color: var(--mu); } .tile .t { display: flex; align-items: center; gap: 4px; margin-top: 6px; color: var(--tx); } .tile .t .i { width: 14px; height: 14px; }
+  .tile.ghost { opacity: .5; } .tile.ghost .ring { color: var(--mu); border: 2px dashed var(--c3l); border-radius: 50%; }
+  /* Quest mit Zurück */
+  .q { flex: 1; display: flex; flex-direction: column; }
+  .qtop { display: flex; align-items: center; gap: 10px; padding: 10px 0; } .sfull { flex: 1; display: flex; align-items: center; padding: 0 6px; }
+  .sn.big { width: 44px; height: 44px; } .sn.big .i { width: 22px; height: 22px; }
+  .nav { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; color: var(--mu); background: var(--c2); }
+  .bar { display: flex; align-items: center; justify-content: space-between; height: 40px; }
+  .navtxt { display: flex; align-items: center; gap: 2px; color: var(--p); font-size: 17px; } .navtxt .i { width: 20px; height: 20px; } .qn { font-size: 15px; color: var(--mu); }
+  .stepbody { display: flex; flex-direction: column; align-items: center; gap: 24px; padding-top: 24px; } .stepbody h2 { margin: 0; font-size: 30px; }
+  .sheetbg { position: absolute; inset: 0; background: color-mix(in oklch, var(--tx) 25%, var(--bg)); }
+  .q.sheet { position: absolute; inset: 10px 0 0; padding: 6px 20px 34px; border-radius: 22px 22px 0 0; background: var(--bg); }
+  .grab { width: 38px; height: 5px; border-radius: 3px; background: var(--c3l); align-self: center; }
+  #big { position: fixed; inset: 0; z-index: 9; display: none; place-items: center; background: color-mix(in oklch, var(--bg) 92%, transparent); cursor: zoom-out; }
+  #big.open { display: grid; } #big .frame { width: 393px; height: 852px; max-height: 96dvh; } #big .phone { transform: none; }
+
+/* Schritt-Animationen der Wäsche-Quest, übernommen aus entwuerfe/animationen-10.html.
+   Farben kommen aus dem App-Thema, nur die Szenenfarben (Korb, Wasser, helles Grün, Beige) sind eigene Werte. */
+.ql-scene-defs { position: absolute; width: 0; height: 0; }
+.ql-scene {
+  --ink: var(--color-base-content); --muted: color-mix(in oklch, var(--color-base-content) 55%, transparent);
+  --pr: var(--color-primary); --prc: var(--color-primary-content); --ac: var(--color-accent);
+  --card: var(--color-base-200); --line: var(--color-base-300);
+  --pr2: oklch(80% 0.05 165); --c3: oklch(86% 0.02 70); --water: oklch(60% 0.05 200 / 0.35); --wick: oklch(83% 0.06 78);
+}
+@media (prefers-color-scheme: dark) {
+  .ql-scene { --pr2: oklch(45% 0.05 165); --c3: oklch(40% 0.02 70); --water: oklch(72% 0.05 200 / 0.35); --wick: oklch(50% 0.05 72); }
+}
+.ql-scene .stage { aspect-ratio: 1; }
+svg.sc { width: 100%; height: 100%; display: block; overflow: visible; }
+svg.clip { overflow: hidden; }
+.sc *:not([transform]) { transform-box: fill-box; }
+.ln { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.lp { fill: none; stroke: var(--pr); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.fp { fill: var(--pr); }
+.ff { fill: var(--line); }
+.o { transform-origin: center; }
+.ol { transform-origin: 0 50%; }
+.or { transform-origin: 100% 50%; }
+.muted { opacity: 0.35; }
+svg.sc text { font: 600 9px system-ui, sans-serif; fill: var(--muted); }
+.sc g, .sc use, .sc path, .sc circle, .sc rect { animation-iteration-count: infinite; }
+.rot { transform-box: view-box !important; transform-origin: 60px 68px; }
+.ld3 { animation: ld3 9.5s infinite; opacity: 0; }
+.door3 { animation: door3 9.5s infinite cubic-bezier(.65,0,.35,1); }
+.lid3 { animation: lid3 9.5s infinite cubic-bezier(.65,0,.35,1); }
+.led3 { animation: led3 9.5s infinite ease-in-out; }
+.w4a { animation: w4a 12s infinite ease-in-out; }
+.w4b { animation: w4b 12s infinite ease-in-out; }
+.f4 { animation: f4 12s infinite; }
+.d4 { animation: d4 12s infinite; }
+.sh4 { animation: sh4 12s infinite linear; }
+.h6-1,.h6-2,.h6-3 { animation: 8s infinite linear; transform-origin: center; }
+.h6-1 { animation-name: h6-1 }
+.h6-2 { animation-name: h6-2 }
+.h6-3 { animation-name: h6-3 }
+.l6 { animation: l6 8s infinite cubic-bezier(.45,0,.4,1); }
+.stage.withtimer { aspect-ratio: auto; }
+.stage.withtimer svg.sc { aspect-ratio: 1; height: auto; }
+.orb7 { animation: spin 12s infinite linear; transform-box: view-box !important; transform-origin: 60px 112px; }
+.cnt7 { animation: spin 12s infinite linear reverse; transform-origin: center; }
+.night7 { animation: night7 12s infinite ease-in-out; opacity: 0; }
+.star7 { animation: star7 12s infinite ease-in-out; opacity: 0; }
+.wet7 { animation: wet7 12s infinite linear; fill: var(--ink); }
+.dv7 { animation: dv7 12s infinite; }
+.k7v { animation: k7v 3s infinite ease-out; opacity: 0; }
+.k7-sw { animation: k7-sw 4s infinite ease-in-out alternate; transform-origin: 50% 0; }
+.hinge { transform-box: view-box !important; transform-origin: 60px 46px; }
+.k9e-1,.k9e-2,.k9e-3,.k9e-4 { animation: 6s infinite; }
+.k9e-1 { animation-name: k9e-1 }
+.k9e-2 { animation-name: k9e-2 }
+.k9e-3 { animation-name: k9e-3 }
+.k9e-4 { animation-name: k9e-4 }
+.k9e-s { animation: k9e-s 6s infinite; opacity: 0; transform-origin: center; }
+.blink { animation: blink 1.2s infinite ease-in-out alternate; }
+.r4b { animation: r4b 1.8s infinite ease-in; opacity: 0; }
+.bob4 { animation: bob4 1.4s infinite ease-in-out alternate; }
+.win1,.win2,.win3,.win4,.win5 { animation: 12s infinite; opacity: 0; }
+.win1 { animation-name: win1 }
+.win2 { animation-name: win2 }
+.win3 { animation-name: win3 }
+.win4 { animation-name: win4 }
+.win5 { animation-name: win5 }
+.a8s,.a8p,.a8k { animation: 9s infinite cubic-bezier(.65,0,.35,1); }
+.a8s { animation-name: a8s }
+.a8p { animation-name: a8p }
+.a8k { animation-name: a8k }
+.a8q1,.a8q2,.a8q3 { animation: 9s infinite; opacity: 0; }
+.a8q1 { animation-name: a8q1 }
+.a8q2 { animation-name: a8q2 }
+.a8q3 { animation-name: a8q3 }
+.fade10 { animation: fade 11s infinite; }
+.wl10 { animation: wl10 11s infinite cubic-bezier(.65,0,.35,1); }
+.wr10 { animation: wr10 11s infinite cubic-bezier(.65,0,.35,1); }
+.ll10 { animation: ll10 11s infinite cubic-bezier(.65,0,.35,1); }
+.lr10 { animation: lr10 11s infinite cubic-bezier(.65,0,.35,1); }
+.lift10 { animation: lift10 11s infinite cubic-bezier(.65,0,.35,1); }
+.mv10 { animation: mv10 11s infinite cubic-bezier(.65,0,.35,1); }
+.door10 { animation: door10 11s infinite cubic-bezier(.65,0,.35,1); }
+.sp10 { animation: sp10 11s infinite; opacity: 0; transform-origin: center; }
+.dry .wet7, .dry .dv7 { display: none; }
+.j1a,.j1b,.j1c { animation: 7s infinite; }
+.j1a { animation-name: j1a }
+.j1b { animation-name: j1b }
+.j1c { animation-name: j1c }
+.lid1r { animation: lid1r 7s infinite cubic-bezier(.65,0,.35,1); }
+.slow4 .sh4, .slow4 .w4a, .slow4 .w4b, .slow4 .f4, .slow4 .d4, .slow4 .win1, .slow4 .win2, .slow4 .win3, .slow4 .win4, .slow4 .win5 { animation-duration: 20s; }
+.tl7 { margin: 8px 11.67% 0; font-size: 12px; color: var(--muted); }
+.tl7 .head { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--ink); font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.tl7 .head svg { width: 18px; height: 18px; flex: none; }
+.tl7 .row { position: relative; height: 16px; }
+.tl7 .row span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; line-height: 16px; }
+.tl7 .row.days span { color: var(--muted); font-weight: 600; font-size: 11px; }
+.tl7 .row .late { color: var(--ac); font-weight: 600; }
+.tl7 .bar { position: relative; height: 6px; margin: 4px 0; border-radius: 3px; background: var(--line); }
+.tl7 .bar .el { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--pr); }
+.tl7 .bar .ov { position: absolute; top: 0; bottom: 0; right: 0; border-radius: 0 3px 3px 0; background: var(--ac); }
+.tl7 .bar .tick { position: absolute; top: -3px; bottom: -3px; width: 1.5px; margin-left: -.75px; background: var(--muted); }
+.tl7 .bar .mk { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--pr); border: 2.5px solid var(--card); }
+.tl7 .bar .mk.late { background: var(--ac); }
+.tl7 .bar .end { position: absolute; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; }
+.tl7.m4 { margin-left: 26.67%; margin-right: 26.67%; }
+.tl7.m4 .head { font-size: 14px; }
+.stop, .stop * { animation: none !important; }
+.stop .w4a, .stop .w4b { opacity: 0; }
+.stop .win5 { opacity: 1; }
+.e9-fade { animation: fade 13.5s infinite; }
+.e9-cam { animation: e9-cam 13.5s infinite cubic-bezier(.65,0,.35,1); transform-box: view-box !important; transform-origin: 0 0 !important; }
+.e9-cab { animation: e9-cab 13.5s infinite cubic-bezier(.65,0,.35,1); }
+.e9-bk { animation: e9-bk 13.5s infinite cubic-bezier(.65,0,.35,1); }
+.e9-bkop { animation: e9-bkop 13.5s infinite cubic-bezier(.65,0,.35,1); }
+.e9-full { animation: e9-full 13.5s infinite cubic-bezier(.65,0,.35,1); }
+.e9-da { animation: e9-da 13.5s infinite cubic-bezier(.65,0,.35,1); }
+.e9-db { animation: e9-db 13.5s infinite cubic-bezier(.65,0,.35,1); }
+.e9-xr { animation: e9-xr 13.5s infinite cubic-bezier(.65,0,.35,1); }
+.e9-btna { animation: e9-btna 13.5s infinite cubic-bezier(.65,0,.35,1); }
+.e9-btnb { animation: e9-btnb 13.5s infinite cubic-bezier(.65,0,.35,1); }
+.e9-key { animation: e9-key 13.5s infinite cubic-bezier(.65,0,.35,1); }
+.e9-door { animation: e9-door 13.5s infinite cubic-bezier(.65,0,.35,1); }
+.e9-pp0 { animation: e9-pp0 13.5s infinite cubic-bezier(.65,0,.35,1); }
+.e9-pp1 { animation: e9-pp1 13.5s infinite cubic-bezier(.65,0,.35,1); }
+.e5-fade { animation: fade 26s infinite; }
+.e5-cam { animation: e5-cam 26s infinite cubic-bezier(.65,0,.35,1); transform-box: view-box !important; transform-origin: 0 0 !important; }
+.e5-cab { animation: e5-cab 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-bk { animation: e5-bk 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-bkop { animation: e5-bkop 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-full { animation: e5-full 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-da { animation: e5-da 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-db { animation: e5-db 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-xr { animation: e5-xr 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-btna { animation: e5-btna 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-btnb { animation: e5-btnb 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-key { animation: e5-key 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-door { animation: e5-door 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-wbk { animation: e5-wbk 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-wfull { animation: e5-wfull 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-lid { animation: e5-lid 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-wd { animation: e5-wd 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-it0 { animation: e5-it0 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-it1 { animation: e5-it1 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-it2 { animation: e5-it2 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-pp0 { animation: e5-pp0 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-pp1 { animation: e5-pp1 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-pp2 { animation: e5-pp2 26s infinite cubic-bezier(.65,0,.35,1); }
+.e5-pp3 { animation: e5-pp3 26s infinite cubic-bezier(.65,0,.35,1); }
+.tl7 .head svg { width: 18px; height: 18px; }
+.tl7.m4 { margin-top: calc(-15% + 14px); }
+.tl7:not(.m4) { margin-top: calc(-6.7% + 14px); }
+.tl7 .head { margin-bottom: 6px; }
+.tl7 .bar .ov { border-radius: 0 3px 3px 0; }
+.tl7 .row.days span.late { color: var(--ac); font-weight: 700; }
+.tl7 .head svg[style] { width: 30px; height: 25px; }
+@keyframes spin { to { transform: rotate(360deg) } }
+@keyframes fade { 0% { opacity: 0 } 3%,95% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes ld3 { 0%,5.89% { transform: none; opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 7.37% { opacity: 1 } 11.79%,13.26% { transform: translateY(-32px); animation-timing-function: cubic-bezier(.65,0,.35,1) } 22.11% { transform: translate(-53px,-16px) scale(.45) rotate(-15deg); opacity: 1 } 23.58%,100% { transform: translate(-53px,-16px) scale(.45); opacity: 0 } }
+@keyframes door3 { 0%,44.21% { transform: scaleX(.12) } 51.58% { transform: scaleX(1) } 53.79% { transform: scale(.96) } 56.00%,94.74% { transform: none } 100% { transform: scaleX(.12) } }
+@keyframes lid3 { 0%,1.47% { transform: none } 5.89%,42.74% { transform: rotate(105deg) } 48.63%,100% { transform: none } }
+@keyframes led3 { 0%,63.16% { opacity: .2 } 65.26% { opacity: 1 } 67.37% { opacity: .55 } 69.47%,96.84% { opacity: 1 } 100% { opacity: .2 } }
+@keyframes w4a { 0% { transform: translateY(22px) } 8%,36% { transform: none } 42%,100% { transform: translateY(22px) } }
+@keyframes w4b { 0%,42% { transform: translateY(22px) } 50%,62% { transform: none } 68%,100% { transform: translateY(22px) } }
+@keyframes f4 { 0%,8% { opacity: 0 } 12%,34% { opacity: 1 } 38%,100% { opacity: 0 } }
+@keyframes d4 { 0%,8% { transform: none; animation-timing-function: linear } 36% { transform: rotate(360deg) } 42% { transform: rotate(360deg); animation-timing-function: linear }
+    62% { transform: rotate(720deg) } 68% { transform: rotate(720deg); animation-timing-function: cubic-bezier(.6,0,.4,1) } 88%,100% { transform: rotate(3240deg) } }
+@keyframes sh4 { 0%,70% { transform: none } 71%,73%,75%,77%,79%,81%,83%,85% { transform: translateX(1px) } 72%,74%,76%,78%,80%,82%,84% { transform: translateX(-1px) } 86%,100% { transform: none } }
+@keyframes h6-1 { 0%,12.5%,16% { transform: translate(24px,58px) scale(.6); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 17.75% { opacity: 1 } 25.62% { transform: none } 30%,43.12% { transform: translateY(2.9px) } 47.5%,60.63% { transform: translateY(5.1px) } 65%,89.5% { transform: translateY(7.3px); opacity: 1 } 98.25%,100% { transform: none; opacity: 0 } }
+@keyframes h6-2 { 0%,12.5%,33.5% { transform: translate(0,58px) scale(.6); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 35.25% { opacity: 1 } 43.12% { transform: translateY(4px) } 47.5%,60.63% { transform: translateY(7px) } 65%,89.5% { transform: translateY(10px); opacity: 1 } 98.25%,100% { transform: none; opacity: 0 } }
+@keyframes h6-3 { 0%,12.5%,51% { transform: translate(-24px,58px) scale(.6); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 52.75% { opacity: 1 } 60.63% { transform: translateY(5.1px) } 65%,89.5% { transform: translateY(7.3px); opacity: 1 } 98.25%,100% { transform: none; opacity: 0 } }
+@keyframes l6 { 0%,1% { transform: none } 16%,70% { transform: rotate(-196deg) } 84%,100% { transform: none } }
+@keyframes night7 { 0%,25% { opacity: 0 } 50% { opacity: .07 } 75%,100% { opacity: 0 } }
+@keyframes star7 { 0%,36% { opacity: 0 } 46%,56% { opacity: 1 } 66%,100% { opacity: 0 } }
+@keyframes wet7 { 0% { opacity: .32 } 70%,94% { opacity: 0 } 100% { opacity: .32 } }
+@keyframes dv7 { 0%,55% { opacity: 1 } 70%,94% { opacity: 0 } 100% { opacity: 1 } }
+@keyframes k7v { 0% { opacity: 0; transform: none } 30% { opacity: .9 } 100% { opacity: 0; transform: translateY(-16px) } }
+@keyframes k7-sw { from { transform: rotate(-3deg) } to { transform: rotate(3deg) } }
+@keyframes k9e-1 { 0% { transform: translate(var(--dx),var(--dy)); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 3% { opacity: 1 } 16%,86% { transform: none; opacity: 1 } 94%,100% { opacity: 0 } }
+@keyframes k9e-2 { 0%,14% { transform: translate(var(--dx),var(--dy)); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 17% { opacity: 1 } 30%,86% { transform: none; opacity: 1 } 94%,100% { opacity: 0 } }
+@keyframes k9e-3 { 0%,28% { transform: translate(var(--dx),var(--dy)); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 31% { opacity: 1 } 44%,86% { transform: none; opacity: 1 } 94%,100% { opacity: 0 } }
+@keyframes k9e-4 { 0%,42% { transform: translate(var(--dx),var(--dy)); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 45% { opacity: 1 } 58%,86% { transform: none; opacity: 1 } 94%,100% { opacity: 0 } }
+@keyframes k9e-s { 0%,60% { opacity: 0; transform: scale(.2) } 66% { opacity: 1; transform: scale(1) rotate(45deg) } 76%,100% { opacity: 0; transform: scale(.4) rotate(90deg) } }
+@keyframes blink { from { opacity: 1 } to { opacity: .3 } }
+@keyframes r4b { 0% { opacity: 0; transform: none } 20% { opacity: .9 } 100% { opacity: 0; transform: translateY(-9px) } }
+@keyframes bob4 { from { transform: translateY(-.6px) } to { transform: translateY(.6px) } }
+@keyframes win1 { 0%,7.9% { opacity: 1 } 8%,100% { opacity: 0 } }
+@keyframes win2 { 0%,7.9% { opacity: 0 } 8%,35.9% { opacity: 1 } 36%,100% { opacity: 0 } }
+@keyframes win3 { 0%,35.9% { opacity: 0 } 36%,67.9% { opacity: 1 } 68%,100% { opacity: 0 } }
+@keyframes win4 { 0%,67.9% { opacity: 0 } 68%,87.9% { opacity: 1 } 88%,100% { opacity: 0 } }
+@keyframes win5 { 0%,87.9% { opacity: 0 } 88%,100% { opacity: 1 } }
+@keyframes a8s { 0%,6% { transform: none; opacity: 1 } 9% { transform: translateY(-4px) } 20% { transform: translate(24px,48px) } 26% { transform: translate(24px,48px) scaleY(.5) }
+    29% { transform: translate(24px,49px) scale(.8,.5); opacity: 1 } 32%,96% { transform: translate(24px,50px) scale(.7,.4); opacity: 0 } 97% { transform: none; opacity: 0 } 100% { transform: none; opacity: 1 } }
+@keyframes a8p { 0%,9% { transform: none; opacity: 1 } 13%,36% { transform: translateY(-3px) } 39% { transform: translateY(-7px) } 50% { transform: translateY(35px) } 56% { transform: translateY(35px) scaleY(.5) }
+    59% { transform: translateY(36px) scale(.8,.5); opacity: 1 } 62%,96% { transform: translateY(37px) scale(.7,.4); opacity: 0 } 97% { transform: none; opacity: 0 } 100% { transform: none; opacity: 1 } }
+@keyframes a8k { 0%,9% { transform: none; opacity: 1 } 13%,38% { transform: translateY(-2.2px) } 42%,64% { transform: translateY(-4.7px) } 67% { transform: translateY(-8px) } 77% { transform: translate(-24px,29px) } 81% { transform: translate(-24px,29px) scaleY(.5) }
+    84% { transform: translate(-24px,30px) scale(.8,.5); opacity: 1 } 87%,96% { transform: translate(-24px,31px) scale(.7,.4); opacity: 0 } 97% { transform: none; opacity: 0 } 100% { transform: none; opacity: 1 } }
+@keyframes a8q1 { 0%,28% { opacity: 0; transform: scale(.9) } 32% { opacity: 1; transform: scale(1.06) } 40%,92% { opacity: 1; transform: none } 97%,100% { opacity: 0 } }
+@keyframes a8q2 { 0%,58% { opacity: 0; transform: scale(.9) } 62% { opacity: 1; transform: scale(1.06) } 70%,92% { opacity: 1; transform: none } 97%,100% { opacity: 0 } }
+@keyframes a8q3 { 0%,83% { opacity: 0; transform: scale(.9) } 87% { opacity: 1; transform: scale(1.06) } 90%,92% { opacity: 1; transform: none } 97%,100% { opacity: 0 } }
+@keyframes wl10 { 0%,6% { transform: none } 20%,100% { transform: rotate(-90deg) } }
+@keyframes wr10 { 0%,6% { transform: none } 20%,100% { transform: rotate(90deg) } }
+@keyframes ll10 { 0%,22% { transform: none } 36%,100% { transform: rotate(-23deg) } }
+@keyframes lr10 { 0%,22% { transform: none } 36%,100% { transform: rotate(23deg) } }
+@keyframes lift10 { 0%,22% { transform: none } 36%,100% { transform: translateY(-5.7px) } }
+@keyframes mv10 { 0%,50% { transform: none } 66%,100% { transform: translateX(56px) } }
+@keyframes door10 { 0%,40% { transform: none } 48%,68% { transform: scaleX(.12) } 76%,100% { transform: none } }
+@keyframes sp10 { 0%,76% { opacity: 0; transform: scale(.2) } 82% { opacity: 1; transform: scale(1) rotate(45deg) } 92%,100% { opacity: 0; transform: scale(.4) rotate(90deg) } }
+@keyframes j1a { 0%,7% { transform: none; opacity: 1; animation-timing-function: ease-out } 15% { transform: translate(calc(var(--dx) * .5), -44px) rotate(-60deg); animation-timing-function: ease-in } 23% { transform: translate(var(--dx), var(--dy)) rotate(-120deg); opacity: 1 } 26%,78% { transform: translate(var(--dx), calc(var(--dy) + 8px)) rotate(-120deg); opacity: 0 } 79% { transform: none; opacity: 0 } 90%,100% { transform: none; opacity: 1 } }
+@keyframes j1b { 0%,19% { transform: none; opacity: 1; animation-timing-function: ease-out } 27% { transform: translate(calc(var(--dx) * .5), -44px) rotate(-60deg); animation-timing-function: ease-in } 35% { transform: translate(var(--dx), var(--dy)) rotate(-120deg); opacity: 1 } 38%,78% { transform: translate(var(--dx), calc(var(--dy) + 8px)) rotate(-120deg); opacity: 0 } 79% { transform: none; opacity: 0 } 90%,100% { transform: none; opacity: 1 } }
+@keyframes j1c { 0%,31% { transform: none; opacity: 1; animation-timing-function: ease-out } 39% { transform: translate(calc(var(--dx) * .5), -44px) rotate(-60deg); animation-timing-function: ease-in } 47% { transform: translate(var(--dx), var(--dy)) rotate(-120deg); opacity: 1 } 50%,78% { transform: translate(var(--dx), calc(var(--dy) + 8px)) rotate(-120deg); opacity: 0 } 79% { transform: none; opacity: 0 } 90%,100% { transform: none; opacity: 1 } }
+@keyframes lid1r { 0% { transform: none } 6%,53% { transform: rotate(105deg) } 61%,100% { transform: none } }
+@keyframes e9-cam { 0% { transform: none } 0.00% { transform: none } 25.93% { transform: none } 31.85% { transform: scale(.5) } 56.30% { transform: scale(.5) } 62.22% { transform: translate(-120px, -120px) } 100% { transform: translate(-120px, -120px) } }
+@keyframes e9-cab { 0% { transform: none } 0.00% { transform: none } 31.85% { transform: none } 42.96% { transform: translateY(120px) } 100% { transform: translateY(120px) } }
+@keyframes e9-bk { 0% { transform: none } 0.00% { transform: none } 11.85% { transform: none } 19.26% { transform: translate(43px, 0px) } 31.85% { transform: translate(43px, 0px) } 42.96% { transform: translate(43px, 120px) } 47.41% { transform: translate(43px, 120px) } 56.30% { transform: translate(122px, 120px) } 78.52% { transform: translate(122px, 120px) } 85.19% { transform: translate(150px, 120px) } 100% { transform: translate(150px, 120px) } }
+@keyframes e9-bkop { 0% { opacity: 1 } 0.00% { opacity: 1 } 81.48% { opacity: 1 } 85.19% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes e9-full { 0% { opacity: 1 } 0.00% { opacity: 1 } 100% { opacity: 1 } }
+@keyframes e9-da { 0% { transform: none } 0.00% { transform: none } 6.67% { transform: none } 11.11% { transform: scaleX(.06) } 20.74% { transform: scaleX(.06) } 25.19% { transform: none } 100% { transform: none } }
+@keyframes e9-db { 0% { transform: none } 0.00% { transform: none } 43.70% { transform: none } 47.41% { transform: scaleX(.06) } 57.78% { transform: scaleX(.06) } 62.22% { transform: none } 100% { transform: none } }
+@keyframes e9-xr { 0% { opacity: 1 } 0.00% { opacity: 1 } 25.93% { opacity: 1 } 31.85% { opacity: 0.22 } 42.96% { opacity: 0.22 } 45.93% { opacity: 1 } 100% { opacity: 1 } }
+@keyframes e9-btna { 0% { opacity: 0 } 0.00% { opacity: 0 } 2.22% { opacity: 0 } 3.33% { opacity: 1 } 11.11% { opacity: 1 } 13.33% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes e9-btnb { 0% { opacity: 0 } 0.00% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes e9-key { 0% { opacity: 0; transform: translateX(-8px) } 0.00% { opacity: 0; transform: translateX(-8px) } 62.96% { opacity: 0; transform: translateX(-8px) } 65.93% { opacity: 1; transform: none } 67.41% { opacity: 1; transform: none } 70.37% { opacity: 1; transform: rotate(90deg) } 72.59% { opacity: 1; transform: rotate(90deg) } 74.81% { opacity: 0; transform: rotate(90deg) } 100% { opacity: 0; transform: rotate(90deg) } }
+@keyframes e9-door { 0% { transform: none } 0.00% { transform: none } 73.33% { transform: none } 78.52% { transform: scaleX(.15) } 100% { transform: scaleX(.15) } }
+@keyframes e9-pp0 { 0% { opacity: 1 } 0.00% { opacity: 1 } 56.67% { opacity: 1 } 58.89% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes e9-pp1 { 0% { opacity: 0 } 0.00% { opacity: 0 } 56.67% { opacity: 0 } 58.89% { opacity: 1 } 100.00% { opacity: 1 } 100% { opacity: 1 } }
+@keyframes e5-cam { 0% { transform: none } 0.00% { transform: none } 13.46% { transform: none } 16.54% { transform: scale(.5) } 29.23% { transform: scale(.5) } 32.31% { transform: translate(-120px, -120px) } 44.62% { transform: translate(-120px, -120px) } 47.69% { transform: translate(-240px, -120px) } 60.00% { transform: translate(-240px, -120px) } 63.08% { transform: translate(-120px, -120px) } 66.15% { transform: translate(-120px, -120px) } 69.23% { transform: scale(.5) } 83.85% { transform: scale(.5) } 86.92% { transform: none } 100% { transform: none } }
+@keyframes e5-cab { 0% { transform: none } 0.00% { transform: none } 16.54% { transform: none } 22.31% { transform: translateY(120px) } 77.69% { transform: translateY(120px) } 83.46% { transform: none } 100% { transform: none } }
+@keyframes e5-bk { 0% { transform: none } 0.00% { transform: none } 6.15% { transform: none } 10.00% { transform: translate(43px, 0px) } 16.54% { transform: translate(43px, 0px) } 22.31% { transform: translate(43px, 120px) } 24.62% { transform: translate(43px, 120px) } 29.23% { transform: translate(122px, 120px) } 40.77% { transform: translate(122px, 120px) } 43.85% { transform: translate(150px, 120px) } 63.08% { transform: translate(150px, 120px) } 65.38% { transform: translate(122px, 120px) } 69.62% { transform: translate(122px, 120px) } 73.46% { transform: translate(43px, 120px) } 77.69% { transform: translate(43px, 120px) } 83.46% { transform: translate(43px, 0px) } 88.85% { transform: translate(43px, 0px) } 92.31% { transform: translate(0px, 0px) } 100% { transform: translate(0px, 0px) } }
+@keyframes e5-bkop { 0% { opacity: 1 } 0.00% { opacity: 1 } 42.31% { opacity: 1 } 43.85% { opacity: 0 } 62.31% { opacity: 0 } 63.46% { opacity: 1 } 100% { opacity: 1 } }
+@keyframes e5-full { 0% { opacity: 0 } 0.00% { opacity: 0 } 59.62% { opacity: 0 } 60.00% { opacity: 1 } 100% { opacity: 1 } }
+@keyframes e5-da { 0% { transform: none } 0.00% { transform: none } 3.46% { transform: none } 5.77% { transform: scaleX(.06) } 10.77% { transform: scaleX(.06) } 13.08% { transform: none } 86.92% { transform: none } 88.85% { transform: scaleX(.06) } 96.15% { transform: scaleX(.06) } 99.62% { transform: none } 100% { transform: none } }
+@keyframes e5-db { 0% { transform: none } 0.00% { transform: none } 22.69% { transform: none } 24.62% { transform: scaleX(.06) } 30.00% { transform: scaleX(.06) } 32.31% { transform: none } 67.69% { transform: none } 69.62% { transform: scaleX(.06) } 73.85% { transform: scaleX(.06) } 76.15% { transform: none } 100% { transform: none } }
+@keyframes e5-xr { 0% { opacity: 1 } 0.00% { opacity: 1 } 13.46% { opacity: 1 } 16.54% { opacity: 0.22 } 22.31% { opacity: 0.22 } 23.85% { opacity: 1 } 76.15% { opacity: 1 } 77.69% { opacity: 0.22 } 83.46% { opacity: 0.22 } 85.00% { opacity: 1 } 100% { opacity: 1 } }
+@keyframes e5-btna { 0% { opacity: 0 } 0.00% { opacity: 0 } 1.15% { opacity: 0 } 1.73% { opacity: 1 } 5.77% { opacity: 1 } 6.92% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes e5-btnb { 0% { opacity: 0 } 0.00% { opacity: 0 } 66.54% { opacity: 0 } 67.12% { opacity: 1 } 69.62% { opacity: 1 } 70.77% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes e5-key { 0% { opacity: 0; transform: translateX(-8px) } 0.00% { opacity: 0; transform: translateX(-8px) } 32.69% { opacity: 0; transform: translateX(-8px) } 34.23% { opacity: 1; transform: none } 35.00% { opacity: 1; transform: none } 36.54% { opacity: 1; transform: rotate(90deg) } 37.69% { opacity: 1; transform: rotate(90deg) } 38.85% { opacity: 0; transform: rotate(90deg) } 100% { opacity: 0; transform: rotate(90deg) } }
+@keyframes e5-door { 0% { transform: none } 0.00% { transform: none } 38.08% { transform: none } 40.77% { transform: scaleX(.15) } 65.38% { transform: scaleX(.15) } 67.69% { transform: none } 100% { transform: none } }
+@keyframes e5-wbk { 0% { opacity: 0 } 0.00% { opacity: 0 } 44.62% { opacity: 0 } 45.77% { opacity: 1 } 63.08% { opacity: 1 } 63.46% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes e5-wfull { 0% { opacity: 0 } 0.00% { opacity: 0 } 55.00% { opacity: 0 } 55.77% { opacity: 1 } 100% { opacity: 1 } }
+@keyframes e5-lid { 0% { transform: none } 0.00% { transform: none } 48.08% { transform: none } 50.00% { transform: rotate(88deg) } 57.69% { transform: rotate(88deg) } 59.23% { transform: none } 100% { transform: none } }
+@keyframes e5-wd { 0% { transform: none } 0.00% { transform: none } 48.46% { transform: none } 50.38% { transform: scaleX(.12) } 57.69% { transform: scaleX(.12) } 59.23% { transform: none } 100% { transform: none } }
+@keyframes e5-it0 { 0% { transform: translate(-53px, -16px) scale(.45); opacity: 0 } 0.00% { transform: translate(-53px, -16px) scale(.45); opacity: 0 } 51.15% { transform: translate(-53px, -16px) scale(.45); opacity: 0 } 51.54% { transform: translate(-53px, -16px) scale(.45); opacity: 1 } 53.85% { transform: translateY(-32px); opacity: 1 } 55.00% { transform: none; opacity: 1 } 55.38% { transform: none; opacity: 0 } 100% { transform: none; opacity: 0 } }
+@keyframes e5-it1 { 0% { transform: translate(-53px, -16px) scale(.45); opacity: 0 } 0.00% { transform: translate(-53px, -16px) scale(.45); opacity: 0 } 53.08% { transform: translate(-53px, -16px) scale(.45); opacity: 0 } 53.46% { transform: translate(-53px, -16px) scale(.45); opacity: 1 } 55.77% { transform: translateY(-32px); opacity: 1 } 56.92% { transform: none; opacity: 1 } 57.31% { transform: none; opacity: 0 } 100% { transform: none; opacity: 0 } }
+@keyframes e5-it2 { 0% { transform: translate(-53px, -16px) scale(.45); opacity: 0 } 0.00% { transform: translate(-53px, -16px) scale(.45); opacity: 0 } 55.00% { transform: translate(-53px, -16px) scale(.45); opacity: 0 } 55.38% { transform: translate(-53px, -16px) scale(.45); opacity: 1 } 57.69% { transform: translateY(-32px); opacity: 1 } 58.85% { transform: none; opacity: 1 } 59.23% { transform: none; opacity: 0 } 100% { transform: none; opacity: 0 } }
+@keyframes e5-pp0 { 0% { opacity: 1 } 0.00% { opacity: 1 } 29.42% { opacity: 1 } 30.58% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes e5-pp1 { 0% { opacity: 0 } 0.00% { opacity: 0 } 29.42% { opacity: 0 } 30.58% { opacity: 1 } 45.58% { opacity: 1 } 46.73% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes e5-pp2 { 0% { opacity: 0 } 0.00% { opacity: 0 } 45.58% { opacity: 0 } 46.73% { opacity: 1 } 65.58% { opacity: 1 } 66.73% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes e5-pp3 { 0% { opacity: 0 } 0.00% { opacity: 0 } 65.58% { opacity: 0 } 66.73% { opacity: 1 } 100.00% { opacity: 1 } 100% { opacity: 1 } }
+
+/* Schritt 3: Waschmittel ins Fach, zwischen Einladen und Türe zu */
+.pour3 { animation: pour3 9.5s infinite cubic-bezier(.65,0,.35,1); opacity: 0; transform-box: view-box !important; transform-origin: 46px 8px; }
+@keyframes pour3 { 0%,51.58% { opacity: 0; transform: translateY(-6px) } 53.05% { opacity: 1; transform: none } 55.26%,58.95% { opacity: 1; transform: rotate(-115deg) translate(-2px,-6px) } 60.42% { opacity: 1; transform: none } 61.89%,100% { opacity: 0; transform: translateY(-6px) } }
+.drop3 { animation: drop3 9.5s infinite ease-in; opacity: 0; }
+@keyframes drop3 { 0%,55.58% { opacity: 0; transform: none } 56.00% { opacity: 1 } 57.89% { opacity: 1; transform: translateY(9px) } 58.21%,100% { opacity: 0; transform: translateY(9px) } }
+
+/* Abschluss: Regal füllt sich, dann grüner Haken oben drauf und Funkeln (Variante E aus entwuerfe/abschluss.html). Läuft einmal. */
+.ql-finale { position: relative; display: grid; place-items: center; }
+.ql-finale .shelf { position: absolute; inset: 0; overflow: visible; transform-origin: 50% 100%; }
+.ql-finale .disc { position: absolute; top: -26px; width: 64px; height: 64px; border-radius: 50%; background: var(--color-primary); transform: scale(0); }
+.ql-finale .chk { position: absolute; top: -14px; width: 40px; height: 40px; color: var(--color-primary-content); opacity: 0; }
+.ql-finale .sp { position: absolute; margin: -9px; fill: var(--color-primary); opacity: 0; }
+.ql-finale .pk, .ql-finale .shelf, .ql-finale .disc, .ql-finale .chk, .ql-finale .sp, .ql-finale-title { animation-fill-mode: both; animation-duration: 3.2s; animation-iteration-count: 1; }
+@keyframes fin-p0 { 0.00% { opacity: 0; transform: translateY(30px) } 6.25% { opacity: 0; transform: translateY(30px) } 17.19% { opacity: 1; transform: none } 100.00% { opacity: 1; transform: none } }
+.ql-finale.play .pk0 { animation-name: fin-p0; animation-timing-function: cubic-bezier(.16,1,.3,1); }
+@keyframes fin-p1 { 0.00% { opacity: 0; transform: translateY(30px) } 15.62% { opacity: 0; transform: translateY(30px) } 26.56% { opacity: 1; transform: none } 100.00% { opacity: 1; transform: none } }
+.ql-finale.play .pk1 { animation-name: fin-p1; animation-timing-function: cubic-bezier(.16,1,.3,1); }
+@keyframes fin-p2 { 0.00% { opacity: 0; transform: translateY(30px) } 25.00% { opacity: 0; transform: translateY(30px) } 35.94% { opacity: 1; transform: none } 100.00% { opacity: 1; transform: none } }
+.ql-finale.play .pk2 { animation-name: fin-p2; animation-timing-function: cubic-bezier(.16,1,.3,1); }
+@keyframes fin-p3 { 0.00% { opacity: 0; transform: translateY(30px) } 34.37% { opacity: 0; transform: translateY(30px) } 45.31% { opacity: 1; transform: none } 100.00% { opacity: 1; transform: none } }
+.ql-finale.play .pk3 { animation-name: fin-p3; animation-timing-function: cubic-bezier(.16,1,.3,1); }
+@keyframes fin-sh { 0.00% { transform: none } 46.88% { transform: none } 59.37% { transform: scale(.82) translateY(-6px) } 100.00% { transform: scale(.82) translateY(-6px) } }
+@keyframes fin-pop { 0.00% { transform: scale(0) } 56.25% { transform: scale(0) } 65.62% { transform: scale(1.1) } 71.87% { transform: none } 100.00% { transform: none } }
+@keyframes fin-chk { 0.00% { opacity: 0; transform: scale(.6) } 64.06% { opacity: 0; transform: scale(.6) } 71.87% { opacity: 1; transform: scale(1.08) } 78.12% { opacity: 1; transform: none } 100.00% { opacity: 1; transform: none } }
+@keyframes fin-sp { 0.00% { opacity: 0; transform: scale(.2) } 70.31% { opacity: 0; transform: scale(.2) } 79.69% { opacity: 1; transform: scale(1) rotate(45deg) } 96.88% { opacity: 0; transform: scale(.5) rotate(90deg) } 100.00% { opacity: 0; transform: scale(.5) rotate(90deg) } }
+@keyframes fin-ttl { 0.00% { opacity: 0; transform: translateY(10px) } 75.00% { opacity: 0; transform: translateY(10px) } 84.38% { opacity: 1; transform: none } 100.00% { opacity: 1; transform: none } }
+.ql-finale.play .shelf { animation-name: fin-sh; animation-timing-function: cubic-bezier(.65,0,.35,1); }
+.ql-finale.play .disc { animation-name: fin-pop; }
+.ql-finale.play .chk { animation-name: fin-chk; }
+.ql-finale.play .sp { animation-name: fin-sp; animation-timing-function: ease-out; }
+.ql-finale-title { opacity: 0; } .ql-finale-title.play { animation-name: fin-ttl; }
+@media (prefers-reduced-motion: reduce) { .ql-finale .pk, .ql-finale .shelf, .ql-finale .disc, .ql-finale .chk, .ql-finale-title { animation-duration: 0.01ms; } .ql-finale .sp { display: none; } }
+
+/* Schritt 3: nach dem Start läuft die Maschine kurz an, bevor alles von vorn beginnt */
+.run3 { animation: run3 9.5s infinite; opacity: 0; }
+@keyframes run3 { 0%,66.32% { opacity: 0 } 69.47%,93.68% { opacity: 1 } 96.84%,100% { opacity: 0 } }
+.water3 { animation: water3 9.5s infinite ease-out; }
+@keyframes water3 { 0%,67.37% { transform: translateY(14px) } 77.89%,100% { transform: none } }
+.spin3 { animation: spin3 9.5s infinite; transform-box: view-box !important; transform-origin: 39px 72px; }
+@keyframes spin3 { 0%,68.42% { transform: none; animation-timing-function: cubic-bezier(.5,0,.75,1) } 96.84% { transform: rotate(540deg) } 100% { transform: rotate(540deg) } }
+.shake3 { animation: shake3 9.5s infinite linear; }
+@keyframes shake3 { 0%,82.11% { transform: none } 83.16%,85.26%,87.37%,89.47%,91.58% { transform: translateX(.6px) } 84.21%,86.32%,88.42%,90.53%,92.63% { transform: translateX(-.6px) } 93.68%,100% { transform: none } }
+
+</style>
+</head>
+<body>
+<svg class="ql-scene-defs" width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <path id="shirtP" d="M-6 -11 L-13 -7 L-10 -1 L-7 -3 V11 H7 V-3 L10 -1 L13 -7 L6 -11 Q0 -7 -6 -11 Z"/>
+    <path id="pantsP" d="M-8 -11 H8 L9.5 11 H2.5 L0 -1 L-2.5 11 H-9.5 Z"/>
+    <path id="sockP" d="M-4 -11 H3 V3 L8 6 Q11 9 8 11 H-1 Q-4 11 -4 7 Z"/>
+    <g id="shirt"><use href="#shirtP" style="fill:var(--ac);stroke:var(--ink);stroke-width:2;stroke-linejoin:round"/></g>
+    <g id="pants"><use href="#pantsP" style="fill:var(--c3);stroke:var(--ink);stroke-width:2;stroke-linejoin:round"/><path d="M-8 -7 H8" style="fill:none;stroke:var(--ink);stroke-width:1.5;opacity:.6"/></g>
+    <g id="sock"><use href="#sockP" style="fill:var(--pr2);stroke:var(--ink);stroke-width:2;stroke-linejoin:round"/></g>
+    <g id="hbody">
+      <rect x="-19" y="-32" width="38" height="32" rx="5" style="fill:var(--wick);stroke:var(--ink);stroke-width:2.5"/>
+      <g style="fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;opacity:.45">
+        <path d="M-15 -19 H15" style="stroke-dasharray:4 3"/><path d="M-15 -12 H15" style="stroke-dasharray:4 3;stroke-dashoffset:3.5"/><path d="M-15 -5 H15" style="stroke-dasharray:4 3"/>
+      </g>
+      <rect x="-6" y="-28" width="12" height="4" rx="2" style="fill:var(--card);stroke:var(--ink);stroke-width:1.6"/>
+    </g>
+    <rect id="hlid" x="-21" y="-37" width="42" height="5" rx="2.5" style="fill:var(--wick);stroke:var(--ink);stroke-width:2.5"/>
+    <g id="hamper"><use href="#hbody"/><use href="#hlid"/></g>
+    <g id="washerBody" style="stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round">
+      <rect x="32" y="18" width="56" height="84" rx="8" style="fill:var(--card)"/><path d="M32 34 H88" style="fill:none"/><circle cx="46" cy="26" r="3.5" style="fill:none"/>
+    </g>
+    <clipPath id="tile120"><rect x="0" y="0" width="120" height="120"/></clipPath><clipPath id="drum"><circle cx="60" cy="68" r="15"/></clipPath>
+    <path id="star" d="M0 -5 l1.4 3.6 l3.6 1.4 l-3.6 1.4 l-1.4 3.6 l-1.4 -3.6 l-3.6 -1.4 l3.6 -1.4 z"/>
+    <rect id="foldS" x="-14" y="-5" width="28" height="10" rx="3" style="fill:var(--ac);stroke:var(--ink);stroke-width:2"/>
+    <rect id="foldP" x="-14" y="-5" width="28" height="10" rx="3" style="fill:var(--c3);stroke:var(--ink);stroke-width:2"/>
+    <rect id="foldK" x="-9" y="-4" width="18" height="8" rx="3" style="fill:var(--pr2);stroke:var(--ink);stroke-width:2"/>
+  </defs>
+</svg>
+<main>
+  <h1>Login, Übersicht und Zurück</h1>
+  <p class="hint">Entwurf für #42 (Login) und #37 (Übersicht). Jedes Bild hat die Größe deines iPhone 15, tippen zeigt es in Originalgröße. Farben wie in der App, hell und dunkel nach Systemeinstellung.</p>
+  <h2>Login</h2>
+  <p class="hint">Ziel: auf dem iPhone ohne Scrollen anmelden, mit App-Symbol. Alle Varianten passen auf einen Bildschirm, auch die Fehlermeldung schiebt nichts.</p>
+  <div class="grid">
+    <figure data-v="L1"><div class="frame"><div class="phone "><div class="status"><span>9:41</span><span class="isl"></span><span>▮▮ ◔</span></div><div class="screen"><div class="lg l1"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle cx="50" cy="50" r="30" fill="none" stroke="#4a4541" stroke-width="9"/><circle cx="50" cy="50" r="30" fill="none" stroke="#7fc4ab" stroke-width="9" stroke-linecap="round" pathLength="100" stroke-dasharray="75 100" transform="rotate(-90 50 50)"/><circle cx="50" cy="50" r="5" fill="#f2ede4"/></svg><h1>Questlog</h1><div class="form"><label class="fld"><span class="lb">Name</span><span class="inp"><span class="v">test</span></span></label><label class="fld"><span class="lb">Passwort</span><span class="inp"><span class="v">••••••••</span><svg class="i fe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg></span></label><span class="msg"></span><button class="btn">Anmelden</button></div></div></div><div class="homebar"></div></div></div><figcaption><b>L1 · Kompakt oben</b><span>Symbol, Name der App und Formular stehen als eine Gruppe im oberen Drittel. Öffnet sich die Tastatur, bleibt der Button sichtbar.</span></figcaption></figure>
+    <figure data-v="L2"><div class="frame"><div class="phone "><div class="status"><span>9:41</span><span class="isl"></span><span>▮▮ ◔</span></div><div class="screen"><div class="lg l2"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle cx="50" cy="50" r="30" fill="none" stroke="#4a4541" stroke-width="9"/><circle cx="50" cy="50" r="30" fill="none" stroke="#7fc4ab" stroke-width="9" stroke-linecap="round" pathLength="100" stroke-dasharray="75 100" transform="rotate(-90 50 50)"/><circle cx="50" cy="50" r="5" fill="#f2ede4"/></svg><h1>Questlog</h1><p class="sub">Schön, dass du da bist.</p><div class="form"><label class="fld"><span class="lb"></span><span class="inp"><svg class="i fi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/></svg><span class="v">test</span></span></label><label class="fld"><span class="lb"></span><span class="inp"><svg class="i fi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span class="v">••••••••</span><svg class="i fe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg></span></label><span class="msg"></span><button class="btn">Anmelden</button></div></div></div><div class="homebar"></div></div></div><figcaption><b>L2 · Mittig, Felder mit Symbol</b><span>Alles als Block in der Mitte. Die Felder tragen ein Symbol statt einer Beschriftung darüber, das spart Höhe.</span></figcaption></figure>
+    <figure data-v="L3"><div class="frame"><div class="phone "><div class="status"><span>9:41</span><span class="isl"></span><span>▮▮ ◔</span></div><div class="screen"><div class="lg l3"><div class="brand"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle cx="50" cy="50" r="30" fill="none" stroke="#4a4541" stroke-width="9"/><circle cx="50" cy="50" r="30" fill="none" stroke="#7fc4ab" stroke-width="9" stroke-linecap="round" pathLength="100" stroke-dasharray="75 100" transform="rotate(-90 50 50)"/><circle cx="50" cy="50" r="5" fill="#f2ede4"/></svg><h1>Questlog</h1></div><div class="form"><label class="fld"><span class="lb">Name</span><span class="inp"><span class="v">test</span></span></label><label class="fld"><span class="lb">Passwort</span><span class="inp"><span class="v">••••••••</span><svg class="i fe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg></span></label><span class="msg"></span></div><button class="btn bottom">Anmelden</button></div></div><div class="homebar"></div></div></div><figcaption><b>L3 · Symbol klein, Button unten</b><span>Kleines Symbol neben dem Namen, Felder direkt darunter. Der Button sitzt unten am Daumen, wie die Hauptaktion in den Quests.</span></figcaption></figure>
+    <figure data-v="L1 Fehler"><div class="frame"><div class="phone "><div class="status"><span>9:41</span><span class="isl"></span><span>▮▮ ◔</span></div><div class="screen"><div class="lg l1"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle cx="50" cy="50" r="30" fill="none" stroke="#4a4541" stroke-width="9"/><circle cx="50" cy="50" r="30" fill="none" stroke="#7fc4ab" stroke-width="9" stroke-linecap="round" pathLength="100" stroke-dasharray="75 100" transform="rotate(-90 50 50)"/><circle cx="50" cy="50" r="5" fill="#f2ede4"/></svg><h1>Questlog</h1><div class="form"><label class="fld"><span class="lb">Name</span><span class="inp"><span class="v">test</span></span></label><label class="fld err"><span class="lb">Passwort</span><span class="inp"><span class="v">••••••••</span><svg class="i fe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg></span></label><span class="msg on">Name oder Passwort stimmt nicht.</span><button class="btn">Anmelden</button></div></div></div><div class="homebar"></div></div></div><figcaption><b>L1 Fehler · Kompakt oben, falsches Passwort</b><span>Die Meldung steht im freigehaltenen Platz über dem Button. Nichts verschiebt sich, das Passwortfeld ist rot umrandet.</span></figcaption></figure>
+  </div>
+  <h2>Übersicht</h2>
+  <p class="hint">Die neue Startseite: Glossar, Mockups und Entwürfe sind weg, die Wäsche-Quest steht als erste drin. Gezeigt ist der Stand „Trocknen, Wartezeit läuft“.</p>
+  <div class="grid">
+    <figure data-v="U1"><div class="frame"><div class="phone "><div class="status"><span>9:41</span><span class="isl"></span><span>▮▮ ◔</span></div><div class="screen"><div class="ov"><div class="hd"><div><p class="date">Freitag, 13. November</p><h1>Questlog</h1></div></div><p class="sec">Läuft</p><a class="qc"><div class="qh"><span class="qi"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h16l-1.6 10.2a2 2 0 0 1-2 1.8H7.6a2 2 0 0 1-2-1.8z"/><path d="M8 9l2-5M16 9l-2-5"/></svg></span><div class="qt"><b>Wäsche</b><span>Trocknen · Wartezeit läuft</span></div><svg class="i cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div><div class="smini"><span class="sn done"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="sl done"></span><span class="sn cur"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 5.5c6 2 13 2 19 0"/><path d="M5.5 6.5v10a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-9.6"/><path d="M13.5 7.2v6.3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1V6.6"/></svg></span><span class="sl"></span><span class="sn open"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6.5a2 2 0 1 1 2.8 1.8c-.5.3-.8.8-.8 1.4V11"/><path d="M12 11l-8.3 5.4A1.3 1.3 0 0 0 4.4 19h15.2a1.3 1.3 0 0 0 .7-2.6z"/></svg></span></div><div class="tlm"><div class="tbar"><i style="width:42%"></i><b style="left:42%"></b></div><span class="tlab"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>trocken Mo, 16:28</span></div></a><p class="sec">Weitere Quests</p><div class="empty">Neue Quests erscheinen hier.</div></div></div><div class="homebar"></div></div></div><figcaption><b>U1 · Liste mit Karten</b><span>Jede Quest ist eine Karte: Symbol, Name, wo sie steht, Mini-Stepper und Zeitlinie. Tippen öffnet die Quest. Weitere Quests kommen darunter dazu.</span></figcaption></figure>
+    <figure data-v="U2"><div class="frame"><div class="phone "><div class="status"><span>9:41</span><span class="isl"></span><span>▮▮ ◔</span></div><div class="screen"><div class="ov"><div class="hd"><div><p class="date">Freitag, 13. November</p><h1>Questlog</h1></div></div><a class="focus"><p class="sec in">Als Nächstes</p><div class="ql-scene scn"><svg class="sc clip" viewBox="0 0 120 120">
+      <defs><mask id="moonr7n" maskUnits="userSpaceOnUse" x="40" y="184" width="40" height="40"><circle cx="60" cy="204" r="8" fill="white"/><circle cx="64.5" cy="200" r="7" fill="black"/></mask></defs>
+      
+      <g style="fill:var(--ac)"><use href="#star" class="star7" x="22" y="16"/><use href="#star" class="star7" x="98" y="26" style="animation-delay:.6s"/><use href="#star" class="star7" x="80" y="10" style="animation-delay:1.2s"/></g>
+      <g class="orb7">
+        <g style="stroke:var(--ac);stroke-width:2.5;stroke-linecap:round"><path d="M60 5 v3 M60 32 v3 M45 20 h3 M72 20 h3 M49.4 9.4 l2.1 2.1 M68.5 28.5 l2.1 2.1 M49.4 30.6 l2.1 -2.1 M68.5 11.5 l2.1 -2.1"/></g>
+        <circle cx="60" cy="20" r="7.5" style="fill:var(--ac)"/>
+        <g class="cnt7"><circle cx="60" cy="204" r="8" style="fill:var(--pr2)" mask="url(#moonr7n)"/></g>
+      </g>
+      <path class="ln" d="M14 112 V58 M106 112 V58"/>
+      <path class="ln" style="stroke-width:1.8" d="M14 62 Q60 72 106 62"/>
+      <g class="k7-sw"><use href="#shirt" x="36" y="76.6"/><use href="#shirtP" class="wet7" x="36" y="76.6"/></g>
+      <g class="k7-sw" style="animation-delay:-1.3s"><use href="#pants" x="60" y="78"/><use href="#pantsP" class="wet7" x="60" y="78"/></g>
+      <g class="k7-sw" style="animation-delay:-2.6s"><use href="#sock" x="84" y="76.6"/><use href="#sockP" class="wet7" x="84" y="76.6"/></g>
+      <g class="dv7">
+        <path class="lp k7v" style="stroke-width:1.5" d="M33 62 q-1.6 -2.2 0 -4.4 t0 -4.4"/><path class="lp k7v" style="stroke-width:1.5;animation-delay:1.5s" d="M39 63 q-1.6 -2.2 0 -4.4 t0 -4.4"/>
+        <path class="lp k7v" style="stroke-width:1.5;animation-delay:1s" d="M60 64 q-1.6 -2.2 0 -4.4 t0 -4.4"/>
+        <path class="lp k7v" style="stroke-width:1.5;animation-delay:2s" d="M84 62 q-1.6 -2.2 0 -4.4 t0 -4.4"/>
+      </g>
+    </svg></div><b>Wäsche</b><span>Trocknen · trocken Mo, 16:28</span><div class="tlm"><div class="tbar"><i style="width:42%"></i><b style="left:42%"></b></div><span class="tlab"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>noch 2 Tage 6 Std</span></div></a><p class="sec">Weitere Quests</p><div class="empty">Noch keine.</div></div></div><div class="homebar"></div></div></div><figcaption><b>U2 · Eine Sache im Fokus</b><span>Oben groß, was als Nächstes dran ist, mit der Szene der Quest. Darunter klein der Rest. Passt zum Calm-Focus-Gedanken: eine Sache zur Zeit.</span></figcaption></figure>
+    <figure data-v="U3"><div class="frame"><div class="phone "><div class="status"><span>9:41</span><span class="isl"></span><span>▮▮ ◔</span></div><div class="screen"><div class="ov"><div class="hd"><div><p class="date">Freitag, 13. November</p><h1>Questlog</h1></div></div><div class="tiles"><a class="tile"><span class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="trk"/><circle cx="50" cy="50" r="44" class="arc" pathLength="100" stroke-dasharray="55 100" transform="rotate(-90 50 50)"/></svg><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h16l-1.6 10.2a2 2 0 0 1-2 1.8H7.6a2 2 0 0 1-2-1.8z"/><path d="M8 9l2-5M16 9l-2-5"/></svg></span><b>Wäsche</b><span>Trocknen</span><span class="t"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Mo, 16:28</span></a><a class="tile ghost"><span class="ring"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></span><b>Neue Quest</b><span>erscheint hier</span></a></div></div></div><div class="homebar"></div></div></div><figcaption><b>U3 · Kacheln mit Ring</b><span>Ein Raster aus Kacheln. Der Ring um das Symbol zeigt den Fortschritt der Quest wie oben im Stepper. Gut, wenn es später viele Quests gibt.</span></figcaption></figure>
+    <figure data-v="U1 Zustände"><div class="frame"><div class="phone "><div class="status"><span>9:41</span><span class="isl"></span><span>▮▮ ◔</span></div><div class="screen"><div class="ov"><div class="hd"><div><p class="date">Freitag, 13. November</p><h1>Questlog</h1></div></div><p class="sec">Wartet auf dich</p><a class="qc call"><div class="qh"><span class="qi"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h16l-1.6 10.2a2 2 0 0 1-2 1.8H7.6a2 2 0 0 1-2-1.8z"/><path d="M8 9l2-5M16 9l-2-5"/></svg></span><div class="qt"><b>Wäsche</b><span>Waschgang fertig · wartet auf dich</span></div><svg class="i cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div><div class="smini"><span class="sn cur"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M4 7.5h16"/><circle cx="12" cy="14" r="4"/><path d="M7 5.25h.01M9.5 5.25h.01"/></svg></span><span class="sl"></span><span class="sn open"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 5.5c6 2 13 2 19 0"/><path d="M5.5 6.5v10a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-9.6"/><path d="M13.5 7.2v6.3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1V6.6"/></svg></span><span class="sl"></span><span class="sn open"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6.5a2 2 0 1 1 2.8 1.8c-.5.3-.8.8-.8 1.4V11"/><path d="M12 11l-8.3 5.4A1.3 1.3 0 0 0 4.4 19h15.2a1.3 1.3 0 0 0 .7-2.6z"/></svg></span></div><div class="tlm"><div class="tbar"><i style="width:80%"></i><i class="ov" style="left:80%"></i></div><span class="tlab late"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>+40 Min</span></div></a><p class="sec">Läuft</p><a class="qc"><div class="qh"><span class="qi"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h16l-1.6 10.2a2 2 0 0 1-2 1.8H7.6a2 2 0 0 1-2-1.8z"/><path d="M8 9l2-5M16 9l-2-5"/></svg></span><div class="qt"><b>Wäsche</b><span>Trocknen · Wartezeit läuft</span></div><svg class="i cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div><div class="smini"><span class="sn done"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="sl done"></span><span class="sn cur"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 5.5c6 2 13 2 19 0"/><path d="M5.5 6.5v10a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-9.6"/><path d="M13.5 7.2v6.3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1V6.6"/></svg></span><span class="sl"></span><span class="sn open"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6.5a2 2 0 1 1 2.8 1.8c-.5.3-.8.8-.8 1.4V11"/><path d="M12 11l-8.3 5.4A1.3 1.3 0 0 0 4.4 19h15.2a1.3 1.3 0 0 0 .7-2.6z"/></svg></span></div><div class="tlm"><div class="tbar"><i style="width:42%"></i><b style="left:42%"></b></div><span class="tlab"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>trocken Mo, 16:28</span></div></a><p class="sec">Bereit</p><a class="qc"><div class="qh"><span class="qi"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h16l-1.6 10.2a2 2 0 0 1-2 1.8H7.6a2 2 0 0 1-2-1.8z"/><path d="M8 9l2-5M16 9l-2-5"/></svg></span><div class="qt"><b>Wäsche</b><span>3 Etappen · 2 Wartezeiten</span></div><svg class="i cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></div><button class="btn sm">Quest starten</button></a></div></div><div class="homebar"></div></div></div><figcaption><b>U1 Zustände · Karte: neu, läuft, wartet</b><span>Dieselbe Karte in den drei Lagen. Wartet eine Quest auf dich, rückt sie nach oben und bekommt den orangen Hinweis wie bei der Überzeit.</span></figcaption></figure>
+  </div>
+  <h2>Zurück zur Übersicht</h2>
+  <p class="hint">Aus einer laufenden Quest raus, ohne etwas zu verlieren: sie läuft weiter und steht auf der Übersicht mit ihrem Stand.</p>
+  <div class="grid">
+    <figure data-v="Z1"><div class="frame"><div class="phone "><div class="status"><span>9:41</span><span class="isl"></span><span>▮▮ ◔</span></div><div class="screen"><div class="q"><div class="qtop"><span class="nav"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></span><div class="sfull"><span class="sn big done"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M4 7.5h16"/><circle cx="12" cy="14" r="4"/><path d="M7 5.25h.01M9.5 5.25h.01"/></svg></span><span class="sl done"></span><span class="sn big cur"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 5.5c6 2 13 2 19 0"/><path d="M5.5 6.5v10a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-9.6"/><path d="M13.5 7.2v6.3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1V6.6"/></svg></span><span class="sl"></span><span class="sn big open"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6.5a2 2 0 1 1 2.8 1.8c-.5.3-.8.8-.8 1.4V11"/><path d="M12 11l-8.3 5.4A1.3 1.3 0 0 0 4.4 19h15.2a1.3 1.3 0 0 0 .7-2.6z"/></svg></span></div></div><div class="stepbody"><div class="ql-scene scn big"><svg class="sc" viewBox="0 0 120 120">
+      <path class="ln" d="M14 112 V26 M106 112 V26"/>
+      <path class="ln" style="stroke-width:1.8" d="M14 32 Q60 36 106 32">
+        <animate attributeName="d" dur="8s" repeatCount="indefinite" keyTimes="0;0.125;0.2562;0.3;0.4312;0.475;0.6063;0.65;0.895;0.9825;1"
+                 values="M14 32 Q60 36 106 32;M14 32 Q60 36 106 32;M14 32 Q60 36 106 32;M14 32 Q60 44 106 32;M14 32 Q60 44 106 32;M14 32 Q60 50 106 32;M14 32 Q60 50 106 32;M14 32 Q60 56 106 32;M14 32 Q60 56 106 32;M14 32 Q60 36 106 32;M14 32 Q60 36 106 32"/>
+      </path>
+      <g class="h6-1"><use href="#shirt" x="36" y="44.5"/></g>
+      <g class="h6-2"><use href="#pants" x="60" y="45"/></g>
+      <g class="h6-3"><use href="#sock" x="84" y="44.5"/></g>
+      <g transform="translate(60 112) scale(.7)"><use href="#hbody"/><g class="l6 ol"><use href="#hlid"/></g></g>
+    </svg></div><h2>Wäsche aufhängen</h2></div><button class="btn bottom">Erledigt</button></div></div><div class="homebar"></div></div></div><figcaption><b>Z1 · Pfeil links neben dem Stepper</b><span>Ein schlichter Zurück-Pfeil in derselben Zeile wie der Stepper. Kostet keine Höhe, der Stepper wird nur etwas schmaler.</span></figcaption></figure>
+    <figure data-v="Z2"><div class="frame"><div class="phone "><div class="status"><span>9:41</span><span class="isl"></span><span>▮▮ ◔</span></div><div class="screen"><div class="q"><div class="bar"><span class="navtxt"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Übersicht</span><span class="qn">Wäsche</span></div><div class="qtop"><div class="sfull"><span class="sn big done"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M4 7.5h16"/><circle cx="12" cy="14" r="4"/><path d="M7 5.25h.01M9.5 5.25h.01"/></svg></span><span class="sl done"></span><span class="sn big cur"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 5.5c6 2 13 2 19 0"/><path d="M5.5 6.5v10a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-9.6"/><path d="M13.5 7.2v6.3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1V6.6"/></svg></span><span class="sl"></span><span class="sn big open"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6.5a2 2 0 1 1 2.8 1.8c-.5.3-.8.8-.8 1.4V11"/><path d="M12 11l-8.3 5.4A1.3 1.3 0 0 0 4.4 19h15.2a1.3 1.3 0 0 0 .7-2.6z"/></svg></span></div></div><div class="stepbody"><div class="ql-scene scn big"><svg class="sc" viewBox="0 0 120 120">
+      <path class="ln" d="M14 112 V26 M106 112 V26"/>
+      <path class="ln" style="stroke-width:1.8" d="M14 32 Q60 36 106 32">
+        <animate attributeName="d" dur="8s" repeatCount="indefinite" keyTimes="0;0.125;0.2562;0.3;0.4312;0.475;0.6063;0.65;0.895;0.9825;1"
+                 values="M14 32 Q60 36 106 32;M14 32 Q60 36 106 32;M14 32 Q60 36 106 32;M14 32 Q60 44 106 32;M14 32 Q60 44 106 32;M14 32 Q60 50 106 32;M14 32 Q60 50 106 32;M14 32 Q60 56 106 32;M14 32 Q60 56 106 32;M14 32 Q60 36 106 32;M14 32 Q60 36 106 32"/>
+      </path>
+      <g class="h6-1"><use href="#shirt" x="36" y="44.5"/></g>
+      <g class="h6-2"><use href="#pants" x="60" y="45"/></g>
+      <g class="h6-3"><use href="#sock" x="84" y="44.5"/></g>
+      <g transform="translate(60 112) scale(.7)"><use href="#hbody"/><g class="l6 ol"><use href="#hlid"/></g></g>
+    </svg></div><h2>Wäsche aufhängen</h2></div><button class="btn bottom">Erledigt</button></div></div><div class="homebar"></div></div></div><figcaption><b>Z2 · Kopfzeile mit Quest-Name</b><span>Über dem Stepper eine schmale Zeile: Pfeil, „Übersicht“ und rechts der Name der Quest. Am klarsten, kostet aber eine Zeile Höhe.</span></figcaption></figure>
+    <figure data-v="Z3"><div class="frame"><div class="phone "><div class="status"><span>9:41</span><span class="isl"></span><span>▮▮ ◔</span></div><div class="screen"><div class="sheetbg"></div><div class="q sheet"><span class="grab"></span><div class="qtop"><div class="sfull"><span class="sn big done"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M4 7.5h16"/><circle cx="12" cy="14" r="4"/><path d="M7 5.25h.01M9.5 5.25h.01"/></svg></span><span class="sl done"></span><span class="sn big cur"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 5.5c6 2 13 2 19 0"/><path d="M5.5 6.5v10a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-9.6"/><path d="M13.5 7.2v6.3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1V6.6"/></svg></span><span class="sl"></span><span class="sn big open"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6.5a2 2 0 1 1 2.8 1.8c-.5.3-.8.8-.8 1.4V11"/><path d="M12 11l-8.3 5.4A1.3 1.3 0 0 0 4.4 19h15.2a1.3 1.3 0 0 0 .7-2.6z"/></svg></span></div><span class="nav"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="stepbody"><div class="ql-scene scn big"><svg class="sc" viewBox="0 0 120 120">
+      <path class="ln" d="M14 112 V26 M106 112 V26"/>
+      <path class="ln" style="stroke-width:1.8" d="M14 32 Q60 36 106 32">
+        <animate attributeName="d" dur="8s" repeatCount="indefinite" keyTimes="0;0.125;0.2562;0.3;0.4312;0.475;0.6063;0.65;0.895;0.9825;1"
+                 values="M14 32 Q60 36 106 32;M14 32 Q60 36 106 32;M14 32 Q60 36 106 32;M14 32 Q60 44 106 32;M14 32 Q60 44 106 32;M14 32 Q60 50 106 32;M14 32 Q60 50 106 32;M14 32 Q60 56 106 32;M14 32 Q60 56 106 32;M14 32 Q60 36 106 32;M14 32 Q60 36 106 32"/>
+      </path>
+      <g class="h6-1"><use href="#shirt" x="36" y="44.5"/></g>
+      <g class="h6-2"><use href="#pants" x="60" y="45"/></g>
+      <g class="h6-3"><use href="#sock" x="84" y="44.5"/></g>
+      <g transform="translate(60 112) scale(.7)"><use href="#hbody"/><g class="l6 ol"><use href="#hlid"/></g></g>
+    </svg></div><h2>Wäsche aufhängen</h2></div><button class="btn bottom">Erledigt</button></div></div><div class="homebar"></div></div></div><figcaption><b>Z3 · Schließen rechts, Quest als Blatt</b><span>Die Quest liegt wie ein Blatt über der Übersicht, oben ein Griff und rechts ein ×. Nach unten wischen geht auch. Fühlt sich am meisten wie iOS an.</span></figcaption></figure>
+  </div>
+</main>
+<div id="big"></div>
+<script>
+  const big = document.getElementById("big");
+  document.querySelectorAll("figure").forEach((f) => f.addEventListener("click", () => {
+    big.innerHTML = f.querySelector(".frame").outerHTML; big.classList.add("open");
+  }));
+  big.addEventListener("click", () => big.classList.remove("open"));
+</script>
+</body>
+</html>
