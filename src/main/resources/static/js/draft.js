@@ -69,6 +69,40 @@
   };
   const WAIT_SECONDS = 120;
 
+  // Der Stand liegt im Gerät, damit die Quest nach einem Blick auf die Übersicht an derselben
+  // Stelle weitergeht. Die Wartezeit läuft dabei im Zeitraffer weiter.
+  const STORE = "questlog.entwurf.waesche";
+  const SAVED = ["screen", "stageIndex", "stepIndex", "chosenMinutes", "custom", "remaining", "over"];
+
+  function loadState() {
+    let state;
+    try {
+      state = JSON.parse(localStorage.getItem(STORE));
+    } catch {
+      return null;
+    }
+    if (!state || !["step", "missing", "wait", "waitDone"].includes(state.screen)) return null;
+    const seconds = (Date.now() - state.savedAt) / 1000;
+    if (state.screen === "wait") {
+      state.remaining -= seconds / WAIT_SECONDS;
+      if (state.remaining <= 0) {
+        state.over = -state.remaining * state.chosenMinutes;
+        state.remaining = 0;
+        state.screen = "waitDone";
+      }
+    } else if (state.screen === "waitDone") {
+      state.over += (seconds * state.chosenMinutes) / WAIT_SECONDS;
+    }
+    return state;
+  }
+
+  function saveState(quest) {
+    const state = Object.fromEntries(SAVED.map((key) => [key, quest[key]]));
+    state.endsAt = quest.endsAt?.getTime() ?? null;
+    state.savedAt = Date.now();
+    localStorage.setItem(STORE, JSON.stringify(state));
+  }
+
   // Segmente unterscheiden sich in der Dicke: erledigt und aktiv dick, offen dünn.
   const RING = { radius: 46, width: 9, thin: 3.5, gap: 6, sweep: 0.5, travel: 0.55, settle: 0.22 };
 
@@ -167,6 +201,14 @@
 
       init() {
         this.root = this.$el;
+        const saved = loadState();
+        if (saved) {
+          SAVED.forEach((key) => (this[key] = saved[key]));
+          this.endsAt = saved.endsAt ? new Date(saved.endsAt) : null;
+          if (this.screen === "wait") this.timer = setInterval(() => this.tick(1 / WAIT_SECONDS), 1000);
+          if (this.screen === "waitDone") this.overTimer = setInterval(() => (this.over += this.chosenMinutes / WAIT_SECONDS), 1000);
+        }
+        Alpine.effect(() => saveState(this));
       },
 
       icon(name) {
@@ -568,7 +610,74 @@
     };
   }
 
+  // Übersicht: zeigt groß, was als Nächstes dran ist, mit der Szene der Stelle, an der die Quest steht.
+  function questOverview() {
+    return {
+      quest: QUEST,
+      state: null,
+      sceneName: "",
+      today: new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" }),
+
+      init() {
+        this.refresh();
+        setInterval(() => this.refresh(), 1000);
+      },
+
+      // Die Szene nur tauschen, wenn sie wechselt, sonst startet ihre Animation jede Sekunde neu.
+      refresh() {
+        this.state = loadState();
+        const name = this.currentScene();
+        if (name !== this.sceneName) this.sceneName = name;
+      },
+
+      currentScene() {
+        const s = this.state;
+        if (!s) return QUEST.stages[0].steps[0].scene;
+        if (s.screen === "wait") return this.stage.wait.scene;
+        if (s.screen === "waitDone") return `${this.stage.wait.scene}-done`;
+        return this.stage.steps[s.stepIndex].scene;
+      },
+
+      scene(name) {
+        return document.getElementById(`scene-${name}`)?.innerHTML ?? "";
+      },
+
+      get stage() {
+        return QUEST.stages[this.state?.stageIndex ?? 0];
+      },
+
+      get timed() {
+        return this.state?.screen === "wait" || this.state?.screen === "waitDone";
+      },
+
+      get late() {
+        return this.state?.screen === "waitDone";
+      },
+
+      get status() {
+        const s = this.state;
+        if (!s) return "Bereit zum Starten";
+        const step = this.stage.steps[s.stepIndex];
+        if (s.screen === "missing") return `${step.missing} fehlt`;
+        if (s.screen === "wait") return `${this.stage.wait.label} läuft · fertig ${finishedAt(new Date(s.endsAt))}`;
+        if (s.screen === "waitDone") return `${this.stage.wait.label} fertig`;
+        return `${this.stage.name} · ${step.title}`;
+      },
+
+      get progress() {
+        return (1 - (this.state?.remaining ?? 1)) * 100;
+      },
+
+      get timeText() {
+        const s = this.state;
+        if (!this.timed) return "";
+        return this.late ? overdue(s.over) : inWords(s.remaining * s.chosenMinutes);
+      },
+    };
+  }
+
   document.addEventListener("alpine:init", () => {
     Alpine.data("laundryDraft", laundryDraft);
+    Alpine.data("questOverview", questOverview);
   });
 })();

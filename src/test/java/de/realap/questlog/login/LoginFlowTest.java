@@ -1,6 +1,7 @@
 package de.realap.questlog.login;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -30,7 +31,11 @@ class LoginFlowTest {
   @Test
   void anonymousVisitorIsSentToLogin() throws Exception {
     mvc.perform(get("/")).andExpect(status().is3xxRedirection());
-    mvc.perform(get("/login")).andExpect(status().isOk());
+    mvc.perform(get("/login"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("autocomplete=\"current-password\"")));
+    mvc.perform(get("/login?error"))
+        .andExpect(content().string(containsString("Name oder Passwort stimmt nicht.")));
   }
 
   @Test
