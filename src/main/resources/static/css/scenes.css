@@ -25,10 +25,10 @@ svg.clip { overflow: hidden; }
 svg.sc text { font: 600 9px system-ui, sans-serif; fill: var(--muted); }
 .sc g, .sc use, .sc path, .sc circle, .sc rect { animation-iteration-count: infinite; }
 .rot { transform-box: view-box !important; transform-origin: 60px 68px; }
-.ld3 { animation: ld3 7s infinite; opacity: 0; }
-.door3 { animation: door3 7s infinite cubic-bezier(.65,0,.35,1); }
-.lid3 { animation: lid3 7s infinite cubic-bezier(.65,0,.35,1); }
-.led3 { animation: led3 7s infinite ease-in-out; }
+.ld3 { animation: ld3 9.5s infinite; opacity: 0; }
+.door3 { animation: door3 9.5s infinite cubic-bezier(.65,0,.35,1); }
+.lid3 { animation: lid3 9.5s infinite cubic-bezier(.65,0,.35,1); }
+.led3 { animation: led3 9.5s infinite ease-in-out; }
 .w4a { animation: w4a 12s infinite ease-in-out; }
 .w4b { animation: w4b 12s infinite ease-in-out; }
 .f4 { animation: f4 12s infinite; }
@@ -156,12 +156,10 @@ svg.sc text { font: 600 9px system-ui, sans-serif; fill: var(--muted); }
 .tl7 .head svg[style] { width: 30px; height: 25px; }
 @keyframes spin { to { transform: rotate(360deg) } }
 @keyframes fade { 0% { opacity: 0 } 3%,95% { opacity: 1 } 100% { opacity: 0 } }
-@keyframes ld3 { 0%,8% { transform: none; opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 10% { opacity: 1 }
-    16%,18% { transform: translateY(-32px); animation-timing-function: cubic-bezier(.65,0,.35,1) }
-    30% { transform: translate(-53px,-16px) scale(.45) rotate(-15deg); opacity: 1 } 32%,100% { transform: translate(-53px,-16px) scale(.45); opacity: 0 } }
-@keyframes door3 { 0%,60% { transform: scaleX(.12) } 70% { transform: scaleX(1) } 73% { transform: scale(.96) } 76%,92% { transform: none } 100% { transform: scaleX(.12) } }
-@keyframes lid3 { 0%,2% { transform: none } 8%,58% { transform: rotate(105deg) } 66%,100% { transform: none } }
-@keyframes led3 { 0%,85% { opacity: .2 } 88% { opacity: 1 } 91% { opacity: .55 } 94%,97% { opacity: 1 } 100% { opacity: .2 } }
+@keyframes ld3 { 0%,5.89% { transform: none; opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) } 7.37% { opacity: 1 } 11.79%,13.26% { transform: translateY(-32px); animation-timing-function: cubic-bezier(.65,0,.35,1) } 22.11% { transform: translate(-53px,-16px) scale(.45) rotate(-15deg); opacity: 1 } 23.58%,100% { transform: translate(-53px,-16px) scale(.45); opacity: 0 } }
+@keyframes door3 { 0%,44.21% { transform: scaleX(.12) } 51.58% { transform: scaleX(1) } 53.79% { transform: scale(.96) } 56.00%,94.74% { transform: none } 100% { transform: scaleX(.12) } }
+@keyframes lid3 { 0%,1.47% { transform: none } 5.89%,42.74% { transform: rotate(105deg) } 48.63%,100% { transform: none } }
+@keyframes led3 { 0%,63.16% { opacity: .2 } 65.26% { opacity: 1 } 67.37% { opacity: .55 } 69.47%,96.84% { opacity: 1 } 100% { opacity: .2 } }
 @keyframes w4a { 0% { transform: translateY(22px) } 8%,36% { transform: none } 42%,100% { transform: translateY(22px) } }
 @keyframes w4b { 0%,42% { transform: translateY(22px) } 50%,62% { transform: none } 68%,100% { transform: translateY(22px) } }
 @keyframes f4 { 0%,8% { opacity: 0 } 12%,34% { opacity: 1 } 38%,100% { opacity: 0 } }
@@ -251,10 +249,10 @@ svg.sc text { font: 600 9px system-ui, sans-serif; fill: var(--muted); }
 @keyframes e5-pp3 { 0% { opacity: 0 } 0.00% { opacity: 0 } 65.58% { opacity: 0 } 66.73% { opacity: 1 } 100.00% { opacity: 1 } 100% { opacity: 1 } }
 
 /* Schritt 3: Waschmittel ins Fach, zwischen Einladen und Türe zu */
-.pour3 { animation: pour3 7s infinite cubic-bezier(.65,0,.35,1); opacity: 0; transform-box: view-box !important; transform-origin: 46px 8px; }
-@keyframes pour3 { 0%,70% { opacity: 0; transform: translateY(-6px) } 72% { opacity: 1; transform: none } 75%,80% { opacity: 1; transform: rotate(-115deg) translate(-2px,-6px) } 82% { opacity: 1; transform: none } 84%,100% { opacity: 0; transform: translateY(-6px) } }
-.drop3 { animation: drop3 7s infinite ease-in; opacity: 0; }
-@keyframes drop3 { 0%,75.5% { opacity: 0; transform: none } 76% { opacity: 1 } 78.5% { opacity: 1; transform: translateY(9px) } 79%,100% { opacity: 0; transform: translateY(9px) } }
+.pour3 { animation: pour3 9.5s infinite cubic-bezier(.65,0,.35,1); opacity: 0; transform-box: view-box !important; transform-origin: 46px 8px; }
+@keyframes pour3 { 0%,51.58% { opacity: 0; transform: translateY(-6px) } 53.05% { opacity: 1; transform: none } 55.26%,58.95% { opacity: 1; transform: rotate(-115deg) translate(-2px,-6px) } 60.42% { opacity: 1; transform: none } 61.89%,100% { opacity: 0; transform: translateY(-6px) } }
+.drop3 { animation: drop3 9.5s infinite ease-in; opacity: 0; }
+@keyframes drop3 { 0%,55.58% { opacity: 0; transform: none } 56.00% { opacity: 1 } 57.89% { opacity: 1; transform: translateY(9px) } 58.21%,100% { opacity: 0; transform: translateY(9px) } }
 
 /* Abschluss: Regal füllt sich, dann grüner Haken oben drauf und Funkeln (Variante E aus entwuerfe/abschluss.html). Läuft einmal. */
 .ql-finale { position: relative; display: grid; place-items: center; }
@@ -282,3 +280,13 @@ svg.sc text { font: 600 9px system-ui, sans-serif; fill: var(--muted); }
 .ql-finale.play .sp { animation-name: fin-sp; animation-timing-function: ease-out; }
 .ql-finale-title { opacity: 0; } .ql-finale-title.play { animation-name: fin-ttl; }
 @media (prefers-reduced-motion: reduce) { .ql-finale .pk, .ql-finale .shelf, .ql-finale .disc, .ql-finale .chk, .ql-finale-title { animation-duration: 0.01ms; } .ql-finale .sp { display: none; } }
+
+/* Schritt 3: nach dem Start läuft die Maschine kurz an, bevor alles von vorn beginnt */
+.run3 { animation: run3 9.5s infinite; opacity: 0; }
+@keyframes run3 { 0%,66.32% { opacity: 0 } 69.47%,93.68% { opacity: 1 } 96.84%,100% { opacity: 0 } }
+.water3 { animation: water3 9.5s infinite ease-out; }
+@keyframes water3 { 0%,67.37% { transform: translateY(14px) } 77.89%,100% { transform: none } }
+.spin3 { animation: spin3 9.5s infinite; transform-box: view-box !important; transform-origin: 39px 72px; }
+@keyframes spin3 { 0%,68.42% { transform: none; animation-timing-function: cubic-bezier(.5,0,.75,1) } 96.84% { transform: rotate(540deg) } 100% { transform: rotate(540deg) } }
+.shake3 { animation: shake3 9.5s infinite linear; }
+@keyframes shake3 { 0%,82.11% { transform: none } 83.16%,85.26%,87.37%,89.47%,91.58% { transform: translateX(.6px) } 84.21%,86.32%,88.42%,90.53%,92.63% { transform: translateX(-.6px) } 93.68%,100% { transform: none } }
