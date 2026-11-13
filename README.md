@@ -35,6 +35,9 @@ deklarativ in `pom.xml`.
 **Frontend-Bibliotheken:** Es sind keine Fremdbibliotheken eingecheckt. Alle Versionen stehen als
 Properties in `pom.xml`, Node und npm sind nicht nötig.
 
+Mitteilungen gibt es auf dem iPhone nur in der installierten App, nicht im Safari-Tab. Die Frage
+nach der Erlaubnis kommt beim ersten Start einer Wartezeit.
+
 - htmx und Alpine.js kommen als WebJars und werden unter `/webjars/...` ausgeliefert.
 - daisyUI kommt als WebJar. Der Build entpackt es für die Tailwind-Standalone-CLI, die
   `src/main/frontend/app.css` zu `static/css/app.css` im JAR übersetzt.
@@ -79,8 +82,23 @@ Einmalig, von Hand.
    | `QUESTLOG_USERNAME`        | Benutzername für die Anmeldung                            |
    | `QUESTLOG_PASSWORD`        | Passwort für die Anmeldung                                |
    | `QUESTLOG_REMEMBER_ME_KEY` | Schlüssel für das Remember-me-Cookie, `openssl rand -base64 32` |
+   | `QUESTLOG_VAPID_PUBLIC_KEY`  | Web Push, öffentlicher Schlüssel (siehe unten)          |
+   | `QUESTLOG_VAPID_PRIVATE_KEY` | Web Push, privater Schlüssel (siehe unten)              |
+   | `QUESTLOG_VAPID_SUBJECT`     | Web Push, Kontakt: die eigene Domain, z. B. `https://questlog.example.de` |
 
    Ändert sich das Passwort oder der Remember-me-Schlüssel, müssen sich alle Geräte neu anmelden.
+   Ohne die drei VAPID-Variablen läuft die App, nur ohne Mitteilungen. Das Schlüsselpaar einmal
+   erzeugen:
+
+   ```bash
+   openssl ecparam -name prime256v1 -genkey -noout -out vapid.pem
+   openssl ec -in vapid.pem -pubout -outform DER | tail -c 65 | base64 | tr '/+' '_-' | tr -d '=\n'; echo   # PUBLIC
+   openssl ec -in vapid.pem -outform DER | tail -c +8 | head -c 32 | base64 | tr '/+' '_-' | tr -d '=\n'; echo  # PRIVATE
+   rm vapid.pem
+   ```
+
+   Ein neues Schlüsselpaar macht bestehende Abos ungültig; die App fragt dann beim nächsten Start
+   einer Wartezeit neu an.
 5. **Auto-Deploy abschalten:** in den Einstellungen der Ressource *Auto Deploy* deaktivieren. Sonst
    deployt Coolify bei jedem Push auch ohne grüne Pipeline.
 6. **Deploy-Webhook:** in der Ressource unter *Webhooks* die *Deploy Webhook*-URL kopieren.

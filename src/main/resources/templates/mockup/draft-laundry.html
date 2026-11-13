@@ -246,8 +246,11 @@
         </div>
       </div>
       <footer class="mt-auto pt-4 pb-6">
-        <button type="button" x-show="screen === 'wait'" class="btn btn-ghost h-[52px] w-full font-normal text-base-content/60"
-                @click="skipTime()">Zeit vorspulen (nur im Entwurf)</button>
+        <!-- Nur in der Beta: Wartezeit sofort beenden, das Kolben-Symbol markiert die Testfunktion -->
+        <button type="button" x-show="screen === 'wait'" class="btn btn-ghost h-[52px] w-full gap-2 font-normal text-base-content/60"
+                data-label="Beta" @click="skipTime()">
+          <svg th:replace="~{fragments/icons :: flask('size-[18px]')}"></svg>Überspringen
+        </button>
         <button type="button" x-show="screen === 'waitDone'" class="btn btn-primary h-[52px] w-full rounded-[14px] text-[17px]" data-label="Hauptaktion"
                 @click="continueQuest($event)">Weiter: <span x-text="nextStage?.name"></span></button>
       </footer>

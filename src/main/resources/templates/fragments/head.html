@@ -10,6 +10,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Questlog">
+  <!-- CSRF-Token für fetch-Aufrufe der Seite -->
+  <meta name="csrf" th:if="${_csrf}" th:content="${_csrf.token}" th:attr="data-header=${_csrf.headerName}">
   <link rel="manifest" th:href="@{/manifest.webmanifest}">
   <link rel="icon" type="image/png" sizes="192x192" th:href="@{/icons/icon-192.png}">
   <link rel="apple-touch-icon" th:href="@{/icons/icon-180.png}">
