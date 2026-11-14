@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entwurf: Wartung mit Kran</title>
+<style>
+  :root { --bg: oklch(98.5% 0.006 85); --card: oklch(95.5% 0.008 85); --ink: oklch(28% 0.015 70); --mu: oklch(28% 0.015 70 / .6); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 80px; }
+  h1 { font-size: 28px; margin: 8px 0 4px; } .hint { color: var(--mu); margin: 0 0 8px; max-width: 780px; }
+  .tools { display: flex; gap: 10px; margin: 14px 0 22px; flex-wrap: wrap; }
+  .tools button { height: 40px; padding: 0 14px; border-radius: 12px; border: 1.5px solid oklch(91% 0.01 85); background: var(--card); color: var(--ink); font: 15px system-ui, sans-serif; cursor: pointer; }
+  .tools button.on { background: oklch(52% 0.07 165); color: #fff; border-color: transparent; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; border-radius: 22px; overflow: hidden; box-shadow: 0 0 0 1px oklch(91% 0.01 85); }
+  .side { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 26px 16px; }
+  .side.light { --bg2: oklch(98.5% 0.006 85); --ink2: oklch(28% 0.015 70); --pole: #8d857d; --pr: oklch(52% 0.07 165); --prc: #fff; background: var(--bg2); color: var(--ink2); }
+  .side.dark { --bg2: oklch(21% 0.008 70); --ink2: oklch(92% 0.008 85); --pole: #a39b92; --pr: oklch(72% 0.08 165); --prc: oklch(20% 0.02 165); background: var(--bg2); color: var(--ink2); }
+  .scene { width: 100%; max-width: 330px; overflow: visible; }
+  .lead { margin: 0; font-size: 18px; font-weight: 600; }
+  .reload { position: relative; overflow: hidden; width: 100%; max-width: 300px; height: 48px; border: 0; border-radius: 14px; background: var(--pr); color: var(--prc); font: 600 16px system-ui, sans-serif; cursor: pointer; }
+  .reload .left { position: absolute; inset: 0 auto 0 0; background: oklch(100% 0 0 / .18); transition: width .25s linear; }
+  .reload span { position: relative; } .reload .sec { font-weight: 400; opacity: .75; font-variant-numeric: tabular-nums; }
+  .opens { margin: 0; font-size: 14px; opacity: 0; transition: opacity .4s; } .opens.on { opacity: .6; }
+
+  .track { fill: none; stroke: #4a4541; stroke-width: 9; }
+  .arc { fill: none; stroke: #7fc4ab; stroke-width: 9; stroke-linecap: round; }
+  .ground { stroke: var(--pole); stroke-width: 2.5; stroke-linecap: round; opacity: .6; }
+  .base { fill: var(--pole); }
+  .steel { stroke: #d9a25f; stroke-width: 2.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .lat { stroke: #d9a25f; stroke-width: 1.4; fill: none; }
+  .tie { stroke: #d9a25f; stroke-width: 1; opacity: .8; }
+  .weight { fill: var(--pole); }
+  .trolley { fill: #d9a25f; }
+  .cable { stroke: #9a928a; stroke-width: 1.2; }
+  .hook { stroke: #9a928a; stroke-width: 2; fill: none; stroke-linecap: round; }
+  .hookblock { fill: #d9a25f; }
+  .shine { fill: none; stroke: #fff; stroke-width: 1.6; opacity: .45; stroke-linecap: round; }
+  .dull { fill: none; stroke: var(--pole); stroke-width: 9.5; opacity: 0; }
+  .spk { fill: #7fc4ab; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Wartung: Kran tauscht die Teile des Logos</h1>
+  <p class="hint">Aufbau, dann Austausch: Das alte Viertel wird herausgehoben und abgelegt, ein neues vom Stapel geholt und eingesetzt, danach dreht der Ring zum nächsten Viertel. Nach vier Teilen kommt eine Lieferung. Die Seite fragt unabhängig davon alle 20 s beim Server nach.</p>
+  <p class="hint">Alles hängt an der Uhr: „Ganze Seite neu laden“ zeigt, dass nichts springt. „Server ist wieder da“ und dann „Neu laden“: Der laufende Austausch wird fertig, dann Abbau und Funkeln.</p>
+  <div class="tools">
+    <button type="button" id="reloadPage">Ganze Seite neu laden</button>
+    <button type="button" id="back">Server ist wieder da</button>
+    <button type="button" id="reset">Von vorn</button>
+    <button type="button" id="fast">Zeitraffer ×4</button>
+  </div>
+  <div class="pair"><div class="side light"></div><div class="side dark"></div></div>
+</main>
+
+<template id="side">
+  <svg class="scene" viewBox="0 -12 300 206" aria-hidden="true">
+    <defs>
+      <clipPath id="wq"><polygon points="170,116 127.57,73.57 212.43,73.57"/></clipPath>
+    </defs>
+    <path class="ground" data-el="ground" d="M6 188 H294"/>
+    <!-- Stapel: neue Teile links, Ablage für alte daneben -->
+    <g data-el="stack"></g>
+    <g data-el="pile"></g>
+    <!-- Logo -->
+    <rect x="120" y="66" width="100" height="100" rx="23" fill="#2a2724"/>
+    <g data-el="ring"><circle class="track" cx="170" cy="116" r="30"/><circle class="arc" cx="170" cy="116" r="30" pathLength="100" stroke-dasharray="75 100" transform="rotate(-90 170 116)"/></g>
+    <g data-el="gap" clip-path="url(#wq)"><circle cx="170" cy="116" r="30" fill="none" stroke="#2a2724" stroke-width="12"/></g>
+    <circle cx="170" cy="116" r="5" fill="#f2ede4"/>
+    <!-- Kran -->
+    <rect class="base" data-el="base" x="244" y="183" width="24" height="6" rx="2"/>
+    <g data-el="mast"></g>
+    <g data-el="head"><path class="steel" d="M250 10 L256 -6 L262 10"/></g>
+    <g data-el="jib">
+      <path class="steel" d="M18 10 H262 M24 20 H262 M18 10 L24 20"/>
+      <path class="lat" data-el="jiblat"/>
+      <path class="tie" d="M256 -6 L80 10 M256 -6 L150 10"/>
+    </g>
+    <g data-el="cjib"><path class="steel" d="M262 10 H294 M262 20 H294 V10"/><path class="lat" d="M262 20 L270 10 L278 20 L286 10 L294 20"/><path class="tie" d="M256 -6 L294 10"/></g>
+    <rect class="weight" data-el="weight" x="278" y="20" width="14" height="14" rx="2"/>
+    <g data-el="trolley">
+      <rect class="trolley" x="-7" y="20" width="14" height="5" rx="1.5"/>
+    </g>
+    <g data-el="hang">
+      <line class="cable" data-el="cable" x1="0" y1="25" x2="0" y2="34"/>
+      <g data-el="hook"><rect class="hookblock" x="-4" y="0" width="8" height="4" rx="1"/><path class="hook" d="M0 4 v2 a3 3 0 1 0 3 3"/></g>
+      <g data-el="load"></g>
+    </g>
+    <g data-el="sparks"></g>
+  </svg>
+  <p class="lead">Gleich wieder da.</p>
+  <button class="reload" type="button"><i class="left"></i><span>Neu laden <span class="sec">· <b>20</b> s</span></span></button>
+  <p class="opens">App öffnet sich …</p>
+</template>
+
+<script>
+(() => {
+  // ---------- Zeitplan ----------
+  // Alles ist eine Funktion der Zeit seit Beginn. Darum steht die Szene nach dem Neuladen genau dort, wo sie war.
+  const BUILD = 6.2;
+  const CX = 170, CY = 116;          // Mitte des Rings
+  const MAST = 256, OLD_X = 92, NEW_X = 36;
+  const IDLE = 34;                   // Oberkante des Hakens in Ruhe
+  const RING_TOP = 81.5;             // Oberkante eines Viertels im Ring
+  const LIE = 90, STEP_UP = 10;      // Versatz eines Viertels, das am Boden liegt, und Stapelhöhe
+  const hookAt = (dy) => RING_TOP + dy - 9;
+
+  // Ein Austausch in Abschnitten: [Dauer, Name]
+  const SWAP_PARTS = [
+    [0.9, "lowerRing"], [0.25, "grip"], [1.0, "liftOld"], [1.25, "toOld"], [1.0, "lowerOld"], [0.25, "release"],
+    [0.7, "upEmpty"], [0.75, "toNew"], [0.9, "lowerNew"], [0.25, "gripNew"], [0.9, "liftNew"], [1.4, "toRing"],
+    [1.25, "lowerIn"], [0.25, "set"], [0.7, "upDone"], [1.0, "turn"],
+  ];
+  const SWAP = SWAP_PARTS.reduce((s, [d]) => s + d, 0);
+  const DELIVERY = 2.8;
+  const ROUND = 4 * SWAP + DELIVERY;
+
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const soft = (p) => (p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);   // weich an, weich ab
+  const out = (p) => 1 - Math.pow(1 - p, 3);
+  const settle = (p) => { const c = 1.4; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };  // leichtes Einrasten
+  const seg = (t, a, d) => clamp((t - a) / d);
+
+  // Pendeln nach einer Fahrt: klein und schnell abklingend.
+  const swing = (since, dir) => since < 0 || since > 1.6 ? 0 : dir * 4 * Math.exp(-since / .45) * Math.sin(2 * Math.PI * since / .8);
+
+  // Zustand der Arbeit zur Zeit w (Sekunden seit Arbeitsbeginn).
+  function workState(w) {
+    const r = Math.floor(w / ROUND);
+    let x = w - r * ROUND;
+    const st = { trolley: CX, hook: IDLE, load: null, gap: false, ring: 0, stackLeft: 4, pileCount: 0, pileFade: 1, delivered: 4, swing: 0, dull: [] };
+    if (x >= 4 * SWAP) {
+      // Lieferung: alte Teile gehen, neue werden abgelegt
+      const d = x - 4 * SWAP;
+      st.ring = 0; st.pileCount = 4; st.pileFade = 1 - out(seg(d, 0, .8)); st.stackLeft = 0;
+      st.delivered = d < .8 ? 0 : clamp(Math.floor((d - .8) / .45) + 1, 0, 4);
+      st.deliverT = d;
+      st.dull = [1, 1, 1, 1];
+      return st;
+    }
+    const s = Math.floor(x / SWAP);
+    x -= s * SWAP;
+    st.ring = 90 * s; st.stackLeft = 4 - s; st.pileCount = s; st.dull = [1, 1, 1, 1];
+    st.swap = s;
+    let a = 0;
+    let lastMove = null;
+    const OLD_LOAD = ["liftOld", "toOld", "lowerOld"], NEW_LOAD = ["liftNew", "toRing", "lowerIn"];
+    const GAP_FROM = SWAP_PARTS.findIndex(([, n]) => n === "liftOld"), GAP_TO = SWAP_PARTS.findIndex(([, n]) => n === "lowerIn");
+    SWAP_PARTS.forEach(([d, name], idx) => {
+      if (x < a) return;
+      const p = clamp((x - a) / d), e = soft(p);
+      const oldY = hookAt(LIE - STEP_UP * s), newY = hookAt(LIE - STEP_UP * (3 - s));
+      switch (name) {
+        case "lowerRing": st.hook = lerp(IDLE, hookAt(0), e); break;
+        case "grip": case "set": case "lowerIn": st.hook = name === "lowerIn" ? lerp(IDLE, hookAt(0), e) : hookAt(0); break;
+        case "liftOld": st.hook = lerp(hookAt(0), IDLE, e); break;
+        case "toOld": st.hook = IDLE; st.trolley = lerp(CX, OLD_X, e); lastMove = { end: a + d, dir: -1 }; break;
+        case "lowerOld": st.trolley = OLD_X; st.hook = lerp(IDLE, oldY, e); break;
+        case "release": st.trolley = OLD_X; st.hook = oldY; break;
+        case "upEmpty": st.trolley = OLD_X; st.hook = lerp(oldY, IDLE, e); break;
+        case "toNew": st.hook = IDLE; st.trolley = lerp(OLD_X, NEW_X, e); lastMove = { end: a + d, dir: -1 }; break;
+        case "lowerNew": st.trolley = NEW_X; st.hook = lerp(IDLE, newY, e); break;
+        case "gripNew": st.trolley = NEW_X; st.hook = newY; break;
+        case "liftNew": st.trolley = NEW_X; st.hook = lerp(newY, IDLE, e); break;
+        case "toRing": st.hook = IDLE; st.trolley = lerp(NEW_X, CX, e); lastMove = { end: a + d, dir: 1 }; break;
+        case "upDone": st.trolley = CX; st.hook = lerp(hookAt(0), IDLE, e); break;
+        case "turn": st.trolley = CX; st.hook = IDLE; st.ring = 90 * s + 90 * e; break;
+      }
+      if (name === "lowerIn" || name === "set") st.trolley = CX;
+      st.load = OLD_LOAD.includes(name) ? { s } : NEW_LOAD.includes(name) ? { s, fresh: true } : null;
+      st.gap = idx >= GAP_FROM && idx <= GAP_TO;
+      if (idx >= SWAP_PARTS.findIndex(([, n]) => n === "release")) st.pileCount = s + 1;
+      if (name === "release") st.dull[s] = 0;
+      if (name === "upEmpty") st.dull[s] = out(p);
+      if (idx >= SWAP_PARTS.findIndex(([, n]) => n === "liftNew")) st.stackLeft = 3 - s;
+      a += d;
+    });
+    if (lastMove) st.swing = swing(x - lastMove.end, lastMove.dir);
+    return st;
+  }
+
+  // Nächster ruhiger Moment: Ende des Aufbaus, eines Austauschs oder der Lieferung.
+  function nextCalm(t) {
+    if (t <= BUILD) return BUILD;
+    const w = t - BUILD, r = Math.floor(w / ROUND), x = w - r * ROUND;
+    const marks = [1, 2, 3, 4].map((k) => k * SWAP).concat([ROUND]);
+    const next = marks.find((m) => m >= x - 1e-6);
+    return BUILD + r * ROUND + next;
+  }
+
+  // ---------- Szene aufbauen ----------
+  const ns = "http://www.w3.org/2000/svg";
+  const RING = '<circle class="track" cx="170" cy="116" r="30"/><circle class="arc" cx="170" cy="116" r="30" pathLength="100" stroke-dasharray="75 100" transform="rotate(-90 170 116)"/>';
+  // Ein Viertel: der Ausschnitt oben am Ring, mit der Drehung des Rings bei Austausch s.
+  const piece = (s, uid) => `<g clip-path="url(#wq-${uid})"><g transform="rotate(${90 * s} 170 116)">${RING}</g><circle class="dull" cx="170" cy="116" r="30"/></g><path class="shine" d="M146.67 92.67 A33 33 0 0 1 193.33 92.67"/>`;
+
+  const scenes = [...document.querySelectorAll(".side")].map((host, i) => {
+    host.append(document.getElementById("side").content.cloneNode(true));
+    const svg = host.querySelector("svg");
+    svg.querySelector("clipPath").id = `wq-${i}`;
+    svg.querySelector('[data-el="gap"]').setAttribute("clip-path", `url(#wq-${i})`);
+    const el = (n) => svg.querySelector(`[data-el="${n}"]`);
+    // Mast aus fünf Gitterteilen
+    const mast = el("mast");
+    for (let k = 0; k < 5; k++) {
+      const y0 = 188 - 35.6 * (k + 1), y1 = 188 - 35.6 * k;
+      const g = document.createElementNS(ns, "g");
+      g.innerHTML = `<path class="steel" d="M249 ${y1} V${y0} M263 ${y1} V${y0} M249 ${y0} H263"/><path class="lat" d="M249 ${y1} L263 ${y1 - 17.8} L249 ${y0}"/>`;
+      mast.append(g);
+    }
+    el("jiblat").setAttribute("d", Array.from({ length: 20 }, (_, k) => `M${24 + k * 12} 20 L${30 + k * 12} 10 L${36 + k * 12} 20`).join(" "));
+    // Stapel und Ablage: je vier Viertel
+    for (const [name] of [["stack"], ["pile"]]) {
+      for (let k = 0; k < 4; k++) {
+        const g = document.createElementNS(ns, "g");
+        g.innerHTML = piece(name === "stack" ? 3 - k : k, i);
+        el(name).append(g);
+      }
+    }
+    for (const [x, y, sc] of [[118, 58, .8], [228, 64, .6], [230, 168, .7], [110, 166, .5]]) {
+      const g = document.createElementNS(ns, "g");
+      g.setAttribute("transform", `translate(${x} ${y}) scale(${sc})`);
+      g.innerHTML = '<path class="spk" d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/>';
+      el("sparks").append(g);
+    }
+    return { host, svg, el, mastParts: [...mast.children], stack: [...el("stack").children], pile: [...el("pile").children], sparks: [...el("sparks").querySelectorAll("path")] };
+  });
+
+  const show = (node, o, tf) => { node.style.opacity = o; if (tf !== undefined) node.setAttribute("transform", tf); };
+
+  // ---------- Zeichnen ----------
+  function draw(sc, t, done) {
+    const { el } = sc;
+    // Aufbau (oder Abbau rückwärts in eigener Zeit)
+    const D = done == null ? -1 : t - done;
+    const b = (a, d) => seg(t, a, d);
+    const u = (a, d) => (D < 0 ? 0 : seg(D, a, d));   // Abbau-Fortschritt
+
+    el("ground").style.opacity = String(.6 * out(b(0, .4)) * (1 - u(4.3, .5)));
+    const baseIn = out(b(.1, .4)), baseOut = u(4.2, .4);
+    show(el("base"), baseIn * (1 - baseOut), `translate(0 ${6 * (1 - baseIn)})`);
+    sc.mastParts.forEach((g, k) => {
+      const pin = b(.5 + k * .5, .45);
+      const pout = u(2.4 + (4 - k) * .35, .45);
+      const y = -36 * (1 - settle(pin)) - 30 * soft(pout);
+      show(g, Math.min(1, pin * 3) * (1 - pout), `translate(0 ${y})`);
+    });
+    const hin = out(b(3.0, .35)), hout = u(2.2, .3);
+    show(el("head"), hin * (1 - hout), `translate(0 ${-14 * (1 - hin) - 14 * hout})`);
+    const jin = soft(b(3.35, .9)), jout = soft(u(1.5, .8));
+    const js = jin * (1 - jout);
+    show(el("jib"), js > 0 ? 1 : 0, `translate(262 0) scale(${Math.max(js, .001)} 1) translate(-262 0)`);
+    const cs = soft(b(3.35, .6)) * (1 - soft(u(1.5, .6)));
+    show(el("cjib"), cs > 0 ? 1 : 0, `translate(262 0) scale(${Math.max(cs, .001)} 1) translate(-262 0)`);
+    const win = out(b(4.25, .5)), wout = u(1.15, .45);
+    show(el("weight"), win * (1 - wout), `translate(0 ${-18 * (1 - win) - 18 * soft(wout)})`);
+
+    // Arbeit
+    let st;
+    const w = (done == null ? t : Math.min(t, done)) - BUILD;
+    if (w < 0) {
+      // Während des Aufbaus: Laufkatze fährt aus, Haken kommt herunter, Stapel wird abgelegt
+      st = { trolley: lerp(MAST, CX, soft(b(4.8, .8))), hook: lerp(27, IDLE, out(b(5.5, .6))), load: null, gap: false, ring: 0, stackLeft: 4, pileCount: 0, pileFade: 1, delivered: clamp(Math.floor((t - 4.4) / .35) + 1, 0, 4), deliverT: t - 4.4 + .8, swing: 0, dull: [1, 1, 1, 1], building: true };
+    } else {
+      st = workState(w);
+    }
+    // Abbau: Haken hoch, Laufkatze zurück, Ring in seine Lage
+    let ring = st.ring, trolley = st.trolley, hook = st.hook, hookO = t < 5.5 ? out(b(5.5, .4)) : 1;
+    if (D >= 0) {
+      hook = lerp(st.hook, 27, soft(u(0, .6)));
+      hookO = 1 - u(.4, .3);
+      trolley = lerp(st.trolley, MAST, soft(u(.5, .8)));
+      const home = Math.ceil(st.ring / 360 - 1e-6) * 360;
+      ring = lerp(st.ring, home, soft(u(0, 1.4)));
+    }
+    el("ring").setAttribute("transform", `rotate(${ring} ${CX} ${CY})`);
+    el("gap").style.opacity = st.gap && D < 0 ? 1 : 0;
+    const trolleyO = st.building ? out(b(4.7, .3)) : 1 - (D >= 0 ? u(1.2, .2) : 0);
+    show(el("trolley"), trolleyO, `translate(${trolley} 0)`);
+    show(el("hang"), trolleyO, `translate(${trolley} 0) rotate(${D >= 0 ? 0 : st.swing} 0 25)`);
+    el("cable").setAttribute("y2", hook);
+    el("cable").style.opacity = hookO;
+    show(el("hook"), hookO, `translate(0 ${hook})`);
+    const load = el("load");
+    if (st.load && D < 0) {
+      if (load.dataset.s !== `${st.load.s}${st.load.fresh ? "n" : "o"}`) {
+        load.innerHTML = piece(st.load.s, sc.host.classList.contains("dark") ? 1 : 0);
+        load.dataset.s = `${st.load.s}${st.load.fresh ? "n" : "o"}`;
+        load.querySelector(".shine").style.opacity = st.load.fresh ? "" : "0";
+      }
+      show(load, 1, `translate(${-CX} ${hook + 9 - RING_TOP})`);
+    } else {
+      load.style.opacity = 0;
+    }
+
+    // Stapel links: die obersten werden zuerst geholt; bei Lieferung fallen sie einzeln herein
+    const stackFade = D >= 0 ? 1 - u(.2, .7) : 1;
+    sc.stack.forEach((g, k) => {
+      let o = k < st.stackLeft ? 1 : 0, y = 0;
+      if (st.stackLeft === 0 || st.building) {
+        const p = clamp((st.deliverT - .8 - k * .45) / .4);
+        o = p > 0 ? Math.min(1, p * 2) : 0;
+        y = -30 * (1 - out(p));
+      }
+      show(g, o * stackFade, `translate(${NEW_X - CX} ${LIE - STEP_UP * k + y})`);
+    });
+    // Ablage: alte Teile werden stumpf, bei Lieferung verschwinden sie
+    sc.pile.forEach((g, k) => {
+      const o = k < st.pileCount ? (st.stackLeft === 0 && !st.building ? st.pileFade : 1) : 0;
+      show(g, o * stackFade, `translate(${OLD_X - CX} ${LIE - STEP_UP * k})`);
+      g.querySelector(".dull").style.opacity = .55 * (st.dull[k] ?? 1);
+      g.querySelector(".shine").style.opacity = 0;
+    });
+
+    // Funkeln, wenn alles abgebaut ist
+    sc.sparks.forEach((p, k) => {
+      const q = D < 0 ? 0 : seg(D, 4.7 + k * .12, 1.1);
+      const o = q < .35 ? q / .35 : 1 - (q - .35) / .65;
+      p.style.opacity = q > 0 && q < 1 ? o : 0;
+      p.setAttribute("transform", `scale(${q < .35 ? .2 + .8 * q / .35 : 1 - .5 * (q - .35) / .65}) rotate(${90 * q})`);
+    });
+    sc.host.querySelector(".opens").classList.toggle("on", D > 5.9);
+  }
+
+  // ---------- Uhr, Nachfrage, Steuerung ----------
+  const K = "wartung-kran";
+  const get = (k) => localStorage.getItem(`${K}.${k}`);
+  const put = (k, v) => localStorage.setItem(`${K}.${k}`, v);
+  if (!get("start")) put("start", String(Date.now()));
+  let speed = Number(get("speed") || 1);
+  // Zum Prüfen einzelner Bilder: ?t=12.5 hält die Uhr an, ?done=20 setzt den Abbau.
+  const q = new URLSearchParams(location.search);
+  const clock = () => (q.has("t") ? Number(q.get("t")) : (Date.now() - Number(get("start"))) / 1000 * speed);
+  const doneAt = () => (q.has("done") ? Number(q.get("done")) : get("done") ? Number(get("done")) : null);
+
+  const backBtn = document.getElementById("back");
+  const fastBtn = document.getElementById("fast");
+  const paint = () => { backBtn.classList.toggle("on", get("back") === "1"); fastBtn.classList.toggle("on", speed > 1); };
+  paint();
+  backBtn.onclick = () => { put("back", get("back") === "1" ? "0" : "1"); paint(); };
+  fastBtn.onclick = () => {
+    // Zeitraffer ändert die Uhr; der Startpunkt wird so verschoben, dass die Szene an derselben Stelle bleibt.
+    const t = clock(); speed = speed > 1 ? 1 : 4; put("speed", String(speed));
+    put("start", String(Date.now() - (t / speed) * 1000)); paint();
+  };
+  document.getElementById("reset").onclick = () => { ["start", "back", "done"].forEach((k) => localStorage.removeItem(`${K}.${k}`)); location.reload(); };
+  document.getElementById("reloadPage").onclick = () => location.reload();
+
+  // Im Entwurf antwortet der Knopf; die echte Seite fragt /actuator/health.
+  const check = () => { if (get("back") === "1" && doneAt() == null) put("done", String(nextCalm(clock()))); };
+  document.querySelectorAll(".reload").forEach((btn) => (btn.onclick = check));
+  let lastCheck = Math.floor(Date.now() / 20000);
+
+  const frame = () => {
+    const t = clock();
+    const done = doneAt();
+    scenes.forEach((sc) => draw(sc, t, done != null && t >= done ? done : null));
+    const now = Date.now();
+    if (Math.floor(now / 20000) > lastCheck) { lastCheck = Math.floor(now / 20000); check(); }
+    const left = 20 - (now / 1000) % 20;
+    document.querySelectorAll(".sec b").forEach((e) => (e.textContent = Math.ceil(left)));
+    document.querySelectorAll(".reload .left").forEach((e) => (e.style.width = `${(left / 20) * 100}%`));
+    requestAnimationFrame(frame);
+  };
+  frame();
+})();
+</script>
+</body>
+</html>
