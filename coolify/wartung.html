@@ -10,12 +10,12 @@
 <style>
   :root {
     --bg: oklch(98.5% 0.006 85); --card: oklch(95.5% 0.008 85); --line: oklch(91% 0.01 85);
-    --ink: oklch(28% 0.015 70); --muted: oklch(28% 0.015 70 / 0.6); --pr: oklch(52% 0.07 165);
+    --ink: oklch(28% 0.015 70); --muted: oklch(28% 0.015 70 / 0.6); --pr: oklch(52% 0.07 165); --prc: oklch(98% 0.01 165);
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: oklch(21% 0.008 70); --card: oklch(25% 0.01 70); --line: oklch(31% 0.012 70);
-      --ink: oklch(92% 0.008 85); --muted: oklch(92% 0.008 85 / 0.6); --pr: oklch(72% 0.08 165);
+      --ink: oklch(92% 0.008 85); --muted: oklch(92% 0.008 85 / 0.6); --pr: oklch(72% 0.08 165); --prc: oklch(20% 0.02 165);
     }
   }
   * { box-sizing: border-box; }
@@ -35,10 +35,17 @@
   .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; font-size: 15px; }
   .row + .row { border-top: 1px solid var(--line); }
   .row svg { width: 22px; height: 22px; flex: none; color: var(--pr); }
-  .note { margin: 22px 0 0; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
-  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pr); animation: breathe 2.4s ease-in-out infinite; }
-  @keyframes breathe { 50% { opacity: .25; } }
-  @media (prefers-reduced-motion: reduce) { .arc, .dot { animation: none; } }
+  /* Neu laden: der helle Balken im Button läuft ab, bis die Seite sich selbst neu lädt */
+  .reload {
+    position: relative; overflow: hidden; margin-top: 22px; width: 100%; max-width: 360px; height: 52px;
+    border: 0; border-radius: 14px; background: var(--pr); color: var(--prc); font: 600 17px system-ui, -apple-system, sans-serif;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .reload:active { transform: scale(.98); }
+  .reload .left { position: absolute; inset: 0 auto 0 0; width: 100%; background: oklch(100% 0 0 / 0.18); transition: width 1s linear; }
+  .reload span { position: relative; }
+  .reload .sec { font-weight: 400; opacity: .75; font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: reduce) { .arc { animation: none; } .reload .left { transition: none; } }
 </style>
 </head>
 <body>
@@ -67,11 +74,23 @@
     </div>
   </div>
 
-  <p class="note"><span class="dot" aria-hidden="true"></span>Die Seite lädt sich von selbst neu.</p>
+  <button class="reload" type="button" onclick="location.reload()">
+    <i class="left" aria-hidden="true"></i><span>Neu laden <span class="sec">· <b id="sec">20</b> s</span></span>
+  </button>
 
   <script>
-    // Alle 20 Sekunden neu laden; ist die App zurück, erscheint sie statt dieser Seite.
-    setTimeout(() => location.reload(), 20000);
+    // Zählt 20 Sekunden herunter und lädt dann neu; ist die App zurück, erscheint sie statt dieser Seite.
+    const total = 20;
+    let left = total;
+    const sec = document.getElementById("sec");
+    const bar = document.querySelector(".reload .left");
+    const tick = () => {
+      sec.textContent = left;
+      bar.style.width = `${(left / total) * 100}%`;
+      if (left-- <= 0) location.reload();
+    };
+    tick();
+    setInterval(tick, 1000);
   </script>
 </body>
 </html>
