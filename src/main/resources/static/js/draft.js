@@ -114,6 +114,9 @@
 
     // Beta: Testnachricht in 15 Sekunden. Sagt bei jedem Schritt, woran es hängt.
     async test() {
+      if (!window.isSecureContext) {
+        return `Mitteilungen brauchen HTTPS, ${location.origin} ist unverschlüsselt. Über einen HTTPS-Tunnel öffnen.`;
+      }
       if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
         return "Dieses Gerät kann hier keine Mitteilungen. Auf dem iPhone die App vom Home-Bildschirm öffnen, nicht in Safari.";
       }
