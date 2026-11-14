@@ -27,6 +27,10 @@ questlog:
     password: ${QUESTLOG_PASSWORD:}
     remember-me-key: ${QUESTLOG_REMEMBER_ME_KEY:}
     remember-me-validity: 56d
+  push:
+    public-key: ${QUESTLOG_VAPID_PUBLIC_KEY:}
+    private-key: ${QUESTLOG_VAPID_PRIVATE_KEY:}
+    subject: ${QUESTLOG_VAPID_SUBJECT:}
 
 management:
   endpoints:

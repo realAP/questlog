@@ -34,6 +34,14 @@
 
   <p class="mt-[22px] text-[13px] font-semibold uppercase tracking-[0.1em] text-base-content/55">Weitere Quests</p>
   <div class="mt-2 rounded-2xl border-[1.5px] border-dashed border-base-300 p-4 text-[15px] text-base-content/55">Noch keine.</div>
+
+  <!-- Nur in der Beta: prüft Mitteilungen, das Kolben-Symbol markiert die Testfunktion -->
+  <div class="mt-auto flex flex-col items-center gap-1 pt-6" data-label="Beta">
+    <button type="button" class="btn btn-ghost h-11 gap-2 font-normal text-base-content/60" @click="testPush()">
+      <svg th:replace="~{fragments/icons :: flask('size-[18px]')}"></svg>Testnachricht in 15 s
+    </button>
+    <p x-show="pushNote" x-cloak class="text-center text-[14px] text-base-content/60" role="status" x-text="pushNote"></p>
+  </div>
 </main>
 </body>
 </html>

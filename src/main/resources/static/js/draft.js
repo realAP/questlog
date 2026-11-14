@@ -67,12 +67,87 @@
       },
     ],
   };
-  const WAIT_SECONDS = 120;
-
   // Der Stand liegt im Gerät, damit die Quest nach einem Blick auf die Übersicht an derselben
-  // Stelle weitergeht. Die Wartezeit läuft dabei im Zeitraffer weiter.
+  // Stelle weitergeht. Rest- und Überzeit kommen immer aus der echten Uhr.
   const STORE = "questlog.entwurf.waesche";
-  const SAVED = ["screen", "stageIndex", "stepIndex", "chosenMinutes", "custom", "remaining", "over"];
+  const SAVED = ["screen", "stageIndex", "stepIndex", "chosenMinutes", "custom"];
+
+  // Erinnerung per Web Push, wenn eine Wartezeit endet. Fehler hier dürfen die Quest nie stören.
+  const Push = {
+    asking: null,
+
+    // Muss direkt beim Tippen laufen, sonst zeigt iOS die Abfrage nicht.
+    ask() {
+      if (!("Notification" in window) || !("PushManager" in window)) return Promise.resolve(false);
+      if (Notification.permission !== "default") return Promise.resolve(Notification.permission === "granted");
+      this.asking ??= Notification.requestPermission().then((answer) => answer === "granted");
+      return this.asking;
+    },
+
+    async request(method, url, body) {
+      const csrf = document.querySelector("meta[name=csrf]");
+      const headers = { "Content-Type": "application/json" };
+      if (csrf) headers[csrf.dataset.header] = csrf.content;
+      const response = await fetch(url, { method, headers, body: body && JSON.stringify(body) });
+      if (!response.ok) throw new Error(`${method} ${url}: ${response.status}`);
+      return response;
+    },
+
+    async subscribe() {
+      const key = await (await this.request("GET", "/push/schluessel")).text();
+      const registration = await navigator.serviceWorker.ready;
+      const raw = atob(key.replace(/-/g, "+").replace(/_/g, "/"));
+      const subscription = (await registration.pushManager.getSubscription())
+        ?? (await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: Uint8Array.from(raw, (c) => c.charCodeAt(0)) }));
+      await this.request("POST", "/push/abo", subscription.toJSON());
+    },
+
+    async plan(name, at, title, body) {
+      try {
+        if (!(await this.ask())) return;
+        await this.subscribe();
+        await this.request("PUT", `/erinnerungen/${name}`, { dueAt: at.toISOString(), title, body, url: location.pathname });
+      } catch (error) {
+        console.warn("Erinnerung nicht geplant", error);
+      }
+    },
+
+    // Beta: Testnachricht in 15 Sekunden. Sagt bei jedem Schritt, woran es hängt.
+    async test() {
+      if (!window.isSecureContext) {
+        return `Mitteilungen brauchen HTTPS, ${location.origin} ist unverschlüsselt. Über einen HTTPS-Tunnel öffnen.`;
+      }
+      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+        return "Dieses Gerät kann hier keine Mitteilungen. Auf dem iPhone die App vom Home-Bildschirm öffnen, nicht in Safari.";
+      }
+      if (!(await this.ask())) return "Mitteilungen sind nicht erlaubt. In den iOS-Einstellungen unter Mitteilungen → Questlog einschalten.";
+      const key = await fetch("/push/schluessel");
+      if (key.status === 404) return "Push ist auf dem Server nicht eingerichtet: die VAPID-Variablen fehlen.";
+      try {
+        await this.subscribe();
+      } catch (error) {
+        return `Anmelden beim Push-Dienst ging nicht: ${error.message}`;
+      }
+      try {
+        await this.request("PUT", "/erinnerungen/test", { dueAt: new Date(Date.now() + 15000).toISOString(), title: "Questlog", body: "Testnachricht angekommen", url: "/" });
+      } catch (error) {
+        return `Server hat die Erinnerung nicht angenommen: ${error.message}`;
+      }
+      return "Kommt in etwa 15 Sekunden. Du kannst das Handy sperren.";
+    },
+
+    cancel(name) {
+      this.request("DELETE", `/erinnerungen/${name}`).catch((error) => console.warn("Erinnerung nicht gelöscht", error));
+    },
+  };
+  const REMINDER = "waesche";
+
+  function timing(endsAt, minutes) {
+    const left = endsAt - Date.now();
+    return left > 0
+      ? { screen: "wait", remaining: left / (minutes * 60000), over: 0 }
+      : { screen: "waitDone", remaining: 0, over: -left / 60000 };
+  }
 
   function loadState() {
     let state;
@@ -82,24 +157,13 @@
       return null;
     }
     if (!state || !["step", "missing", "wait", "waitDone"].includes(state.screen)) return null;
-    const seconds = (Date.now() - state.savedAt) / 1000;
-    if (state.screen === "wait") {
-      state.remaining -= seconds / WAIT_SECONDS;
-      if (state.remaining <= 0) {
-        state.over = -state.remaining * state.chosenMinutes;
-        state.remaining = 0;
-        state.screen = "waitDone";
-      }
-    } else if (state.screen === "waitDone") {
-      state.over += (seconds * state.chosenMinutes) / WAIT_SECONDS;
-    }
+    if (state.screen === "wait" || state.screen === "waitDone") Object.assign(state, timing(state.endsAt, state.chosenMinutes));
     return state;
   }
 
   function saveState(quest) {
     const state = Object.fromEntries(SAVED.map((key) => [key, quest[key]]));
     state.endsAt = quest.endsAt?.getTime() ?? null;
-    state.savedAt = Date.now();
     localStorage.setItem(STORE, JSON.stringify(state));
   }
 
@@ -203,10 +267,10 @@
         this.root = this.$el;
         const saved = loadState();
         if (saved) {
-          SAVED.forEach((key) => (this[key] = saved[key]));
+          [...SAVED, "remaining", "over"].forEach((key) => (this[key] = saved[key]));
           this.endsAt = saved.endsAt ? new Date(saved.endsAt) : null;
-          if (this.screen === "wait") this.timer = setInterval(() => this.tick(1 / WAIT_SECONDS), 1000);
-          if (this.screen === "waitDone") this.overTimer = setInterval(() => (this.over += this.chosenMinutes / WAIT_SECONDS), 1000);
+          if (this.screen === "wait") this.timer = setInterval(() => this.tick(), 1000);
+          if (this.screen === "waitDone") this.overTimer = setInterval(() => this.tickOver(), 1000);
         }
         Alpine.effect(() => saveState(this));
       },
@@ -480,6 +544,8 @@
       },
 
       async complete(event) {
+        // Die Frage nach Mitteilungen kommt beim Start der Wartezeit, noch im selben Tippen.
+        if (this.step.startsWait) Push.ask();
         if (this.busy) return;
         this.busy = true;
         await this.press(event);
@@ -539,33 +605,48 @@
 
       startTimer() {
         this.endsAt = new Date(Date.now() + this.chosenMinutes * 60000);
-        this.timer = setInterval(() => this.tick(1 / WAIT_SECONDS), 1000);
+        this.timer = setInterval(() => this.tick(), 1000);
+        this.planReminder(this.endsAt);
       },
 
-      tick(amount) {
-        this.remaining = Math.max(0, this.remaining - amount);
-        if (this.remaining === 0) this.finishWaiting();
+      planReminder(at) {
+        Push.plan(REMINDER, at, `${this.stage.wait.label} fertig`, `Weiter: ${this.nextStage?.name ?? "Abschluss"}`);
       },
 
+      tick() {
+        const t = timing(this.endsAt.getTime(), this.chosenMinutes);
+        this.remaining = t.remaining;
+        if (t.screen === "waitDone") this.finishWaiting();
+      },
+
+      tickOver() {
+        this.over = timing(this.endsAt.getTime(), this.chosenMinutes).over;
+      },
+
+      // Beta: beendet die Wartezeit sofort, die Erinnerung kommt dann gleich.
       async skipTime() {
         clearInterval(this.timer);
+        this.planReminder(new Date());
         await QL.tween(this.remaining, 0, (v) => {
           this.remaining = v;
         }, { duration: 1, ease: "easeInOut" });
+        this.endsAt = new Date();
         this.finishWaiting();
       },
 
-      // Danach läuft die Überzeit im selben Zeitraffer weiter wie die Wartezeit.
+      // Danach zählt die Überzeit ab dem Ende der Wartezeit.
       finishWaiting() {
         clearInterval(this.timer);
-        this.over = 0;
-        this.overTimer = setInterval(() => (this.over += this.chosenMinutes / WAIT_SECONDS), 1000);
+        this.remaining = 0;
+        this.tickOver();
+        this.overTimer = setInterval(() => this.tickOver(), 1000);
         this.show(() => {
           this.screen = "waitDone";
         });
       },
 
       async continueQuest(event) {
+        Push.cancel(REMINDER);
         await this.press(event);
         clearInterval(this.overTimer);
         this.peek = false;
@@ -599,6 +680,7 @@
       },
 
       restart() {
+        Push.cancel(REMINDER);
         clearInterval(this.timer);
         clearInterval(this.overTimer);
         this.show(() => {
@@ -666,6 +748,12 @@
 
       get progress() {
         return (1 - (this.state?.remaining ?? 1)) * 100;
+      },
+
+      pushNote: "",
+      async testPush() {
+        this.pushNote = "Einen Moment …";
+        this.pushNote = await Push.test().catch((error) => `Fehler: ${error.message}`);
       },
 
       get timeText() {

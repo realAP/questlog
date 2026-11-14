@@ -11,6 +11,10 @@ services:
       QUESTLOG_USERNAME: ${QUESTLOG_USERNAME:?}
       QUESTLOG_PASSWORD: ${QUESTLOG_PASSWORD:?}
       QUESTLOG_REMEMBER_ME_KEY: ${QUESTLOG_REMEMBER_ME_KEY:?}
+      # Web Push. Leer gelassen bleibt Push aus, die App läuft trotzdem.
+      QUESTLOG_VAPID_PUBLIC_KEY: ${QUESTLOG_VAPID_PUBLIC_KEY:-}
+      QUESTLOG_VAPID_PRIVATE_KEY: ${QUESTLOG_VAPID_PRIVATE_KEY:-}
+      QUESTLOG_VAPID_SUBJECT: ${QUESTLOG_VAPID_SUBJECT:-}
     depends_on:
       db:
         condition: service_healthy
