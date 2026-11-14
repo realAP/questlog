@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f9f7f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#262320" media="(prefers-color-scheme: dark)">
+<title>Questlog – gleich wieder da</title>
+<!-- Wartungsseite für Coolify: eine Datei, alles inline. Lädt sich alle 20 s neu, bis die App wieder läuft. -->
+<style>
+  :root {
+    --bg: oklch(98.5% 0.006 85); --card: oklch(95.5% 0.008 85); --line: oklch(91% 0.01 85);
+    --ink: oklch(28% 0.015 70); --muted: oklch(28% 0.015 70 / 0.6); --pr: oklch(52% 0.07 165);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: oklch(21% 0.008 70); --card: oklch(25% 0.01 70); --line: oklch(31% 0.012 70);
+      --ink: oklch(92% 0.008 85); --muted: oklch(92% 0.008 85 / 0.6); --pr: oklch(72% 0.08 165);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px 20px calc(40px + env(safe-area-inset-bottom)); background: var(--bg); color: var(--ink);
+    font: 17px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; text-align: center; -webkit-font-smoothing: antialiased;
+  }
+  .logo { width: 72px; height: 72px; }
+  /* Der grüne Ring dreht sich langsam: es arbeitet, ohne Hektik */
+  .arc { transform-origin: 50px 50px; animation: turn 6s linear infinite; }
+  @keyframes turn { to { transform: rotate(360deg); } }
+  h1 { margin: 14px 0 0; font-size: 30px; font-weight: 700; letter-spacing: -.01em; }
+  .lead { margin: 18px 0 0; font-size: 20px; font-weight: 600; }
+  .card { margin-top: 22px; width: 100%; max-width: 360px; padding: 6px 18px; border-radius: 20px; background: var(--card); text-align: left; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; font-size: 15px; }
+  .row + .row { border-top: 1px solid var(--line); }
+  .row svg { width: 22px; height: 22px; flex: none; color: var(--pr); }
+  .note { margin: 22px 0 0; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pr); animation: breathe 2.4s ease-in-out infinite; }
+  @keyframes breathe { 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) { .arc, .dot { animation: none; } }
+</style>
+</head>
+<body>
+  <svg class="logo" viewBox="0 0 100 100" aria-hidden="true">
+    <rect width="100" height="100" rx="23" fill="#2a2724"/>
+    <circle cx="50" cy="50" r="30" fill="none" stroke="#4a4541" stroke-width="9"/>
+    <circle class="arc" cx="50" cy="50" r="30" fill="none" stroke="#7fc4ab" stroke-width="9" stroke-linecap="round"
+            pathLength="100" stroke-dasharray="75 100" transform="rotate(-90 50 50)"/>
+    <circle cx="50" cy="50" r="5" fill="#f2ede4"/>
+  </svg>
+  <h1>Questlog</h1>
+  <p class="lead">Gleich wieder da.</p>
+
+  <div class="card">
+    <div class="row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+      <span>Laufende Wartezeiten zählen weiter.</span>
+    </div>
+    <div class="row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>
+      <span>Erinnerungen kommen, sobald alles wieder läuft.</span>
+    </div>
+    <div class="row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      <span>Deine Quest geht an derselben Stelle weiter.</span>
+    </div>
+  </div>
+
+  <p class="note"><span class="dot" aria-hidden="true"></span>Die Seite lädt sich von selbst neu.</p>
+
+  <script>
+    // Alle 20 Sekunden neu laden; ist die App zurück, erscheint sie statt dieser Seite.
+    setTimeout(() => location.reload(), 20000);
+  </script>
+</body>
+</html>
