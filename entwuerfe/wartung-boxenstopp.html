@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entwurf: Wartung als Boxenstopp</title>
+<style>
+  :root { --bg: oklch(98.5% 0.006 85); --card: oklch(95.5% 0.008 85); --ink: oklch(28% 0.015 70); --mu: oklch(28% 0.015 70 / .6); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 80px; }
+  h1 { font-size: 28px; margin: 8px 0 4px; } .hint { color: var(--mu); margin: 0 0 8px; max-width: 800px; }
+  .tools { display: flex; gap: 10px; margin: 14px 0 22px; flex-wrap: wrap; }
+  .tools button { height: 40px; padding: 0 14px; border-radius: 12px; border: 1.5px solid oklch(91% 0.01 85); background: var(--card); color: var(--ink); font: 15px system-ui, sans-serif; cursor: pointer; }
+  .tools button.on { background: oklch(52% 0.07 165); color: #fff; border-color: transparent; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; border-radius: 22px; overflow: hidden; box-shadow: 0 0 0 1px oklch(91% 0.01 85); }
+  .side { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 22px 12px; }
+  .side.light { --ink2: oklch(28% 0.015 70); --pole: #8d857d; --pr: oklch(52% 0.07 165); --prc: #fff; background: oklch(98.5% 0.006 85); color: var(--ink2); }
+  .side.dark { --ink2: oklch(92% 0.008 85); --pole: #a39b92; --pr: oklch(72% 0.08 165); --prc: oklch(20% 0.02 165); background: oklch(21% 0.008 70); color: var(--ink2); }
+  .scene { width: 100%; max-width: 380px; overflow: visible; }
+  .lead { margin: 0; font-size: 18px; font-weight: 600; }
+  .reload { position: relative; overflow: hidden; width: 100%; max-width: 300px; height: 48px; border: 0; border-radius: 14px; background: var(--pr); color: var(--prc); font: 600 16px system-ui, sans-serif; cursor: pointer; }
+  .reload .left { position: absolute; inset: 0 auto 0 0; background: oklch(100% 0 0 / .18); }
+  .reload span { position: relative; } .reload .sec { font-weight: 400; opacity: .75; font-variant-numeric: tabular-nums; }
+  .opens { margin: 0; font-size: 14px; opacity: 0; transition: opacity .4s; } .opens.on { opacity: .6; }
+
+  .track { fill: none; stroke: #4a4541; stroke-width: 9; }
+  .arc { fill: none; stroke: #7fc4ab; stroke-width: 9; stroke-linecap: round; }
+  .ground { stroke: var(--pole); stroke-width: 2.5; stroke-linecap: round; }
+  .base { fill: var(--pole); }
+  .steel { stroke: #d9a25f; stroke-width: 2.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .lat { stroke: #d9a25f; stroke-width: 1.4; fill: none; }
+  .tie { stroke: #d9a25f; stroke-width: 1; opacity: .8; }
+  .weight { fill: var(--pole); }
+  .trolley { fill: #d9a25f; }
+  .wheel { fill: var(--pole); } .spoke { stroke: #2a2724; stroke-width: 1; }
+  .drum { fill: var(--pole); } .drumspoke { stroke: #2a2724; stroke-width: 1.4; }
+  .cable { stroke: #9a928a; stroke-width: 1.3; }
+  .grip { stroke: #9a928a; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .pad { fill: #5c554e; }
+  .plate { fill: var(--pole); opacity: .35; } .stripe { fill: #e5b65a; }
+  .jack { stroke: #9a928a; stroke-width: 2.4; fill: none; stroke-linecap: round; }
+  .jackbase, .saddle { fill: #9a928a; }
+  .post { stroke: var(--pole); stroke-width: 4; stroke-linecap: round; }
+  .link1 { stroke: #d9a25f; stroke-width: 4.2; stroke-linecap: round; }
+  .link2 { stroke: #d9a25f; stroke-width: 3; stroke-linecap: round; }
+  .joint { fill: #9a928a; stroke: #d9a25f; stroke-width: 1.5; }
+  .led { stroke: #2a2724; stroke-width: 1; }
+  .tray { fill: var(--pole); } .slot { fill: none; stroke: var(--ink2); stroke-width: .8; stroke-dasharray: 2 1.5; opacity: .45; }
+  .housing { fill: #2a2724; } .lamp { stroke: none; }
+  .defect-dust { fill: none; stroke: #9b9184; stroke-width: 9.5; }
+  .defect-matte { fill: none; stroke: #8f877c; stroke-width: 9.5; }
+  .spot { fill: #6e5a43; }
+  .scratch { stroke: #efe8dc; stroke-width: 1.2; stroke-linecap: round; }
+  .shine { fill: none; stroke: #fff; stroke-width: 1.6; stroke-linecap: round; }
+  .puff { fill: #b8afa3; }
+  .spk { fill: #7fc4ab; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Wartung als Boxenstopp</h1>
+  <p class="hint">Der Kran setzt das Logo in die Box, der Wagenheber bockt es auf, vier Arme arbeiten gleichzeitig an den vier Vierteln: jeder holt das Werkzeug, das sein Viertel braucht, und legt es danach zurück. Ist ein Viertel fertig, wird sein Licht grün. Alle grün: Ampel gelb, die Box wartet auf die Freigabe.</p>
+  <p class="hint">Antwortet der Server: Ampel grün, ablassen, der Kran hebt das Logo zurück, alles baut sich ab, es funkelt grün. Die Szene hängt an der Uhr, „Ganze Seite neu laden“ zeigt, dass nichts springt.</p>
+  <div class="tools">
+    <button type="button" id="reloadPage">Ganze Seite neu laden</button>
+    <button type="button" id="back">Server ist wieder da</button>
+    <button type="button" id="reset">Von vorn</button>
+    <button type="button" id="fast">Zeitraffer ×4</button>
+  </div>
+  <div class="pair"><div class="side light"></div><div class="side dark"></div></div>
+</main>
+
+<template id="side">
+  <svg class="scene" viewBox="0 -12 362 352" aria-hidden="true">
+    <path class="ground" data-el="ground" d="M4 332 H358"/>
+    <!-- Box -->
+    <g data-el="plate"><rect class="plate" x="62" y="326" width="196" height="6" rx="1"/><rect class="stripe" x="62" y="326" width="10" height="6"/><rect class="stripe" x="248" y="326" width="10" height="6"/></g>
+    <g data-el="ampel"><path class="post" d="M14 330 V190"/><rect class="housing" x="7" y="156" width="14" height="38" rx="3"/>
+      <circle class="lamp" data-el="red" cx="14" cy="164" r="4"/><circle class="lamp" data-el="yellow" cx="14" cy="175" r="4"/><circle class="lamp" data-el="green" cx="14" cy="186" r="4"/></g>
+    <g data-el="trays"></g>
+    <g data-el="posts"></g>
+    <g data-el="jackg">
+      <rect class="jackbase" x="130" y="318" width="60" height="5" rx="1.5"/>
+      <g data-el="wheels"></g>
+      <path class="jack" data-el="scissor"/>
+      <rect class="saddle" data-el="saddle" x="138" y="0" width="44" height="4" rx="1"/>
+      <path class="jack" data-el="lever"/>
+    </g>
+    <!-- Logo, wird bewegt -->
+    <g data-el="logo">
+      <rect x="-50" y="-50" width="100" height="100" rx="23" fill="#2a2724"/>
+      <circle class="track" cx="0" cy="0" r="30"/>
+      <circle class="arc" cx="0" cy="0" r="30" pathLength="100" stroke-dasharray="75 100" transform="rotate(-90)"/>
+      <g data-el="defects"></g>
+      <circle cx="0" cy="0" r="5" fill="#f2ede4"/>
+    </g>
+    <g data-el="arms"></g>
+    <g data-el="tools"></g>
+    <g data-el="puffs"></g>
+    <!-- Kran -->
+    <rect class="base" data-el="cbase" x="311" y="327" width="24" height="6" rx="2"/>
+    <g data-el="mast"></g>
+    <g data-el="head"><path class="steel" d="M317 10 L323 -6 L329 10"/></g>
+    <g data-el="jib"><path class="steel" d="M28 10 H329 M34 20 H329 M28 10 L34 20"/><path class="lat" data-el="jiblat"/><path class="tie" d="M323 -6 L90 10 M323 -6 L200 10"/></g>
+    <g data-el="cjib"><path class="steel" d="M329 10 H359 M329 20 H359 V10"/><path class="tie" d="M323 -6 L359 10"/>
+      <circle class="drum" cx="340" cy="27" r="6.5"/><g data-el="drumspin"><path class="drumspoke" d="M334 27 H346 M340 21 V33"/></g></g>
+    <rect class="weight" data-el="weight" x="349" y="20" width="10" height="16" rx="2"/>
+    <g data-el="trolley"><rect class="trolley" x="-8" y="19" width="16" height="5" rx="1.5"/>
+      <g data-el="w1"><circle class="wheel" cx="0" cy="0" r="2.6"/><path class="spoke" d="M-2.6 0 H2.6"/></g>
+      <g data-el="w2"><circle class="wheel" cx="0" cy="0" r="2.6"/><path class="spoke" d="M-2.6 0 H2.6"/></g></g>
+    <line class="cable" data-el="cable" x1="0" y1="24" x2="0" y2="30"/>
+    <g data-el="gripper"><rect class="trolley" x="-64" y="0" width="128" height="5" rx="2"/><rect class="trolley" x="-6" y="-5" width="12" height="6" rx="1.5"/>
+      <path class="grip" data-el="jawL"/><path class="grip" data-el="jawR"/><rect class="pad" data-el="padL" width="4" height="10" rx="1"/><rect class="pad" data-el="padR" width="4" height="10" rx="1"/></g>
+    <g data-el="sparks"></g>
+  </svg>
+  <p class="lead">Gleich wieder da.</p>
+  <button class="reload" type="button"><i class="left"></i><span>Neu laden <span class="sec">· <b>20</b> s</span></span></button>
+  <p class="opens">App öffnet sich …</p>
+</template>
+
+<script>
+(() => {
+  // ---------- Hilfen ----------
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const soft = (p) => (p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+  const out = (p) => 1 - Math.pow(1 - p, 3);
+  const settle = (p) => { const c = 1.4; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+  const seg = (t, a, d) => clamp((t - a) / d);
+  const rad = (d) => d * Math.PI / 180;
+  const ns = "http://www.w3.org/2000/svg";
+  const make = (parent, html) => { const g = document.createElementNS(ns, "g"); g.innerHTML = html; parent.append(g); return g; };
+  const show = (node, o, tf) => { node.style.opacity = o; if (tf !== undefined) node.setAttribute("transform", tf); };
+
+  // ---------- Bühne ----------
+  const CX = 160, HOME_Y = 100, BOX_Y = 245, JACK_UP = 13;
+  const MAST = 323, GRIP_IDLE = 30, GRIP_OFF = 62;   // Greiferbalken liegt 62 über der Logomitte
+  const JAW_OPEN = 64, JAW_SHUT = 52;
+  const TRAY_Y = 238, TOOL_LEN = 13;
+
+  // Viertel: 0 oben rechts, 1 unten rechts, 2 unten links, 3 oben links (Winkel ab oben im Uhrzeigersinn)
+  const QA = [45, 135, 225, 315];
+  // Werkzeuge mit Platz in der Ablage
+  const TOOLS = {
+    air:     { x: 256, side: 1, dur: 3.0, reach: 61 },
+    brushR:  { x: 270, side: 1, dur: 4.5, reach: 47.5, kind: "brush" },
+    sander:  { x: 284, side: 1, dur: 5.0, reach: 47.5 },
+    clothR:  { x: 298, side: 1, dur: 4.5, reach: 47.5, kind: "cloth" },
+    brushL:  { x: 28, side: -1, dur: 4.5, reach: 47.5, kind: "brush" },
+    sanderL: { x: 44, side: -1, dur: 5.0, reach: 47.5, kind: "sander" },
+    clothL:  { x: 60, side: -1, dur: 4.5, reach: 47.5, kind: "cloth" },
+  };
+  for (const [k, v] of Object.entries(TOOLS)) v.kind ??= k;
+  // Arme: Schulter, Biegerichtung, Viertel, Werkzeuge in Reihenfolge, Startversatz
+  const ARMS = [
+    { s: [236, 200], bend: 1, q: 0, tools: ["air", "brushR"], lag: .4 },
+    { s: [236, 285], bend: 1, q: 1, tools: ["sander", "clothR"], lag: .8 },
+    { s: [84, 285], bend: -1, q: 2, tools: ["brushL", "sanderL"], lag: 1.2 },
+    { s: [84, 200], bend: -1, q: 3, tools: ["clothL"], lag: 0 },
+  ];
+  const L1 = 46, L2 = 46, MOVE = 1.3, GRAB = .35, HOME_BACK = 1.0;
+
+  // Befunde je Viertel: Winkel relativ zur Viertelmitte
+  const DEFECTS = [
+    { dust: true, spots: [[-34, 29, 3], [-22, 32, 2], [-12, 27.5, 2.6], [2, 31, 3.4], [16, 28, 2.2], [30, 32, 2.8]], scratches: [], matte: .25, fix: { dust: "air", spots: "brushR", matte: "brushR" } },
+    { spots: [], scratches: [-32, -20, -9, 4, 15, 28], matte: .3, fix: { scratches: "sander", matte: "clothR" } },
+    { spots: [[-30, 30, 2.8], [-14, 27, 2.2], [0, 32, 3], [18, 29, 2.4], [32, 31.5, 2]], scratches: [-24, -6, 10, 26], matte: .25, fix: { spots: "brushL", scratches: "sanderL", matte: "sanderL" } },
+    { spots: [], scratches: [], matte: .55, fix: { matte: "clothL" } },
+  ];
+
+  // ---------- Zeitplan ----------
+  const BUILD = 8.0;
+  const T_GRAB = 8.9, T_LIFT = 9.3, T_LOWER = 9.8, T_SET = 12.8, T_UP = 13.2, T_JACK = 14.0, ARM0 = 16.2;
+
+  // Ablauf je Arm: für jedes Werkzeug holen, arbeiten, zurücklegen; dann in Ruhestellung
+  ARMS.forEach((arm) => {
+    let t = ARM0 + arm.lag;
+    arm.plan = arm.tools.map((name) => {
+      const tool = TOOLS[name];
+      const p = { name, toTray: t, grab: t + MOVE, carry: t + MOVE + GRAB, work: t + 2 * MOVE + GRAB };
+      p.back = p.work + tool.dur;
+      p.drop = p.back + MOVE;
+      p.end = p.drop + GRAB;
+      t = p.end;
+      return p;
+    });
+    arm.home = t;
+    arm.ready = t + HOME_BACK;
+  });
+  const READY = Math.max(...ARMS.map((a) => a.ready)) + .4;
+
+  // Werkzeugbahn während der Arbeit: Winkel (relativ zur Viertelmitte) und Abstand
+  function toolPath(kind, p) {
+    switch (kind) {
+      case "brush": { const i = Math.min(2, Math.floor(p * 3)), q = soft(p * 3 - i); return { a: i === 1 ? lerp(30, -30, q) : lerp(-30, 30, q), dr: 0, stroke: i }; }
+      case "sander": return { a: lerp(-28, 28, soft(p)) + 4 * Math.sin(p * Math.PI * 2 * 9), dr: 0 };
+      case "cloth": return { a: lerp(-28, 28, p) + 7 * Math.sin(p * Math.PI * 2 * 4), dr: 3 * Math.cos(p * Math.PI * 2 * 4) };
+      case "air": return { a: 22 * Math.sin(p * Math.PI * 2), dr: 0 };
+    }
+  }
+
+  // Zustand eines Arms zur Zeit t: Zielpunkt, Werkzeug, Fortschritt je Werkzeug
+  function armState(arm, t, logoC) {
+    const [sx, sy] = arm.s, side = sx > CX ? 1 : -1;
+    // Ruhestellung: obere Arme nach oben, untere nach unten weggeklappt, damit das Logo frei durchpasst
+    const up = sy < 250 ? -1 : 1;
+    const rest = [sx + side * 10, sy + up * 38], folded = [sx, sy + 46];
+    const work = (name, a, dr = 0) => {
+      const ang = rad(QA[arm.q] + a), r = TOOLS[name].reach + dr;
+      return [logoC[0] + r * Math.sin(ang), logoC[1] - r * Math.cos(ang)];
+    };
+    const trayPt = (name) => [TOOLS[name].x, TRAY_Y - TOOL_LEN];
+    const st = { target: rest, tool: null, progress: {} };
+    if (t < 2.2) { st.target = folded; return st; }
+    if (t < 3.2) { st.target = [lerp(folded[0], rest[0], soft(seg(t, 2.2, 1))), lerp(folded[1], rest[1], soft(seg(t, 2.2, 1)))]; return st; }
+    let from = rest;
+    for (const p of arm.plan) {
+      const tool = TOOLS[p.name];
+      const start = work(p.name, toolPath(tool.kind, 0).a), stop = work(p.name, toolPath(tool.kind, 1).a);
+      st.progress[p.name] = clamp((t - p.work) / tool.dur);
+      if (t < p.toTray) break;
+      const mv = (a, b, t0) => { const e = soft(seg(t, t0, MOVE)); return [lerp(a[0], b[0], e), lerp(a[1], b[1], e)]; };
+      if (t < p.grab) { st.target = mv(from, trayPt(p.name), p.toTray); }
+      else if (t < p.carry) { st.target = trayPt(p.name); st.tool = { name: p.name, ang: 0 }; st.gripping = seg(t, p.grab, GRAB); }
+      else if (t < p.work) { st.target = mv(trayPt(p.name), start, p.carry); st.tool = { name: p.name, ang: lerp(0, QA[arm.q] + toolPath(tool.kind, 0).a, soft(seg(t, p.carry, MOVE))) }; }
+      else if (t < p.back) { const tp = toolPath(tool.kind, (t - p.work) / tool.dur); st.target = work(p.name, tp.a, tp.dr); st.tool = { name: p.name, ang: QA[arm.q] + tp.a, working: (t - p.work) / tool.dur }; }
+      else if (t < p.drop) { st.target = mv(stop, trayPt(p.name), p.back); st.tool = { name: p.name, ang: lerp(QA[arm.q] + toolPath(tool.kind, 1).a, 0, soft(seg(t, p.back, MOVE))) }; }
+      else if (t < p.end) { st.target = trayPt(p.name); }
+      else { st.target = trayPt(p.name); }
+      from = trayPt(p.name);
+    }
+    if (t >= arm.home) { const e = soft(seg(t, arm.home, HOME_BACK)); st.target = [lerp(from[0], rest[0], e), lerp(from[1], rest[1], e)]; }
+    st.light = t >= arm.ready ? 1 : 0;
+    return st;
+  }
+
+  // Zwei Glieder: Ellbogen aus Schulter, Ziel und Biegerichtung
+  function ik([sx, sy], [tx, ty]) {
+    const dx = tx - sx, dy = ty - sy, d = clamp(Math.hypot(dx, dy), 1, L1 + L2 - .5);
+    const base = Math.atan2(dy, dx), off = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
+    const cand = [base + off, base - off].map((a) => [sx + L1 * Math.cos(a), sy + L1 * Math.sin(a)]);
+    const upper = sy < 250;
+    cand.sort((p, q) => (upper ? p[1] - q[1] : q[1] - p[1]));
+    const [ex, ey] = cand[0][1] > 326 ? cand[1] : cand[0];
+    const b = Math.atan2(ty - ey, tx - ex);
+    return { e: [ex, ey], w: [ex + L2 * Math.cos(b), ey + L2 * Math.sin(b)] };
+  }
+
+  // ---------- Szene aufbauen ----------
+  const TOOL_SVG = {
+    brush: '<rect fill="#9a928a" x="-7" y="-3" width="14" height="3" rx="1"/><rect fill="#d9a25f" x="-8" y="-8" width="16" height="5" rx="2"/><path stroke="#d9a25f" stroke-width="2.6" stroke-linecap="round" d="M0 -8 V-13"/>',
+    sander: '<rect fill="#5c554e" x="-7" y="-2.5" width="14" height="2.5" rx=".8"/><rect fill="#d9a25f" x="-7" y="-9" width="14" height="6.5" rx="1.5"/><path stroke="#d9a25f" stroke-width="2.6" stroke-linecap="round" d="M0 -9 V-13"/>',
+    cloth: '<path fill="#efe9df" stroke="#c9c0b3" stroke-width=".8" d="M-8 0 Q-9 -5 -5 -7 Q0 -10 5 -7 Q9 -5 8 0 Q0 2 -8 0 Z"/><path stroke="#c9c0b3" stroke-width=".8" fill="none" d="M-4 -2 Q0 -6 4 -2"/><path stroke="#d9a25f" stroke-width="2.6" stroke-linecap="round" d="M0 -8 V-13"/>',
+    air: '<path stroke="#9a928a" stroke-width="2.4" stroke-linecap="round" d="M0 0 V-6"/><rect fill="#5c554e" x="-4" y="-12" width="8" height="6" rx="1.5"/><path stroke="#d9a25f" stroke-width="2.6" stroke-linecap="round" d="M0 -12 V-13"/>',
+  };
+
+  const scenes = [...document.querySelectorAll(".side")].map((host) => {
+    host.append(document.getElementById("side").content.cloneNode(true));
+    const svg = host.querySelector("svg");
+    const el = (n) => svg.querySelector(`[data-el="${n}"]`);
+    const sc = { host, el };
+    sc.mast = [...Array(5)].map((_, k) => {
+      const y0 = 332 - 64.4 * (k + 1), y1 = 332 - 64.4 * k;
+      return make(el("mast"), `<path class="steel" d="M316 ${y1} V${y0} M330 ${y1} V${y0} M316 ${y0} H330"/><path class="lat" d="M316 ${y1} L330 ${y1 - 21.5} L316 ${y1 - 43} L330 ${y0}"/>`);
+    });
+    el("jiblat").setAttribute("d", Array.from({ length: 25 }, (_, k) => `M${34 + k * 12} 20 L${40 + k * 12} 10 L${46 + k * 12} 20`).join(" "));
+    sc.wheels = [136, 184].map((x) => make(el("wheels"), `<circle class="wheel" cx="0" cy="0" r="3.2"/><path class="spoke" d="M-3.2 0 H3.2"/>`));
+    // Werkzeugablage am Pfosten: Brett mit Konsole, jedes Werkzeug hat seinen markierten Platz
+    sc.trays = [[18, 76, 84], [244, 306, 236]].map(([a, b, post]) => make(el("trays"), `<path class="post" style="stroke-width:2.4" d="M${post} ${TRAY_Y + 14} L${post < CX ? b - 8 : a + 8} ${TRAY_Y + 4}"/><rect class="tray" x="${a}" y="${TRAY_Y}" width="${b - a}" height="4" rx="1"/>`
+      + Object.values(TOOLS).filter((t) => t.x > a && t.x < b).map((t) => `<rect class="slot" x="${t.x - 7.5}" y="${TRAY_Y - 10}" width="15" height="9.5" rx="1.5"/>`).join("")));
+    sc.posts = [[236, 192], [84, 192]].map(([x, top]) => make(el("posts"), `<path class="post" d="M${x} 330 V${top}"/><rect class="base" x="${x - 7}" y="327" width="14" height="5" rx="1.5"/>`));
+    sc.arms = ARMS.map((arm) => {
+      const side = arm.s[0] > CX ? 1 : -1;
+      const g = make(el("arms"), `<line class="link1"/><line class="link2"/><circle class="joint" r="3.6"/><circle class="joint" r="2.8"/><circle class="joint" r="2.2"/><circle class="led" cx="${arm.s[0] + side * 9}" cy="${arm.s[1] - 9}" r="3.4"/>`);
+      return { g, l1: g.children[0], l2: g.children[1], j: [...g.querySelectorAll(".joint")], led: g.querySelector(".led") };
+    });
+    sc.tools = Object.fromEntries(Object.entries(TOOLS).map(([name, t]) => [name, make(el("tools"), TOOL_SVG[t.kind])]));
+    sc.puffs = [...Array(5)].map(() => make(el("puffs"), '<circle class="puff" r="2.4"/>'));
+    // Befunde im Logo
+    const d = el("defects");
+    sc.q = DEFECTS.map((def, q) => {
+      const pt = (a, r) => [r * Math.sin(rad(QA[q] + a)), -r * Math.cos(rad(QA[q] + a))];
+      const part = { matte: make(d, `<circle class="defect-matte" r="30" pathLength="100" stroke-dasharray="25 100" transform="rotate(${-90 + 90 * q})"/>`) };
+      if (def.dust) part.dust = make(d, `<circle class="defect-dust" r="30" pathLength="100" stroke-dasharray="25 100" transform="rotate(${-90 + 90 * q})"/>`);
+      part.spots = def.spots.map(([a, r, z]) => { const [x, y] = pt(a, r); return make(d, `<circle class="spot" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${z}"/>`); });
+      part.scratches = def.scratches.map((a) => { const [x1, y1] = pt(a - 3, 26.5), [x2, y2] = pt(a + 4, 33.5); return make(d, `<path class="scratch" d="M${x1.toFixed(2)} ${y1.toFixed(2)} L${x2.toFixed(2)} ${y2.toFixed(2)}"/>`); });
+      part.shine = make(d, `<circle class="shine" r="33.4" pathLength="100" stroke-dasharray="14 100" transform="rotate(${-90 + 90 * q + 18})"/>`);
+      return part;
+    });
+    sc.sparks = [[96, 46, .9], [224, 52, .7], [228, 150, .8], [92, 150, .6]].map(([x, y, s]) =>
+      make(el("sparks"), `<g transform="translate(${x} ${y}) scale(${s})"><path class="spk" d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/></g>`).querySelector("path"));
+    return sc;
+  });
+
+  // ---------- Zeichnen ----------
+  function draw(sc, t, D) {
+    const { el } = sc;
+    const b = (a, d) => seg(t, a, d);
+    const u = (a, d) => (D < 0 ? 0 : seg(D, a, d));       // Abbau, Sekunden nach der Freigabe
+    const tt = D < 0 ? t : Math.min(t, t - D);              // Arbeit steht ab der Freigabe still
+
+    // Logo: Höhe aus Einfahrt, Wagenheber und Rückweg
+    const pumps = (tt2) => Math.min(2, Math.floor((tt2 - T_JACK) / 1)) + soft(clamp(((tt2 - T_JACK) % 1) / .5));
+    let jack = tt < T_JACK ? 0 : tt >= T_JACK + 2 ? 1 : clamp(pumps(tt) / 2);
+    jack *= 1 - soft(u(.3, 1));
+    let logoY = HOME_Y;
+    if (tt >= T_LIFT) logoY = HOME_Y - 4 * soft(seg(tt, T_LIFT, .5));
+    if (tt >= T_LOWER) logoY = lerp(HOME_Y - 4, BOX_Y, soft(seg(tt, T_LOWER, T_SET - T_LOWER)));
+    logoY -= JACK_UP * jack;
+    if (D >= 0) logoY = lerp(BOX_Y, HOME_Y, soft(u(2.6, 3)));
+    el("logo").setAttribute("transform", `translate(${CX} ${logoY})`);
+
+    // Greifer und Seil
+    let grip = GRIP_IDLE, jaw = JAW_OPEN;
+    const holdY = logoY - GRIP_OFF;
+    if (tt < BUILD) grip = lerp(20, GRIP_IDLE, out(b(7.0, .6)));
+    else if (tt < T_GRAB) grip = lerp(GRIP_IDLE, holdY, soft(seg(tt, BUILD, T_GRAB - BUILD)));
+    else if (tt < T_SET) { grip = holdY; jaw = lerp(JAW_OPEN, JAW_SHUT, soft(seg(tt, T_GRAB, .4))); }
+    else if (tt < T_UP) { grip = holdY; jaw = lerp(JAW_SHUT, JAW_OPEN, soft(seg(tt, T_SET, .4))); }
+    else grip = lerp(BOX_Y - JACK_UP * 0 - GRIP_OFF, GRIP_IDLE, soft(seg(tt, T_UP, .8)));
+    if (D >= 0) {
+      if (D < 1.3) grip = GRIP_IDLE;
+      else if (D < 2.3) grip = lerp(GRIP_IDLE, BOX_Y - GRIP_OFF, soft(u(1.3, 1)));
+      else if (D < 5.6) { grip = logoY - GRIP_OFF; jaw = lerp(JAW_OPEN, JAW_SHUT, soft(u(2.3, .3))); }
+      else { grip = lerp(HOME_Y - GRIP_OFF, 20, soft(u(5.9, .8))); jaw = lerp(JAW_SHUT, JAW_OPEN, soft(u(5.6, .3))); }
+    }
+    // Leerlauf: die Trommel ruckt ab und zu ein wenig
+    const idle = tt > READY && D < 0 ? Math.max(0, Math.sin((tt - READY) * Math.PI / 2.5)) ** 12 * 1.2 : 0;
+    grip += idle;
+    let trolley = tt < BUILD ? lerp(MAST, CX, soft(b(6.0, 1))) : CX;
+    if (D >= 0) trolley = lerp(CX, MAST, soft(u(6.7, 1)));
+    const trolleyO = (tt < BUILD ? out(b(6.0, .3)) : 1) * (1 - u(7.6, .2));
+    show(el("trolley"), trolleyO, `translate(${trolley} 0)`);
+    [el("w1"), el("w2")].forEach((w, k) => w.setAttribute("transform", `translate(${k ? 4 : -4} 21) rotate(${trolley * 6})`));
+    el("cable").setAttribute("x1", trolley); el("cable").setAttribute("x2", trolley); el("cable").setAttribute("y2", grip - 5);
+    el("cable").style.opacity = trolleyO * (tt < BUILD ? out(b(6.9, .3)) : 1);
+    show(el("gripper"), trolleyO * (tt < BUILD ? out(b(6.9, .3)) : 1), `translate(${trolley} ${grip})`);
+    el("jawL").setAttribute("d", `M-62 5 L${-jaw} 14 V${GRIP_OFF + 4}`);
+    el("jawR").setAttribute("d", `M62 5 L${jaw} 14 V${GRIP_OFF + 4}`);
+    el("padL").setAttribute("x", -jaw); el("padL").setAttribute("y", GRIP_OFF - 6);
+    el("padR").setAttribute("x", jaw - 4); el("padR").setAttribute("y", GRIP_OFF - 6);
+    el("drumspin").setAttribute("transform", `rotate(${grip * 5} 340 27)`);
+
+    // Kran auf- und abbauen
+    el("ground").style.opacity = .6 * out(b(0, .4)) * (1 - u(10.6, .5));
+    const baseIn = out(b(.1, .4));
+    show(el("cbase"), baseIn * (1 - u(10.4, .4)), `translate(0 ${6 * (1 - baseIn)})`);
+    sc.mast.forEach((g, k) => {
+      const pin = b(.5 + k * .5, .45), pout = u(8.8 + (4 - k) * .3, .4);
+      show(g, Math.min(1, pin * 3) * (1 - pout), `translate(0 ${-40 * (1 - settle(pin)) - 34 * soft(pout)})`);
+    });
+    const hin = out(b(3.0, .35)), hout = u(8.6, .3);
+    show(el("head"), hin * (1 - hout), `translate(0 ${-14 * (1 - hin) - 14 * hout})`);
+    const js = soft(b(3.35, .9)) * (1 - soft(u(7.9, .7)));
+    show(el("jib"), js > 0 ? 1 : 0, `translate(329 0) scale(${Math.max(js, .001)} 1) translate(-329 0)`);
+    const cs = soft(b(3.35, .6)) * (1 - soft(u(7.9, .6)));
+    show(el("cjib"), cs > 0 ? 1 : 0, `translate(329 0) scale(${Math.max(cs, .001)} 1) translate(-329 0)`);
+    const win = out(b(4.25, .5)), wout = u(7.6, .4);
+    show(el("weight"), win * (1 - wout), `translate(0 ${-18 * (1 - win) - 18 * soft(wout)})`);
+
+    // Box: Platte, Wagenheber, Pfosten, Ablagen, Ampel
+    const pin = soft(b(.3, .6)), pout = soft(u(8.4, .6));
+    show(el("plate"), pin * (1 - pout), `translate(${-80 * (1 - pin) + 80 * pout} 0)`);
+    const jin = soft(b(1.0, 1)), jout = soft(u(7.6, 1));
+    const jx = -150 * (1 - jin) - 150 * jout;
+    show(el("jackg"), Math.min(1, jin * 2) * (1 - jout), `translate(${jx} 0)`);
+    sc.wheels.forEach((w, k) => w.setAttribute("transform", `translate(${[136, 184][k]} 326) rotate(${jx * 4})`));
+    const saddleY = BOX_Y + 50 - JACK_UP * jack;
+    el("saddle").setAttribute("y", saddleY - 4);
+    el("scissor").setAttribute("d", `M140 318 L180 ${saddleY - 4} M180 318 L140 ${saddleY - 4}`);
+    const pumpP = tt >= T_JACK && tt < T_JACK + 2 ? Math.sin(Math.PI * clamp(((tt - T_JACK) % 1) / .5)) * ((tt - T_JACK) % 1 < .5 ? 1 : 0) : 0;
+    const lev = rad(-25 - 30 * pumpP);
+    el("lever").setAttribute("d", `M190 318 L${190 + 30 * Math.cos(lev)} ${318 + 30 * Math.sin(lev)}`);
+    sc.posts.forEach((g) => {
+      const p = soft(b(1.4, .8)) * (1 - soft(u(7.8, .7)));
+      show(g, p > 0 ? 1 : 0, `translate(0 332) scale(1 ${Math.max(p, .001)}) translate(0 -332)`);
+    });
+    sc.trays.forEach((g, k) => {
+      const p = soft(b(3.4, .5)), q = soft(u(7.3, .6));
+      show(g, p * (1 - q), `translate(${(k ? 60 : -60) * (1 - p) + (k ? 60 : -60) * q} 0)`);
+    });
+    const ain = soft(b(5.4, .6)), aout = soft(u(8.0, .6));
+    show(el("ampel"), ain * (1 - aout), `translate(0 ${60 * (1 - ain) + 60 * aout})`);
+    const lamp = D >= 0 ? "green" : tt >= READY ? "yellow" : t >= 6.2 ? "red" : "";
+    el("red").style.fill = lamp === "red" ? "#d96b5f" : "#3a3633";
+    el("yellow").style.fill = lamp === "yellow" ? "#e5b65a" : "#3a3633";
+    el("green").style.fill = lamp === "green" ? "#7fc4ab" : "#3a3633";
+
+    // Arme und Werkzeuge
+    const logoC = [CX, logoY];
+    const held = {};
+    const progress = {};
+    sc.arms.forEach((a, k) => {
+      const arm = ARMS[k];
+      const st = armState(arm, tt, logoC);
+      Object.assign(progress, st.progress);
+      const fold = soft(u(7.0, .8));
+      const tgt = [lerp(st.target[0], arm.s[0], fold), lerp(st.target[1], arm.s[1] + 46, fold)];
+      const { e, w } = ik(arm.s, tgt);
+      const vis = (tt < 2.2 ? out(b(2.2, .4)) : 1) * (1 - u(7.6, .3));
+      a.g.style.opacity = vis;
+      a.l1.setAttribute("x1", arm.s[0]); a.l1.setAttribute("y1", arm.s[1]); a.l1.setAttribute("x2", e[0]); a.l1.setAttribute("y2", e[1]);
+      a.l2.setAttribute("x1", e[0]); a.l2.setAttribute("y1", e[1]); a.l2.setAttribute("x2", w[0]); a.l2.setAttribute("y2", w[1]);
+      [arm.s, e, w].forEach(([x, y], i) => { a.j[i].setAttribute("cx", x); a.j[i].setAttribute("cy", y); });
+      a.led.style.fill = st.light ? "#7fc4ab" : "#4a4541";
+      a.led.style.opacity = tt < 3.2 ? b(3.2, .3) : 1;
+      if (st.tool) held[st.tool.name] = { w, ang: st.tool.ang, working: st.tool.working, q: arm.q };
+    });
+    // Werkzeuge: in der Hand oder an ihrem Platz
+    for (const [name, tool] of Object.entries(TOOLS)) {
+      const g = sc.tools[name], h = held[name];
+      const k = Object.keys(TOOLS).indexOf(name);
+      const drop = out(b(3.9 + k * .3, .4)), lift = u(6.7 + k * .08, .5);
+      if (h) g.setAttribute("transform", `translate(${h.w[0]} ${h.w[1]}) rotate(${h.ang}) translate(0 ${TOOL_LEN})`);
+      else g.setAttribute("transform", `translate(${tool.x} ${TRAY_Y - 30 * (1 - drop) - 30 * soft(lift)})`);
+      g.style.opacity = Math.min(1, drop * 2) * (1 - lift);
+    }
+    // Druckluft: Staubwölkchen fliegen nach außen weg
+    const air = held.air && held.air.working != null ? held.air : null;
+    sc.puffs.forEach((p, k) => {
+      if (!air) { p.style.opacity = 0; return; }
+      const ph = (air.working * 6 + k / 5) % 1, ang = rad(air.ang + (k - 2) * 7), r = 31 + 26 * ph;
+      show(p, (1 - ph) * .7, `translate(${logoC[0] + r * Math.sin(ang)} ${logoC[1] - r * Math.cos(ang)}) scale(${1 + ph * 1.6})`);
+    });
+
+    // Befunde verschwinden, wenn ihr Werkzeug darüber war
+    sc.q.forEach((part, q) => {
+      const def = DEFECTS[q], fx = def.fix;
+      const pr = (name) => progress[name] ?? 0;
+      if (part.dust) part.dust.style.opacity = .5 * (1 - pr(fx.dust));
+      part.spots.forEach((s, i) => {
+        const p = pr(fx.spots), sa = def.spots[i][0];
+        let left = 1;
+        if (p >= 1) left = 0;
+        else if (p > 0) { const tp = toolPath("brush", p); left = 1 - (tp.stroke + ((tp.stroke === 1 ? tp.a <= sa : tp.a >= sa) ? 1 : 0)) / 3; }
+        s.style.opacity = left;
+      });
+      part.scratches.forEach((s, i) => {
+        const p = pr(fx.scratches), sweep = lerp(-28, 28, soft(p));
+        s.style.opacity = p >= 1 ? 0 : 1 - clamp((sweep - def.scratches[i] + 6) / 14);
+      });
+      const mp = pr(fx.matte);
+      part.matte.style.opacity = def.matte * (1 - mp);
+      part.shine.style.opacity = .6 * clamp((mp - .6) / .4);
+    });
+
+    // Funkeln, wenn alles abgebaut ist
+    sc.sparks.forEach((p, k) => {
+      const q = D < 0 ? 0 : seg(D, 10.9 + k * .12, 1.1);
+      p.style.opacity = q > 0 && q < 1 ? (q < .35 ? q / .35 : 1 - (q - .35) / .65) : 0;
+      p.setAttribute("transform", `scale(${q < .35 ? .2 + .8 * q / .35 : 1 - .5 * (q - .35) / .65}) rotate(${90 * q})`);
+    });
+    sc.host.querySelector(".opens").classList.toggle("on", D > 12.2);
+  }
+
+  // ---------- Uhr, Nachfrage, Steuerung ----------
+  const K = "wartung-boxenstopp";
+  const get = (k) => localStorage.getItem(`${K}.${k}`);
+  const put = (k, v) => localStorage.setItem(`${K}.${k}`, v);
+  if (!get("start")) put("start", String(Date.now()));
+  let speed = Number(get("speed") || 1);
+  // Zum Prüfen einzelner Bilder: ?t=12.5 hält die Uhr an, ?done=40 setzt die Freigabe.
+  const q = new URLSearchParams(location.search);
+  const clock = () => (q.has("t") ? Number(q.get("t")) : (Date.now() - Number(get("start"))) / 1000 * speed);
+  const doneAt = () => (q.has("done") ? Number(q.get("done")) : get("done") ? Number(get("done")) : null);
+
+  const backBtn = document.getElementById("back"), fastBtn = document.getElementById("fast");
+  const paint = () => { backBtn.classList.toggle("on", get("back") === "1"); fastBtn.classList.toggle("on", speed > 1); };
+  paint();
+  backBtn.onclick = () => { put("back", get("back") === "1" ? "0" : "1"); paint(); };
+  fastBtn.onclick = () => {
+    const t = clock(); speed = speed > 1 ? 1 : 4; put("speed", String(speed));
+    put("start", String(Date.now() - (t / speed) * 1000)); paint();
+  };
+  document.getElementById("reset").onclick = () => { ["start", "back", "done"].forEach((k) => localStorage.removeItem(`${K}.${k}`)); location.reload(); };
+  document.getElementById("reloadPage").onclick = () => location.reload();
+
+  // Freigabe frühestens, wenn alle vier Viertel fertig sind. Im Entwurf antwortet der Knopf, echt /actuator/health.
+  const check = () => { if (get("back") === "1" && doneAt() == null) put("done", String(Math.max(clock(), READY))); };
+  document.querySelectorAll(".reload").forEach((btn) => (btn.onclick = check));
+  let lastCheck = Math.floor(Date.now() / 20000);
+
+  const frame = () => {
+    const t = clock(), done = doneAt();
+    scenes.forEach((sc) => draw(sc, t, done != null && t >= done ? t - done : -1));
+    const now = Date.now();
+    if (Math.floor(now / 20000) > lastCheck) { lastCheck = Math.floor(now / 20000); check(); }
+    const left = 20 - (now / 1000) % 20;
+    document.querySelectorAll(".sec b").forEach((e) => (e.textContent = Math.ceil(left)));
+    document.querySelectorAll(".reload .left").forEach((e) => (e.style.width = `${(left / 20) * 100}%`));
+    requestAnimationFrame(frame);
+  };
+  frame();
+})();
+</script>
+</body>
+</html>
