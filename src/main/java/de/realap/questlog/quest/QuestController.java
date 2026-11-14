@@ -3,12 +3,12 @@ package de.realap.questlog.quest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
-/** Hauptansicht. Zeigt bis zur Umsetzung der Quest-Logik den Leerzustand. */
+/** Übersicht: zeigt groß die Quest, die als Nächstes dran ist. */
 @Controller
 class QuestController {
 
   @GetMapping("/")
-  String current() {
-    return "quest/current";
+  String overview() {
+    return "quest/overview";
   }
 }

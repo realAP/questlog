@@ -2,22 +2,35 @@
 <html lang="de" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head('Questlog – Anmelden', null)}"></head>
 <body class="bg-base-100 text-base-content">
-  <main class="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-8">
-    <h1 class="pt-[22dvh] text-3xl font-semibold tracking-tight">Questlog</h1>
+  <!-- Alles als Block in der Mitte, die Felder tragen ein Symbol statt einer Beschriftung -->
+  <main class="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5 pb-10">
+    <svg th:replace="~{fragments/icons :: appLogo('size-[72px] self-center')}"></svg>
+    <h1 class="mt-3.5 self-center text-[30px] font-bold tracking-tight">Questlog</h1>
 
-    <form th:action="@{/login}" method="post" class="mt-auto flex flex-col gap-4">
-      <p th:if="${param.error}" class="text-error" role="alert">Name oder Passwort stimmt nicht.</p>
-      <label class="flex flex-col gap-1.5">
-        <span class="text-sm text-base-content/70">Name</span>
-        <input class="input input-lg w-full" type="text" name="username"
+    <form th:action="@{/login}" method="post" class="mt-7 flex flex-col gap-3.5" x-data="{ shown: false }">
+      <label class="flex h-[52px] items-center gap-2.5 rounded-xl border-[1.5px] bg-base-200 px-3.5 focus-within:border-primary"
+             th:classappend="${param.error} ? 'border-error' : 'border-base-300'">
+        <svg th:replace="~{fragments/icons :: person('size-5 shrink-0 text-base-content/55')}"></svg>
+        <input class="h-full min-w-0 flex-1 bg-transparent text-[17px] outline-none" type="text" name="username"
+               placeholder="Name" aria-label="Name"
                autocomplete="username" autocapitalize="none" autocorrect="off" required autofocus>
       </label>
-      <label class="flex flex-col gap-1.5">
-        <span class="text-sm text-base-content/70">Passwort</span>
-        <input class="input input-lg w-full" type="password" name="password"
-               autocomplete="current-password" required>
+      <label class="flex h-[52px] items-center gap-2.5 rounded-xl border-[1.5px] bg-base-200 px-3.5 focus-within:border-primary"
+             th:classappend="${param.error} ? 'border-error' : 'border-base-300'">
+        <svg th:replace="~{fragments/icons :: lock('size-5 shrink-0 text-base-content/55')}"></svg>
+        <input class="h-full min-w-0 flex-1 bg-transparent text-[17px] outline-none" name="password"
+               type="password" :type="shown ? 'text' : 'password'"
+               placeholder="Passwort" aria-label="Passwort" autocomplete="current-password" required>
+        <button type="button" class="-mr-2 grid size-10 shrink-0 place-items-center text-base-content/55"
+                :aria-label="shown ? 'Passwort verbergen' : 'Passwort zeigen'" aria-label="Passwort zeigen" @click="shown = !shown">
+          <span x-show="!shown"><svg th:replace="~{fragments/icons :: eye('size-5')}"></svg></span>
+          <span x-show="shown" x-cloak><svg th:replace="~{fragments/icons :: eyeOff('size-5')}"></svg></span>
+        </button>
       </label>
-      <button class="btn btn-primary btn-lg mt-2 w-full" type="submit">Anmelden</button>
+      <!-- Die Meldung hat ihren Platz immer, so springt nichts -->
+      <p class="-my-1 min-h-5 text-[15px] text-error" role="alert"
+         th:text="${param.error} ? 'Name oder Passwort stimmt nicht.' : ''"></p>
+      <button class="btn btn-primary h-[52px] w-full rounded-[14px] text-[17px]" type="submit">Anmelden</button>
     </form>
   </main>
 </body>

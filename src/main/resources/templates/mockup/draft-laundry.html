@@ -22,6 +22,14 @@
 
 <div class="mx-auto flex min-h-dvh max-w-md flex-col px-5" x-data="laundryDraft" :data-labels="labels" style="--scene: min(80vw, 34dvh, 340px)">
 
+  <!-- Zurück zur Übersicht. Die Quest behält ihren Stand und läuft weiter. -->
+  <nav class="flex h-10 shrink-0 items-center justify-between" data-label="Kopfzeile">
+    <a th:href="@{/}" class="-ml-1.5 flex h-10 items-center gap-0.5 pr-2 text-[17px] text-primary">
+      <svg th:replace="~{fragments/icons :: back('size-5')}"></svg>Übersicht
+    </a>
+    <span class="text-[15px] text-base-content/55" x-text="quest.name"></span>
+  </nav>
+
   <!-- Stepper: Etappen als Symbole, der Ring um die aktuelle Etappe zeigt ihre Unterschritte -->
   <header class="relative pt-3 pb-1" x-show="screen !== 'start' && screen !== 'done'" x-cloak
           x-effect="ringKey; $nextTick(() => updateRings())">

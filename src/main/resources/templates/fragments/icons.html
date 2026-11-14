@@ -62,5 +62,34 @@
      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
   <path d="M14.5 5.5L8 12l6.5 6.5"/>
 </svg>
+<svg th:fragment="person(cls)" th:class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <circle cx="12" cy="8.5" r="3.8"/>
+  <path d="M4.5 20c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/>
+</svg>
+<svg th:fragment="lock(cls)" th:class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <rect x="5" y="10.5" width="14" height="10" rx="2.5"/>
+  <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>
+</svg>
+<svg th:fragment="eye(cls)" th:class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/>
+  <circle cx="12" cy="12" r="2.8"/>
+</svg>
+<svg th:fragment="eyeOff(cls)" th:class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/>
+  <circle cx="12" cy="12" r="2.8"/>
+  <path d="M4 4l16 16"/>
+</svg>
+<!-- App-Symbol wie icon-512.png: dunkles Quadrat, grüner Ring, heller Punkt -->
+<svg th:fragment="appLogo(cls)" th:class="${cls}" viewBox="0 0 100 100" aria-hidden="true">
+  <rect width="100" height="100" rx="23" fill="#2a2724"/>
+  <circle cx="50" cy="50" r="30" fill="none" stroke="#4a4541" stroke-width="9"/>
+  <circle cx="50" cy="50" r="30" fill="none" stroke="#7fc4ab" stroke-width="9" stroke-linecap="round"
+          pathLength="100" stroke-dasharray="75 100" transform="rotate(-90 50 50)"/>
+  <circle cx="50" cy="50" r="5" fill="#f2ede4"/>
+</svg>
 </body>
 </html>
