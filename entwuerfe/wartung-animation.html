@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entwurf: Wartungs-Animation im Logo</title>
+<style>
+  :root { --bg: oklch(98.5% 0.006 85); --card: oklch(95.5% 0.008 85); --ink: oklch(28% 0.015 70); --mu: oklch(28% 0.015 70 / .6); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 80px; }
+  h1 { font-size: 28px; margin: 8px 0 4px; } .hint { color: var(--mu); margin: 0 0 22px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  figure { margin: 0; } figcaption { font-size: 14px; margin-top: 10px; } figcaption b { display: block; font-size: 15px; } figcaption span { color: var(--mu); }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; border-radius: 20px; overflow: hidden; }
+  .pair > div { display: grid; place-items: center; height: 200px; }
+  .light { background: oklch(98.5% 0.006 85); box-shadow: inset 0 0 0 1px oklch(91% 0.01 85); border-radius: 20px 0 0 20px; }
+  .dark { background: oklch(21% 0.008 70); }
+  svg.logo { width: 120px; height: 120px; overflow: visible; }
+
+  /* Gemeinsam: Logo wie icon-512.png */
+  .track { fill: none; stroke: #4a4541; stroke-width: 9; }
+  .arc { fill: none; stroke: #7fc4ab; stroke-width: 9; stroke-linecap: round; }
+  .dot { fill: #f2ede4; }
+  .rot { transform-origin: 50px 50px; transform: rotate(-90deg); }
+  .sp { fill: #7fc4ab; opacity: 0; transform-box: fill-box; transform-origin: center; }
+
+  /* 0 · jetzt: gleichmäßiges Drehen */
+  .v0 .spin { transform-origin: 50px 50px; animation: spin 6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* A · Atmen: der Bogen wird langsam länger und kürzer */
+  .vA .arc { animation: breathe 4.5s ease-in-out infinite alternate; }
+  @keyframes breathe { from { stroke-dasharray: 55 100; } to { stroke-dasharray: 92 100; } }
+
+  /* B · Wartezeit: der Ring füllt sich wie ein Timer, oben grünes Funkeln, dann von vorn */
+  .vB .arc { animation: fill 7s ease-in-out infinite; }
+  @keyframes fill {
+    0% { stroke-dasharray: 0 100; opacity: 1; }
+    65% { stroke-dasharray: 100 100; opacity: 1; }
+    88% { stroke-dasharray: 100 100; opacity: 1; }
+    96%, 100% { stroke-dasharray: 100 100; opacity: 0; }
+  }
+  .vB .sp { animation: twinkle 7s ease-out infinite; }
+  .vB .sp:nth-of-type(2) { animation-delay: .12s; } .vB .sp:nth-of-type(3) { animation-delay: .24s; } .vB .sp:nth-of-type(4) { animation-delay: .36s; }
+  @keyframes twinkle {
+    0%, 64% { opacity: 0; transform: scale(.2); }
+    70% { opacity: 1; transform: scale(1); }
+    84%, 100% { opacity: 0; transform: scale(.6); }
+  }
+
+  /* C · Etappen: drei Abschnitte werden nacheinander grün, wie der Ring im Stepper */
+  .vC .seg { fill: none; stroke: #4a4541; stroke-width: 9; stroke-linecap: round; animation: seg 6s ease-in-out infinite; }
+  .vC .seg:nth-of-type(2) { animation-delay: 1.2s; } .vC .seg:nth-of-type(3) { animation-delay: 2.4s; }
+  @keyframes seg { 0% { stroke: #4a4541; } 10%, 55% { stroke: #7fc4ab; } 70%, 100% { stroke: #4a4541; } }
+
+  /* D · Schritt für Schritt: der Bogen rückt ruckfrei um eine Vierteldrehung weiter, hält kurz an */
+  .vD .step { transform-origin: 50px 50px; animation: steps 6.4s cubic-bezier(.65, 0, .35, 1) infinite; }
+  @keyframes steps {
+    0%, 15% { transform: rotate(0deg); } 25%, 40% { transform: rotate(90deg); }
+    50%, 65% { transform: rotate(180deg); } 75%, 90% { transform: rotate(270deg); } 100% { transform: rotate(360deg); }
+  }
+
+  /* E · Schraubenschlüssel: dreht ruhig am Punkt hin und her, der Ring steht */
+  .vE .wrench { transform-origin: 50px 50px; animation: tighten 3.2s ease-in-out infinite; }
+  @keyframes tighten { 0%, 100% { transform: rotate(-20deg); } 50% { transform: rotate(25deg); } }
+  .vE .wrench path { fill: none; stroke: #f2ede4; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Wartungsseite: Animation im Logo</h1>
+  <p class="hint">Jede Variante steckt nur im App-Symbol, links auf hellem, rechts auf dunklem Grund. Größe wie auf der Seite: 72 px, hier zum Ansehen größer.</p>
+
+  <div class="grid">
+    <figure class="v0">
+      <div class="pair"><div class="light"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle class="track" cx="50" cy="50" r="30"/><g class="spin"><circle class="arc rot" cx="50" cy="50" r="30" pathLength="100" stroke-dasharray="75 100"/></g><circle class="dot" cx="50" cy="50" r="5"/></svg></div><div class="dark"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle class="track" cx="50" cy="50" r="30"/><g class="spin"><circle class="arc rot" cx="50" cy="50" r="30" pathLength="100" stroke-dasharray="75 100"/></g><circle class="dot" cx="50" cy="50" r="5"/></svg></div></div>
+      <figcaption><b>0 · Jetzt: gleichmäßig drehen</b><span>Zum Vergleich: so dreht der Ring auf der Seite gerade.</span></figcaption>
+    </figure>
+
+    <figure class="vA">
+      <div class="pair"><div class="light"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle class="track" cx="50" cy="50" r="30"/><circle class="arc rot" cx="50" cy="50" r="30" pathLength="100"/><circle class="dot" cx="50" cy="50" r="5"/></svg></div><div class="dark"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle class="track" cx="50" cy="50" r="30"/><circle class="arc rot" cx="50" cy="50" r="30" pathLength="100"/><circle class="dot" cx="50" cy="50" r="5"/></svg></div></div>
+      <figcaption><b>A · Atmen</b><span>Der grüne Bogen wird langsam länger und wieder kürzer. Am ruhigsten, nichts dreht sich.</span></figcaption>
+    </figure>
+
+    <figure class="vB">
+      <div class="pair"><div class="light"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle class="track" cx="50" cy="50" r="30"/><circle class="arc rot" cx="50" cy="50" r="30" pathLength="100"/><circle class="dot" cx="50" cy="50" r="5"/><g><path class="sp" transform="translate(6 2) scale(.7)" d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/><path class="sp" transform="translate(98 10) scale(.55)" d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/><path class="sp" transform="translate(102 84) scale(.6)" d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/><path class="sp" transform="translate(-2 74) scale(.45)" d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/></g></svg></div><div class="dark"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle class="track" cx="50" cy="50" r="30"/><circle class="arc rot" cx="50" cy="50" r="30" pathLength="100"/><circle class="dot" cx="50" cy="50" r="5"/><g><path class="sp" transform="translate(6 2) scale(.7)" d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/><path class="sp" transform="translate(98 10) scale(.55)" d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/><path class="sp" transform="translate(102 84) scale(.6)" d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/><path class="sp" transform="translate(-2 74) scale(.45)" d="M0 -10 l2.6 7.4 l7.4 2.6 l-7.4 2.6 l-2.6 7.4 l-2.6 -7.4 l-7.4 -2.6 l7.4 -2.6 z"/></g></svg></div></div>
+      <figcaption><b>B · Wartezeit</b><span>Der Ring füllt sich wie der Timer einer Wartezeit. Ist er voll, funkelt es grün wie beim Abschluss, dann beginnt er von vorn.</span></figcaption>
+    </figure>
+
+    <figure class="vC">
+      <div class="pair"><div class="light"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><g class="rot"><circle class="seg" cx="50" cy="50" r="30" pathLength="100" stroke-dasharray="24 76" stroke-dashoffset="-4.7"/><circle class="seg" cx="50" cy="50" r="30" pathLength="100" stroke-dasharray="24 76" stroke-dashoffset="-38"/><circle class="seg" cx="50" cy="50" r="30" pathLength="100" stroke-dasharray="24 76" stroke-dashoffset="-71.3"/></g><circle class="dot" cx="50" cy="50" r="5"/></svg></div><div class="dark"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><g class="rot"><circle class="seg" cx="50" cy="50" r="30" pathLength="100" stroke-dasharray="24 76" stroke-dashoffset="-4.7"/><circle class="seg" cx="50" cy="50" r="30" pathLength="100" stroke-dasharray="24 76" stroke-dashoffset="-38"/><circle class="seg" cx="50" cy="50" r="30" pathLength="100" stroke-dasharray="24 76" stroke-dashoffset="-71.3"/></g><circle class="dot" cx="50" cy="50" r="5"/></svg></div></div>
+      <figcaption><b>C · Etappen</b><span>Der Ring ist in drei Abschnitte geteilt, wie der Ring um eine Etappe im Stepper. Sie werden nacheinander grün und dann wieder dunkel.</span></figcaption>
+    </figure>
+
+    <figure class="vD">
+      <div class="pair"><div class="light"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle class="track" cx="50" cy="50" r="30"/><g class="step"><circle class="arc rot" cx="50" cy="50" r="30" pathLength="100" stroke-dasharray="75 100"/></g><circle class="dot" cx="50" cy="50" r="5"/></svg></div><div class="dark"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle class="track" cx="50" cy="50" r="30"/><g class="step"><circle class="arc rot" cx="50" cy="50" r="30" pathLength="100" stroke-dasharray="75 100"/></g><circle class="dot" cx="50" cy="50" r="5"/></svg></div></div>
+      <figcaption><b>D · Schritt für Schritt</b><span>Der Bogen rückt um eine Vierteldrehung weiter, hält kurz an, rückt weiter. Weich angefahren und abgebremst, wie die Übergänge in der App.</span></figcaption>
+    </figure>
+
+    <figure class="vE">
+      <div class="pair"><div class="light"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle class="track" cx="50" cy="50" r="30"/><circle class="arc rot" cx="50" cy="50" r="30" pathLength="100" stroke-dasharray="75 100"/><g class="wrench"><path d="M50 50 L64 36 M61.5 28 A8.5 8.5 0 1 0 72 38.5"/></g><circle class="dot" cx="50" cy="50" r="5"/></svg></div><div class="dark"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#2a2724"/><circle class="track" cx="50" cy="50" r="30"/><circle class="arc rot" cx="50" cy="50" r="30" pathLength="100" stroke-dasharray="75 100"/><g class="wrench"><path d="M50 50 L64 36 M61.5 28 A8.5 8.5 0 1 0 72 38.5"/></g><circle class="dot" cx="50" cy="50" r="5"/></svg></div></div>
+      <figcaption><b>E · Schraubenschlüssel</b><span>Ein kleiner Schlüssel sitzt am Punkt und dreht ruhig hin und her, der Ring steht still. Sagt am deutlichsten „Wartung“.</span></figcaption>
+    </figure>
+  </div>
+</main>
+</body>
+</html>
