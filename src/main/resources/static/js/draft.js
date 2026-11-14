@@ -112,6 +112,27 @@
       }
     },
 
+    // Beta: Testnachricht in 15 Sekunden. Sagt bei jedem Schritt, woran es hängt.
+    async test() {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+        return "Dieses Gerät kann hier keine Mitteilungen. Auf dem iPhone die App vom Home-Bildschirm öffnen, nicht in Safari.";
+      }
+      if (!(await this.ask())) return "Mitteilungen sind nicht erlaubt. In den iOS-Einstellungen unter Mitteilungen → Questlog einschalten.";
+      const key = await fetch("/push/schluessel");
+      if (key.status === 404) return "Push ist auf dem Server nicht eingerichtet: die VAPID-Variablen fehlen.";
+      try {
+        await this.subscribe();
+      } catch (error) {
+        return `Anmelden beim Push-Dienst ging nicht: ${error.message}`;
+      }
+      try {
+        await this.request("PUT", "/erinnerungen/test", { dueAt: new Date(Date.now() + 15000).toISOString(), title: "Questlog", body: "Testnachricht angekommen", url: "/" });
+      } catch (error) {
+        return `Server hat die Erinnerung nicht angenommen: ${error.message}`;
+      }
+      return "Kommt in etwa 15 Sekunden. Du kannst das Handy sperren.";
+    },
+
     cancel(name) {
       this.request("DELETE", `/erinnerungen/${name}`).catch((error) => console.warn("Erinnerung nicht gelöscht", error));
     },
@@ -724,6 +745,12 @@
 
       get progress() {
         return (1 - (this.state?.remaining ?? 1)) * 100;
+      },
+
+      pushNote: "",
+      async testPush() {
+        this.pushNote = "Einen Moment …";
+        this.pushNote = await Push.test().catch((error) => `Fehler: ${error.message}`);
       },
 
       get timeText() {
