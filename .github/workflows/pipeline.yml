@@ -53,4 +53,6 @@ jobs:
             echo "::error::GitHub-Secrets COOLIFY_WEBHOOK und COOLIFY_TOKEN fehlen (siehe README, Einrichtung in Coolify)."
             exit 1
           fi
-          curl -fsS --retry 3 -H "Authorization: Bearer ${COOLIFY_TOKEN}" "${COOLIFY_WEBHOOK}"
+          # Coolify nimmt den Deploy-Aufruf seit v4.5 nur noch als POST an (GET gibt 405).
+          # --fail-with-body zeigt bei Fehlern die Meldung von Coolify im Log.
+          curl -sS --fail-with-body --retry 3 -X POST -H "Authorization: Bearer ${COOLIFY_TOKEN}" "${COOLIFY_WEBHOOK}"
