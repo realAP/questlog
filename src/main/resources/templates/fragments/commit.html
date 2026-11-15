@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Welcher Stand gerade läuft: Commit-Zeit und die ersten acht Zeichen des Hashs -->
+<p th:fragment="commit" th:if="${deployedCommit}" th:text="${deployedCommit}"
+   class="text-center text-[12px] tabular-nums text-base-content/40" data-label="Stand">24.12. 14:32 - a1b2c3d4</p>
+</body>
+</html>

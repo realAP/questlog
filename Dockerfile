@@ -4,6 +4,8 @@ FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /build
 COPY pom.xml .
 COPY src src
+# Für die Anzeige des laufenden Commits (git.properties). Coolify klont samt .git.
+COPY .git .git
 # Statische Prüfungen und Tests laufen in der Pipeline; hier wird nur gebaut.
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q package -DskipTests
 
